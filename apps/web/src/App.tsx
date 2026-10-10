@@ -376,19 +376,19 @@ export default function App() {
     };
 
     // 1. Fetch Engine Health
-    safeFetch('http://localhost:3001/health', '/api/engine/health').then((data: EngineHealthResponse | null) => {
+    safeFetch('/api/engine/health', 'http://localhost:3001/health').then((data: EngineHealthResponse | null) => {
       if (data) setEngineHealth(data);
     });
 
     // 2. Fetch MCP Tools List
-    safeFetch('http://localhost:3002/tools', '/api/mcp/tools').then((data) => {
+    safeFetch('/api/mcp/tools', 'http://localhost:3002/tools').then((data) => {
       if (data && Array.isArray(data.tools)) {
         setLiveToolsList(data.tools);
       }
     });
 
     // 3. Fetch Live Switchboard State
-    safeFetch('http://localhost:4000/sim/switchboard', '/api/sim/switchboard').then((data) => {
+    safeFetch('/api/sim/switchboard', 'http://localhost:4000/sim/switchboard').then((data) => {
       if (data && Array.isArray(data.mutations)) {
         setMutations((prev) =>
           prev.map((m) => {
@@ -404,14 +404,14 @@ export default function App() {
   const executeMcpTool = async (toolName: string) => {
     setMcpLoading(true);
     try {
-      let res: Response | null = await fetch('http://localhost:3002/tools/call', {
+      let res: Response | null = await fetch('/api/mcp/tools/call', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ tool: toolName, params: {} }),
       }).catch(() => null);
 
       if (!res || !res.ok) {
-        res = await fetch('/api/mcp/tools/call', {
+        res = await fetch('http://localhost:3002/tools/call', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ tool: toolName, params: {} }),
@@ -779,14 +779,22 @@ export default function App() {
     },
   ]);
 
-  // Real toggle calling live Fastify endpoint
+  // Real toggle calling live Fastify endpoint with proxy resilience
   const toggleMutation = async (id: string) => {
     try {
-      await fetch('http://localhost:4000/sim/switchboard/toggle', {
+      let res = await fetch('/api/sim/switchboard/toggle', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ id }),
-      });
+      }).catch(() => null);
+
+      if (!res || !res.ok) {
+        await fetch('http://localhost:4000/sim/switchboard/toggle', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ id }),
+        }).catch(() => null);
+      }
     } catch {
       // offline fallback
     }
@@ -803,10 +811,13 @@ export default function App() {
     );
   };
 
-  // Real reset calling live Fastify endpoint
+  // Real reset calling live Fastify endpoint with proxy resilience
   const resetAll = async () => {
     try {
-      await fetch('http://localhost:4000/sim/switchboard/reset', { method: 'POST' });
+      let res = await fetch('/api/sim/switchboard/reset', { method: 'POST' }).catch(() => null);
+      if (!res || !res.ok) {
+        await fetch('http://localhost:4000/sim/switchboard/reset', { method: 'POST' }).catch(() => null);
+      }
     } catch {
       // offline fallback
     }

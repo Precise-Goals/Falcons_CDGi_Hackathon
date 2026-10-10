@@ -5,8 +5,19 @@ export interface McpServerConfig {
   apiKey?: string;
 }
 
-export function buildMcpServer(config: McpServerConfig = { engineUrl: 'http://localhost:3001' }): FastifyInstance {
+export function buildMcpServer(
+  config: McpServerConfig = { engineUrl: process.env.ENGINE_URL || 'http://localhost:3001' }
+): FastifyInstance {
   const app = Fastify({ logger: false });
+
+  // Support optional mounted prefix /api/mcp for Vercel services routing
+  app.addHook('onRequest', async (req) => {
+    if (req.url.startsWith('/api/mcp')) {
+      const stripped = req.url.replace(/^\/api\/mcp/, '') || '/';
+      req.raw.url = stripped;
+      (req as any).url = stripped;
+    }
+  });
 
   // CORS headers and preflight handling
   app.addHook('onRequest', async (req, reply) => {
@@ -18,7 +29,7 @@ export function buildMcpServer(config: McpServerConfig = { engineUrl: 'http://lo
     }
   });
 
-  // 1. Health check for Render deployment
+  // 1. Health check for Render / Vercel deployment
   app.get('/healthz', async () => {
     return { status: 'healthy', transport: 'http/streamable', timestamp: new Date().toISOString() };
   });
@@ -148,11 +159,14 @@ export function buildMcpServer(config: McpServerConfig = { engineUrl: 'http://lo
 
 const isDirectRun =
   process.argv[1] &&
-  (process.argv[1].endsWith('server.js') || process.argv[1].endsWith('server.ts'));
+  (process.argv[1].endsWith('server.js') ||
+   process.argv[1].endsWith('server.ts') ||
+   process.argv[1].endsWith('index.js') ||
+   process.argv[1].endsWith('index.ts'));
 
 if (isDirectRun && process.env.NODE_ENV !== 'test' && !process.env.VITEST) {
   const server = buildMcpServer();
-  const port = parseInt(process.env.MCP_PORT || '3002', 10);
+  const port = parseInt(process.env.PORT || process.env.MCP_PORT || '3002', 10);
   server.listen({ port, host: '0.0.0.0' }, (err, address) => {
     if (err) {
       console.error(err);

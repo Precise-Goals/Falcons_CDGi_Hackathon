@@ -5,6 +5,15 @@ import { ObservationSchema } from '@intra/shared';
 export function buildEngineApp(pipeline = new PipelineEngine()): FastifyInstance {
   const app = Fastify({ logger: false });
 
+  // Support optional mounted prefix /api/engine for Vercel services routing
+  app.addHook('onRequest', async (req) => {
+    if (req.url.startsWith('/api/engine')) {
+      const stripped = req.url.replace(/^\/api\/engine/, '') || '/';
+      req.raw.url = stripped;
+      (req as any).url = stripped;
+    }
+  });
+
   // CORS headers and preflight handling
   app.addHook('onRequest', async (req, reply) => {
     reply.header('Access-Control-Allow-Origin', '*');

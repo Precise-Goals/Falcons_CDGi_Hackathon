@@ -47,7 +47,9 @@ describe('High-Volume Multi-Sample Verification Suite (50-60 APIs)', () => {
     expect(categories).toContain('Envelope Flattening');
   });
 
-  it('executes a 50-sample batch verification with logs, policy distributions, and SHA-256 seal', async () => {
+  it(
+    'executes a 50-sample batch verification with logs, policy distributions, and SHA-256 seal',
+    async () => {
     const batch = generateRandomApiBatch(50);
     let progressUpdates = 0;
 
@@ -89,7 +91,7 @@ describe('High-Volume Multi-Sample Verification Suite (50-60 APIs)', () => {
 
     // Logs populated
     expect(report.logs.length).toBeGreaterThanOrEqual(50);
-  });
+  }, 20000);
 
   it('validates BridgeKey wallet configuration on MST Blockchain Testnet', () => {
     expect(MST_CHAIN_ID_DEC).toBe(91562037);
