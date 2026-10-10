@@ -116,19 +116,29 @@ export class PipelineEngine {
           if (decision.adapter) {
             this.adapters.set(decision.adapter.id, decision.adapter);
 
-            // Validation step
-            const replayTests: WorkflowReplayTest[] = impact.affectedWorkflows.map((wf) => ({
-              workflowName: wf,
-              goldenInput: {},
-              expectedOutput:
-                change.kind === 'rename'
-                  ? { id: 'usr_1', name: 'Alice Walker', status: 'active' }
-                  : { amount: 25.0, currency: 'USD' },
-              actualAdaptedOutput:
-                change.kind === 'rename'
-                  ? { id: 'usr_1', name: 'Alice Walker', status: 'active' }
-                  : { amount: 25.0, currency: 'USD' },
-            }));
+            // Validation step: execute synthesized adapter against real recorded payloads
+            const replayTests: WorkflowReplayTest[] = impact.affectedWorkflows.map((wf) => {
+              const goldenInput = obsList[0]?.body ?? {};
+              const mutatedPayload = windowObs[windowObs.length - 1]?.body ?? goldenInput;
+
+              let actualAdaptedOutput = mutatedPayload;
+              try {
+                const cleanCode = decision.adapter!.code.replace(/export\s+/g, '');
+                const fn = new Function(
+                  `${cleanCode}; return typeof adaptResponse === 'function' ? adaptResponse : (typeof adaptRequest === 'function' ? adaptRequest : (d) => d);`
+                )();
+                actualAdaptedOutput = fn(mutatedPayload);
+              } catch {
+                actualAdaptedOutput = mutatedPayload;
+              }
+
+              return {
+                workflowName: wf,
+                goldenInput,
+                expectedOutput: goldenInput,
+                actualAdaptedOutput,
+              };
+            });
 
             const valResult = this.validator.validate(decision.adapter, replayTests);
             this.validationResults.set(decision.adapter.id, valResult);

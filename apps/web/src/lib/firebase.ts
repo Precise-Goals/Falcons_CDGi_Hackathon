@@ -101,23 +101,27 @@ export async function firebaseSignIn(email: string, password: string): Promise<F
   return user;
 }
 
-export async function getUserProfile(uid: string, idToken: string): Promise<Record<string, any> | null> {
-  const url = `${ENV.FIREBASE_DATABASE_URL}/users/${uid}.json?auth=${idToken}`;
+export async function getUserProfile(uid: string, idToken?: string): Promise<Record<string, any> | null> {
+  const authQuery = idToken ? `?auth=${idToken}` : '';
+  const url = `${ENV.FIREBASE_DATABASE_URL}/users/${uid}.json${authQuery}`;
   const res = await fetch(url);
-  if (!res.ok) return null;
+  if (!res.ok) {
+    throw new Error(`Firebase Realtime Database query failed for user ${uid} with HTTP ${res.status}`);
+  }
   return await res.json();
 }
 
-export async function saveUserProfile(uid: string, idToken: string, profileData: Record<string, any>): Promise<void> {
-  const url = `${ENV.FIREBASE_DATABASE_URL}/users/${uid}.json?auth=${idToken}`;
+export async function saveUserProfile(uid: string, idToken: string | undefined, profileData: Record<string, any>): Promise<void> {
+  const authQuery = idToken ? `?auth=${idToken}` : '';
+  const url = `${ENV.FIREBASE_DATABASE_URL}/users/${uid}.json${authQuery}`;
   const res = await fetch(url, {
-    method: 'PUT',
+    method: 'PATCH',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(profileData),
   });
   if (!res.ok) {
-    const err = await res.json();
-    throw new Error(err.error || 'Failed to update Realtime Database profile');
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err.error || `Failed to update Firebase Realtime Database profile (HTTP ${res.status})`);
   }
 }
 

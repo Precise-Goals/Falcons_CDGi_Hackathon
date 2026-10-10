@@ -112,20 +112,31 @@ export function buildEngineApp(pipeline = new PipelineEngine()): FastifyInstance
 
   // 8. Health & rate-limit headroom
   app.get('/health', async () => {
+    const dependencies: Record<string, string> = {
+      users: 'healthy',
+      payments: 'healthy',
+      search: 'healthy',
+      notifications: 'healthy',
+      mcp: 'healthy',
+    };
+    for (const [key] of pipeline.activeContracts.entries()) {
+      const [svc] = key.split(':');
+      const hasBreaking = Array.from(pipeline.detectedChanges.values()).some(
+        (c) => c.service === svc && c.semanticVerdict === 'breaking'
+      );
+      dependencies[svc] = hasBreaking ? 'degraded' : 'healthy';
+    }
     return {
       status: 'ok',
       uptime: process.uptime(),
-      dependencies: {
-        users: 'healthy',
-        payments: 'healthy',
-        search: 'healthy',
-        notifications: 'healthy',
-        mcp: 'healthy',
-      },
+      dependencies,
       rateLimitHeadroom: {
         payments: 10,
         search: 50,
       },
+      activeContractsCount: pipeline.activeContracts.size,
+      detectedChangesCount: pipeline.detectedChanges.size,
+      adaptersCount: pipeline.adapters.size,
     };
   });
 

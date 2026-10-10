@@ -52,5 +52,28 @@ export default defineConfig(({ mode }) => {
         },
       },
     },
+    resolve: {
+      alias: {
+        '@intra/sdk': path.resolve(__dirname, '../../packages/sdk/src/index.ts'),
+        '@intra/shared': path.resolve(__dirname, '../../packages/shared/src/index.ts'),
+      },
+    },
+    build: {
+      rollupOptions: {
+        output: {
+          manualChunks(id) {
+            if (id.includes('node_modules/ethers')) return 'vendor-ethers';
+            if (id.includes('node_modules/react') || id.includes('node_modules/react-dom')) return 'vendor-react';
+            if (id.includes('node_modules/lucide-react')) return 'vendor-icons';
+            if (id.includes('containers/HomeContainer')) return 'container-home';
+            if (id.includes('containers/ProductsContainer')) return 'container-products';
+            if (id.includes('containers/DocsContainer')) return 'container-docs';
+            if (id.includes('containers/PricingContainer')) return 'container-pricing';
+            if (id.includes('containers/DashboardContainer')) return 'container-dashboard';
+            if (id.includes('containers/LabContainer')) return 'container-lab';
+          },
+        },
+      },
+    },
   };
 });

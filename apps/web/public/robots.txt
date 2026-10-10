@@ -1,0 +1,7 @@
+User-agent: *
+Allow: /
+Disallow: /api/engine/
+Disallow: /api/mcp/
+Disallow: /api/sim/
+
+Sitemap: https://intra.precise-goals.com/sitemap.xml

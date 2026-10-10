@@ -1,6 +1,7 @@
 import { ethers } from 'ethers';
 import { ENV } from './config';
 import { saveUserProfile } from './firebase';
+import { computeSha256 } from './crypto';
 
 export interface WalletState {
   address: string;
@@ -15,24 +16,39 @@ export const MST_CHAIN_ID_HEX = '0x5752035'; // 91562037 in hex
 export const MST_CHAIN_ID_DEC = 91562037;
 
 export async function fetchMstBalance(address: string): Promise<string> {
-  try {
-    const provider = new ethers.JsonRpcProvider(ENV.MST_TESTNET_RPC);
-    const balanceWei = await provider.getBalance(address);
-    const formatted = ethers.formatEther(balanceWei);
-    return Number(formatted).toFixed(4);
-  } catch (err) {
-    console.warn('Could not fetch MST balance via JSON-RPC:', err);
-    return '0.0000';
-  }
+  const provider = new ethers.JsonRpcProvider(ENV.MST_TESTNET_RPC);
+  const balanceWei = await provider.getBalance(address);
+  const formatted = ethers.formatEther(balanceWei);
+  return Number(formatted).toFixed(4);
 }
 
 export async function fetchMstBlockNumber(): Promise<number> {
-  try {
-    const provider = new ethers.JsonRpcProvider(ENV.MST_TESTNET_RPC);
-    return await provider.getBlockNumber();
-  } catch {
-    return 6134575;
+  const provider = new ethers.JsonRpcProvider(ENV.MST_TESTNET_RPC);
+  return await provider.getBlockNumber();
+}
+
+export async function verifyMstTransactionHash(txHash: string): Promise<{
+  confirmed: boolean;
+  blockNumber: number;
+  from: string;
+  to: string | null;
+  value: string;
+  status: number | null;
+}> {
+  const provider = new ethers.JsonRpcProvider(ENV.MST_TESTNET_RPC);
+  const tx = await provider.getTransaction(txHash);
+  if (!tx) {
+    throw new Error(`Transaction ${txHash} not found on MST Blockchain Testnet (Chain ID ${MST_CHAIN_ID_DEC})`);
   }
+  const receipt = await provider.getTransactionReceipt(txHash);
+  return {
+    confirmed: !!receipt,
+    blockNumber: tx.blockNumber || (receipt?.blockNumber ?? 0),
+    from: tx.from,
+    to: tx.to,
+    value: ethers.formatEther(tx.value),
+    status: receipt ? receipt.status : null,
+  };
 }
 
 // Connect BridgeKey Web3 Wallet (MST Blockchain)
@@ -178,44 +194,44 @@ export async function purchasePlanWithMstc(
   const nfts = plan === 'free' ? 15 : plan === 'starter' ? 30 : 45;
   const timestamp = new Date().toISOString();
   let txHash = '';
-
+  const provider = new ethers.JsonRpcProvider(ENV.MST_TESTNET_RPC);
   const providerObj = (window as any).bridgekey || (window as any).mst || (window as any).ethereum;
 
   if (plan === 'free') {
-    txHash = `0xfree_${Date.now().toString(16)}`;
+    // Record registration on-chain via zero-value operator transaction on MST Blockchain Testnet
+    const operatorWallet = new ethers.Wallet(ENV.OPERATOR_PRIVATE_KEY, provider);
+    const tx = await operatorWallet.sendTransaction({
+      to: walletState.address,
+      value: 0n,
+    });
+    txHash = tx.hash;
+    await tx.wait(1);
   } else if (walletState.providerType === 'bridgekey-extension' && providerObj) {
-    try {
-      const browserProvider = new ethers.BrowserProvider(providerObj);
-      const signer = await browserProvider.getSigner();
-      const tx = await signer.sendTransaction({
-        to: new ethers.Wallet(ENV.OPERATOR_PRIVATE_KEY).address,
-        value: ethers.parseEther(amountMstc),
-      });
-      txHash = tx.hash;
-    } catch {
-      // Sign cryptographic transaction authorization if direct tx rejected or testnet RPC delays
-      const challenge = `Intra MSTC Plan Subscription: ${plan.toUpperCase()} for ${amountMstc} MSTC\nUser: ${userUid}\nWallet: ${walletState.address}\nTimestamp: ${timestamp}`;
-      const browserProvider = new ethers.BrowserProvider(providerObj);
-      const signer = await browserProvider.getSigner();
-      const sig = await signer.signMessage(challenge);
-      txHash = ethers.keccak256(ethers.toUtf8Bytes(sig));
-    }
+    const browserProvider = new ethers.BrowserProvider(providerObj);
+    const signer = await browserProvider.getSigner();
+    const tx = await signer.sendTransaction({
+      to: new ethers.Wallet(ENV.OPERATOR_PRIVATE_KEY).address,
+      value: ethers.parseEther(amountMstc),
+    });
+    txHash = tx.hash;
+    await tx.wait(1);
   } else {
-    const operatorWallet = new ethers.Wallet(ENV.OPERATOR_PRIVATE_KEY);
-    const challenge = `Intra MSTC Plan Subscription: ${plan.toUpperCase()} for ${amountMstc} MSTC\nUser: ${userUid}\nWallet: ${walletState.address}\nTimestamp: ${timestamp}`;
-    const sig = await operatorWallet.signMessage(challenge);
-    txHash = ethers.keccak256(ethers.toUtf8Bytes(sig));
+    // Direct operator broadcast on MST Blockchain Testnet
+    const operatorWallet = new ethers.Wallet(ENV.OPERATOR_PRIVATE_KEY, provider);
+    const tx = await operatorWallet.sendTransaction({
+      to: walletState.address,
+      value: ethers.parseEther(amountMstc),
+    });
+    txHash = tx.hash;
+    await tx.wait(1);
   }
 
-  // Calculate cryptographic SHA-256 seal for ledger audit
-  const encoder = new TextEncoder();
-  const digestBuf = await crypto.subtle.digest(
-    'SHA-256',
-    encoder.encode(`${txHash}|${plan}|${amountMstc}|${userUid}|${walletState.address}|${timestamp}`)
-  );
-  const checksum = Array.from(new Uint8Array(digestBuf))
-    .map((b) => b.toString(16).padStart(2, '0'))
-    .join('');
+  // Verify on-chain transaction receipt directly against MST Testnet RPC
+  await verifyMstTransactionHash(txHash);
+
+  // Calculate genuine cryptographic SHA-256 seal for ledger audit
+  const sealPayload = `${txHash}|${plan}|${amountMstc}|${userUid}|${walletState.address}|${timestamp}`;
+  const checksum = await computeSha256(sealPayload);
 
   // Update Firebase profile with new tier and NFT rate limits
   const updatedBalance = await fetchMstBalance(walletState.address);
