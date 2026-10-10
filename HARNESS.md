@@ -74,21 +74,21 @@ External service → Observed behaviour → Contract/behavioural model → Chang
 | Hosting | `apps/web` → **Vercel**; `apps/engine` + Postgres → **Railway**; `mcpserver/` → **Render** |
 | CI/CD | GitHub Actions + CodeRabbit; deploys on `main` via platform Git integrations (Vercel/Railway/Render) gated on green CI |
 
-### 3.1 Design System: "Washi & Crimson" (light theme only, Japanese aesthetic)
+### 3.1 Design System: Crimson Red, Cream & Black (3-Tone System)
 
 | Token | Value | Use |
 |---|---|---|
-| `--crimson` | `#C8102E` (hover `#A60D26`, tint `#FBE9EC`) | primary actions, alerts, hanko seal accents |
-| `--sumi` | `#0A0A0B` | text, headings, borders, code blocks |
-| `--washi` | `#FAF8F5` | page background (warm white paper) |
-| `--white` | `#FFFFFF` | cards/surfaces |
-| `--ash` | `#6B6B70` | muted text |
+| `--crimson` | `#C8102E` (hover `#A60D26`, tint `#FDECEF`) | primary actions, alerts, status indicators, gradient accents |
+| `--cream` | `#FAF7F2` (card `#FFFFFF`, subtle `#F4EFEB`, border `#E8E2D9`) | page background, card surfaces, soft containers |
+| `--black` | `#0A0A0A` (muted `#4A4A4A`, border `#1F1F1F`) | text, headings, capsule dock frames, code blocks |
 
-- **Type:** Shippori Mincho / Noto Serif JP for display, Inter + Noto Sans JP for UI, JetBrains Mono for code. Optional vertical (`writing-mode: vertical-rl`) section labels with kanji.
-- **Motifs:** ensō circle, hanko (red seal) badges, seigaiha/asanoha SVG patterns at ≤6% opacity, thin sumi rules, generous negative space (ma), torii-inspired framing in hero.
-- **Severity mapping:** equivalent = sumi outline, lossy = crimson tint, breaking = solid crimson, unknown = hatched crimson. Color is never the sole signal (add icon + label).
-- **3D:** one hero scene max (e.g. floating paper-lantern/ensō ring of API nodes), lazy-loaded, static fallback, respects `prefers-reduced-motion`.
-- **Rules:** no dark mode, no gradients except subtle washi grain, Lighthouse a11y ≥ 95, WCAG AA contrast, all tokens in `tailwind.config` + shadcn CSS vars (single source).
+- **Type:** Montserrat for display/headings, Poppins for standard UI/body, JetBrains Mono for code/telemetry. Zero foreign/Japanese script text.
+- **Motifs & Layout:**
+  - React Bits style floating capsule navbar (pill dock anchored at top).
+  - Antigravity-style cinematic footer with giant `Intra.` headline and red gradient text clipping.
+  - Minimalist dot grid surface texture.
+- **Severity mapping:** equivalent = solid black badge, lossy = subtle outline with migration proposal, breaking = solid crimson alert / circuit breaker. Color is never the sole signal (icon + label always paired).
+- **Rules:** light cream theme with deep black contrast rules, WCAG AA contrast compliance, Lighthouse a11y ≥ 95, all tokens in `tailwind.config.js`.
 - `web-dev` MUST read `.harness/DESIGN.md` before any UI task.
 
 ### 3.2 MCP server (LOCKED: Node/TS on Render)

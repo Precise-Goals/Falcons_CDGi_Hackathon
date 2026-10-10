@@ -71,7 +71,12 @@ pnpm build
 # Run unit tests
 pnpm test
 
-# Run the complete autonomous demonstration
+# Run with Bun (recommended, sub-second execution):
+bun run demo    # Run the end-to-end autonomous adaptation demo
+bun run serve   # Start Sim-Services (4000), Engine (3001), and MCP Server (3002)
+bun run dev     # Start React 18 Washi/Cream web dashboard (3000)
+
+# Or with pnpm
 pnpm demo
 ```
 
@@ -84,4 +89,4 @@ pnpm demo
 - [Data Model & APIs](docs/DataModel.md)
 - [Demo Specification](docs/DemoSpec.md)
 - [Sprint Execution Plan](docs/SprintPlan.md)
-- [Design Tokens (Washi & Crimson)](docs/design.md)
+- [Design Tokens (Crimson Red, Cream & Black)](docs/design.md)

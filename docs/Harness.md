@@ -69,26 +69,30 @@ External service → Observed behaviour → Contract/behavioural model → Chang
 | State/data | TanStack Query + Zustand; SSE for live drift feed |
 | Storage | Postgres on Railway (Drizzle ORM); SQLite for local dev/tests |
 | Tests | Vitest (unit/int), Playwright (e2e), Testing Library (UI) |
+| Auth | **Firebase Authentication, strictly required** for every non-public route. Web: Firebase client SDK (config from `VITE_FIREBASE_*`). Engine/MCP: `firebase-admin` verifies ID tokens (config from env, never committed) |
+| Wallet | **BridgeKey wallet on MST Blockchain only**, via the MST SDK, behind a `WalletProvider` interface. Wallet is *linked to the Firebase user* by signing a server nonce; link is recorded, not used for login |
+| Ledger | `packages/ledger`: append-only **hash chain + signed entries**, local to the engine DB. **No public-chain writes in v1.** Checksum hashes are `console.log`ged (structured, hashes only) |
+| Product mode | **Real startup product**: multi-tenant (org → project), per-tenant API keys, audit log, retention policy, rate limits, error tracking |
 | Simulated services | Fastify mocks + mutation switchboard (`packages/sim-services`) |
 | MCP server | Separate folder `mcpserver/`, deployed to **Render**, Node/TS (`@modelcontextprotocol/sdk`), thin client of the engine REST API; shares zod types via `packages/shared` |
 | Hosting | `apps/web` → **Vercel**; `apps/engine` + Postgres → **Railway**; `mcpserver/` → **Render** |
 | CI/CD | GitHub Actions + CodeRabbit; deploys on `main` via platform Git integrations (Vercel/Railway/Render) gated on green CI |
 
-### 3.1 Design System: "Washi & Crimson" (light theme only, Japanese aesthetic)
+### 3.1 Design System: Crimson Red, Cream & Black (3-Tone System)
 
 | Token | Value | Use |
 |---|---|---|
-| `--crimson` | `#C8102E` (hover `#A60D26`, tint `#FBE9EC`) | primary actions, alerts, hanko seal accents |
-| `--sumi` | `#0A0A0B` | text, headings, borders, code blocks |
-| `--washi` | `#FAF8F5` | page background (warm white paper) |
-| `--white` | `#FFFFFF` | cards/surfaces |
-| `--ash` | `#6B6B70` | muted text |
+| `--crimson` | `#C8102E` (hover `#A60D26`, tint `#FDECEF`) | primary actions, alerts, status indicators, gradient accents |
+| `--cream` | `#FAF7F2` (card `#FFFFFF`, subtle `#F4EFEB`, border `#E8E2D9`) | page background, card surfaces, soft containers |
+| `--black` | `#0A0A0A` (muted `#4A4A4A`, border `#1F1F1F`) | text, headings, capsule dock frames, code blocks |
 
-- **Type:** Shippori Mincho / Noto Serif JP for display, Inter + Noto Sans JP for UI, JetBrains Mono for code. Optional vertical (`writing-mode: vertical-rl`) section labels with kanji.
-- **Motifs:** ensō circle, hanko (red seal) badges, seigaiha/asanoha SVG patterns at ≤6% opacity, thin sumi rules, generous negative space (ma), torii-inspired framing in hero.
-- **Severity mapping:** equivalent = sumi outline, lossy = crimson tint, breaking = solid crimson, unknown = hatched crimson. Color is never the sole signal (add icon + label).
-- **3D:** one hero scene max (e.g. floating paper-lantern/ensō ring of API nodes), lazy-loaded, static fallback, respects `prefers-reduced-motion`.
-- **Rules:** no dark mode, no gradients except subtle washi grain, Lighthouse a11y ≥ 95, WCAG AA contrast, all tokens in `tailwind.config` + shadcn CSS vars (single source).
+- **Type:** Montserrat for display/headings, Poppins for standard UI/body, JetBrains Mono for code/telemetry. Zero foreign/Japanese script text.
+- **Motifs & Layout:**
+  - React Bits style floating capsule navbar (pill dock anchored at top).
+  - Antigravity-style cinematic footer with giant `Intra.` headline and red gradient text clipping.
+  - Minimalist dot grid surface texture.
+- **Severity mapping:** equivalent = solid black badge, lossy = subtle outline with migration proposal, breaking = solid crimson alert / circuit breaker. Color is never the sole signal (icon + label always paired).
+- **Rules:** light cream theme with deep black contrast rules, WCAG AA contrast compliance, Lighthouse a11y ≥ 95, all tokens in `tailwind.config.js`.
 - `web-dev` MUST read `.harness/DESIGN.md` before any UI task.
 
 ### 3.2 MCP server (LOCKED: Node/TS on Render)
@@ -165,6 +169,8 @@ Definitions live in `.claude/agents/<name>.md`. Each has: role, model, tools, **
 | `sim-dev` | Haiku→Sonnet | `packages/sim-services`, `apps/demo-app` | Simulated services + mutation switchboard + demo app. |
 | `web-dev` | Sonnet | `apps/web` | Website/dashboard UI. |
 | `mcp-dev` | Sonnet | `mcpserver/` | Customer MCP server tools/resources. |
+| `ledger-dev` | Sonnet | `packages/ledger` | Hash chain, entry signing, canonical hashing, checksum console logging, `WalletProvider` + MST adapter, verify/inclusion API. |
+| `auth-dev` | Sonnet | `apps/engine/src/auth/**`, `apps/web/src/auth/**` | Firebase login (web + token verification), tenancy (org/project), API keys, wallet link flow (nonce challenge). |
 | `qa-engineer` | Sonnet | `**/*.test.ts`, `tests/**` (tests only) | Independent verifier: writes missing unit tests, runs gates, **cannot edit src**; files failures back. |
 | `reviewer` | Opus | none (read-only) | Pre-PR review against ADRs + security + token/perf hygiene; works alongside CodeRabbit. |
 | `devops` | Haiku/Sonnet | `.github/**`, CI configs | Actions, CodeRabbit config, release pipeline. |
@@ -361,6 +367,14 @@ Use path filters + Turborepo remote/local cache to skip untouched packages (toke
 
 Every decision records: evidence (sample diffs), confidence breakdown, affected workflows, rollback handle. Validation failure after adapter → auto-rollback.
 
+### 10.1 Replay safety classes (hard rules)
+| Class | Meaning | Replay allowed |
+|---|---|---|
+| `safe` | read-only, idempotent (GET/HEAD) | Against live provider and against adapted proxy |
+| `sandbox-only` | state-changing but provider offers a sandbox/test mode | Sandbox only |
+| `shadow-only` | state-changing, no sandbox (payments, emails, deletes) | **Never replayed live**; validate adapter offline on recorded traces and compare in shadow mode |
+Unclassified calls default to `shadow-only`. Active probes (§11 Sprint 2) use `safe` calls only.
+
 ---
 
 ## 11. Sprint Board (agents, waves, exit criteria)
@@ -377,16 +391,22 @@ Every decision records: evidence (sample diffs), confidence breakdown, affected 
 | W2 | qa-engineer | Validate scaffold: gates run green on empty packages |
 **Exit:** `pnpm -w typecheck lint test build` green; first PR merged via autonomous pipeline.
 
-### Sprint 1: Observe & Simulate
+### Sprint 1: Walking Skeleton (Observe, Simulate, thin end-to-end slice)
 | W | Agent | Task |
 |---|---|---|
 | W0 | architect | Interface review of observer/sim contracts |
 | W1 ∥ | observer-dev | HTTP capture proxy + SDK wrapper; webhook receiver; redaction of PII; storage to `observations` |
 | W1 ∥ | sim-dev | 4 simulated services: **Users**, **Payments**, **Search** (paginated), **Notifications webhook**; plus **MCP-tool service** |
 | W1 ∥ | sim-dev (2nd instance) | Mutation catalogue v1 (see §13) toggled via switchboard |
-| W1 ∥ | web-dev | Dashboard shell: layout, auth stub, Services list page |
+| W1 ∥ | auth-dev | Firebase login end to end: web sign-in (env-config), engine token-verification middleware, tenant model (org/project), strict route guard, `.env.example`; tests with Firebase emulator |
+| W1 ∥ | web-dev | Site shell in Washi & Crimson: Home, Agent (placeholder), Docs (shell), Dashboard layout behind auth guard, Services list page |
 | W2 | qa-engineer | Unit + integration tests for capture fidelity (headers, status, body, latency) |
-**Exit:** traffic from demo-app to all sim services is captured with ≥ 99% fidelity in tests.
+| W3 ∥ | differ-dev | **Thin slice**: minimal structural diff + rename-candidate detector (M1 only), no tuning |
+| W3 ∥ | impact-dev | **Thin slice**: AST scan of demo-app for `user.name` reads → workflow list |
+| W3 ∥ | adapter-dev | **Thin slice**: `rename` DSL op + apply in proxy |
+| W3 ∥ | validator-dev | **Thin slice**: replay one recorded read-only workflow; assert green after adapter |
+| W4 | qa-engineer | `pnpm demo:slice` e2e: inject M1 → detect → impact → adapt → validate → green, plus a "benign change must not alert" case |
+**Exit:** (a) traffic from demo-app to all sim services is captured with ≥ 99% fidelity; (b) **the whole pipeline works end to end for M1 (rename)** via `pnpm demo:slice`. Later sprints deepen each stage; they never delay the working slice.
 
 ### Sprint 2: Model (learn real behaviour)
 | W | Agent | Task |
@@ -394,6 +414,8 @@ Every decision records: evidence (sample diffs), confidence breakdown, affected 
 | W1 ∥ | model-dev | Schema inference (types, optionality, enums, formats) |
 | W1 ∥ | model-dev (2nd) | Behavioural fingerprint (value distributions, units, defaults, cardinality) |
 | W1 ∥ | model-dev (3rd) | Error taxonomy, pagination detector (cursor/offset/page/link-header), rate-limit policy learner |
+| W1 ∥ | model-dev (4th) | **Byte-level fingerprints**: canonical + raw SHA-256, byte-length/encoding/compression profile, per-field numeric width (int32/int64/>2^53), string encoding |
+| W1 ∥ | observer-dev | **Active probes**: scheduled, allow-listed, rate-limited, **read-only (GET/HEAD) only** probes so quiet dependencies are still watched; per-tenant opt-in |
 | W1 ∥ | web-dev | Contract viewer page (per endpoint model, field stats) |
 | W2 | qa-engineer | Property-based tests on inference; stability under noisy data |
 **Exit:** model for each sim service built from observation only (docs ignored); contract viewer renders it.
@@ -404,16 +426,19 @@ Every decision records: evidence (sample diffs), confidence breakdown, affected 
 | W1 ∥ | differ-dev | Structural diff (add/remove/type change/nullability) |
 | W1 ∥ | differ-dev (2nd) | **Semantic drift**: rename candidates (value-overlap + name-similarity), unit/scale shift, enum meaning change, default flip, timezone/format change |
 | W1 ∥ | differ-dev (3rd) | Behavioural diff: pagination change, error shape change, rate-limit change, silent truncation, latency regime shift |
+| W1 ∥ | differ-dev (4th) | **Mixed-version detection**: detect two coexisting response populations (old/new shape), classify as `rollout_in_progress`, track new-shape ratio over time, finalize verdict when stable; never alert-storm during rollout |
 | W1 ∥ | web-dev | Drift feed UI with severity + confidence |
 | W2 | differ-dev | Confidence scoring + false-positive suppression (statistical windows) |
+| W3 | qa-engineer | **Calibration report**: bin changes by predicted confidence, compare to ground-truth correctness; fail CI if any bin is off by more than 0.10 |
 | W3 | qa-engineer | Benign-change corpus (must NOT alert) + malicious-change corpus (must alert); precision/recall report |
-**Exit:** recall ≥ 0.95, precision ≥ 0.90 on the mutation catalogue; reported in CI artifact.
+**Exit:** recall ≥ 0.95, precision ≥ 0.90 on the mutation catalogue; calibration report within ±0.10 per confidence bin; mixed-rollout cases do not alert-storm; all reported in CI artifact.
 
 ### Sprint 4: Impact & Adapt
 | W | Agent | Task |
 |---|---|---|
 | W1 ∥ | impact-dev | Static dependency scan (AST: field usage per workflow) + runtime trace correlation |
 | W1 ∥ | impact-dev (2nd) | Workflow graph + blast-radius query ("what depends on `name`?") |
+| W1 ∥ | impact-dev (3rd) | **Consumer expectations**: declarative per-field assertions (e.g. `user.name: non-empty string`, `payment.amount: integer cents`) stored with the app; feed impact severity and validation; catch meaning changes statistics miss |
 | W1 ∥ | adapter-dev | Adapter generators: rename, transform (unit/format), default injection, pagination normalizer, retry/backoff |
 | W1 ∥ | adapter-dev (2nd) | Safe-handling policy engine (§10), migration PR generator, rollback handles |
 | W1 ∥ | web-dev | Impact view + adapter/proposal review UI |
@@ -425,8 +450,12 @@ Every decision records: evidence (sample diffs), confidence breakdown, affected 
 |---|---|---|
 | W1 ∥ | validator-dev | Replay engine: recorded workflows vs adapted service; golden assertions |
 | W1 ∥ | validator-dev (2nd) | Semantic-equivalence checker (e.g. `name` vs `display_name` meaning preserved?) |
+| W1 ∥ | validator-dev (3rd) | **Replay safety classes** (§10.1): enforce `safe` / `sandbox-only` / `shadow-only`; hard-block live replay of state-changing calls |
 | W1 ∥ | sim-dev | Demo app **Shipwell** workflows (checkout, user-profile, search-browse, notification-ack, MCP-tool-call) |
 | W1 ∥ | mcp-dev | Customer MCP server (§12.2) |
+| W1 ∥ | ledger-dev | `packages/ledger`: canonical hashing, hash chain, Ed25519-signed entries, verify + inclusion check, structured checksum `console.log` (hashes only), `WalletProvider` interface + MST adapter (BridgeKey connect) once SDK docs are supplied |
+| W1 ∥ | auth-dev | Wallet link flow: server nonce → wallet signs → engine verifies → stores `uid ↔ address`; unlink; audit entries |
+| W2 | web-dev | Agent page (changes, impact, proposals, chat) and Verify page (hash/id → chain check) |
 | W1 ∥ | web-dev | Live demo console: mutation toggles, timeline, before/after |
 | W2 | validator-dev | `pnpm demo` one-command orchestration |
 | W3 | qa-engineer | E2E: full demo script assertions (§13) |
@@ -437,7 +466,9 @@ Every decision records: evidence (sample diffs), confidence breakdown, affected 
 |---|---|---|
 | W1 ∥ | qa-engineer | Chaos tests (flapping service, partial outage, combined mutations), perf budget |
 | W1 ∥ | reviewer | Security/threat model review (PII, SSRF in proxy, adapter code-injection) |
-| W1 ∥ | scribe | Docs, architecture diagram, quick-start, MCP usage guide |
+| W1 ∥ | scribe | Docs content, MDN-style: Concepts, Guides, Reference (REST, MCP tools, SDK, change kinds, adapter DSL, ledger), compatibility table |
+| W1 ∥ | web-dev | Docs site shell: MDX, Pagefind search, code-copy, sidebar; startup polish (empty states, error pages, a11y ≥95) |
+| W1 ∥ | devops | Startup ops: error tracking, structured logs, per-tenant rate limits, DB backups, staging env, secrets via platform vault |
 | W1 ∥ | devops | Release workflow, container images, deploy dashboard, tag v1.0.0 |
 | W2 | orchestrator | Final retro; `<promise>ALL_COMPLETE</promise>` after reviewer sign-off |
 **Exit:** v1.0.0 tagged, main green, demo reproducible from clean clone.
@@ -472,6 +503,7 @@ Tools (read-mostly, write only via safe proposals):
 - `intra_propose_adapter(change_id)`: returns adapter diff + validation plan (does not apply)
 - `intra_apply_adapter(proposal_id)`: gated by policy (§10) + explicit `confirm:true`
 - `intra_health()`: dependency health & rate-limit headroom
+- `intra_verify_proof(entry_id | hash)`: ledger chain/signature check
 Resources: `intra://contracts/{service}`, `intra://changes/latest`. Auth: API key; per-tenant scoping; audit log on every call.
 
 ---
@@ -526,3 +558,40 @@ Resources: `intra://contracts/{service}`, `intra://changes/latest`. Auth: API ke
 - [x] MCP server language: Node/TS (locked)
 - [x] MCP transport: Streamable HTTP on Render; auth: API key (default, revisit later)
 - [ ] Demo app theme (default: "Shipwell" logistics/commerce)
+- [ ] **MST JS SDK package name + BridgeKey connect docs** (owner to supply; ledger-dev codes against `WalletProvider` until then)
+
+
+---
+
+## 17. Auth, Wallet, Ledger & Startup Requirements (LOCKED v1.1)
+
+**Auth (Firebase, strict)**
+- Every route except landing/docs/status requires a valid Firebase ID token; engine rejects otherwise (401). Tenant resolved from token claims/DB, never from request body.
+- Config only from env. Client: `VITE_FIREBASE_API_KEY`, `VITE_FIREBASE_AUTH_DOMAIN`, `VITE_FIREBASE_PROJECT_ID`, `VITE_FIREBASE_APP_ID`. Server: `FIREBASE_PROJECT_ID`, `FIREBASE_CLIENT_EMAIL`, `FIREBASE_PRIVATE_KEY`. `.env*` gitignored; only `.env.example` committed; secrets live in Vercel/Railway/Render env.
+- MCP server: per-tenant API keys (hashed at rest), optionally exchanged for Firebase-verified identity. Tests use the Firebase Auth emulator.
+
+**Wallet (BridgeKey on MST only)**
+- `WalletProvider` interface: `connect()`, `getAddress()`, `signMessage(msg)`, `network`. One implementation: **MstBridgeKeyProvider** using the MST SDK. Network via `MST_NETWORK=testnet|mainnet` (default testnet).
+- Link flow: authenticated user requests nonce → wallet signs → engine verifies address recovery → stores `uid ↔ address` (one wallet per user in v1). Wallet is **not** used for login.
+- No transactions are sent in v1. No private keys handled by our code.
+
+**Ledger (v1, no public chain)**
+- Entry = `{seq, prevHash, kind, tenant, actor{uid, walletAddress?}, payloadHash, canonicalHash, rawHash, byteLength, ts}` → `entryHash = SHA-256(canonical(entry))`, signed with the server ledger key (`LEDGER_SIGNING_KEY`, Ed25519, from secrets).
+- Entry kinds: observation, change, impact, adapter_proposed, adapter_applied, validation, rollback, agent_action, wallet_linked.
+- **Console logging:** each entry's hashes are logged as one structured line (`level=info event=ledger.entry seq=… entryHash=… payloadHash=…`). Never log payloads, tokens, private keys, or Firebase credentials.
+- Honest scope: integrity of Intra's record, not correctness of the provider's data. Public anchoring is a post-v1 option.
+
+**Startup-grade baseline (v1)**
+Multi-tenancy (org → project) with row-level scoping tests; per-tenant rate limits and API keys; data retention + PII redaction; error tracking and structured logs; staging environment; DB backups; Terms/Privacy placeholders; pricing tiers designed but not billed.
+
+
+---
+
+## 18. Priorities & Cut Line (decided Oct 2026)
+
+**Core (never cut):** observe, learn, detect (structural/behavioural/semantic), impact, adapter DSL, safe-handling policy, validation with rollback, demo M1-M10, calibration report.
+**Added now:** walking skeleton first (Sprint 1), read-only active probes, mixed-version rollout detection, replay safety classes, consumer expectations, confidence calibration.
+**Startup layer (keep, but after core):** Firebase auth, tenancy, API keys, docs site, Verify page.
+**Cut first if time runs short:** wallet link (BridgeKey/MST), ledger polish, Agent chat, Status page.
+**Backlog (not v1):** learning from human approve/reject decisions to tune scoring; community contract registry; public chain anchoring.
+**Known limit to state in docs:** Intra can only adapt calls routed through its proxy/SDK; traffic it never sees is invisible except via probes.

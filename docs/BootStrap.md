@@ -18,9 +18,9 @@ Create exactly these files. Keep every file as short as possible while still bei
 - `CLAUDE.md`: ≤15 lines. "Read HARNESS.md §0-§2 first. Stack in .harness/STACK.md. Current task in .harness/STATE.md. Obey ownership paths. Output contract per HARNESS.md §5."
 - `AGENTS.md`: same content for non-Claude agents.
 - `.coderabbit.yaml`: assertive profile, auto_review on, path_instructions for `packages/differ`, `packages/adapter`, `packages/validator` ("flag any auto-apply path lacking a confidence gate or rollback"), and `packages/observer` ("flag PII leakage and SSRF").
-- `.gitignore`, `.env.example` (no secrets).
+- `.gitignore`, `.env.example` containing every variable in STACK.md "Env contract" with empty values (Firebase, ledger key, MST network; no real secrets).
 
-**`.claude/agents/`**: one file per agent in HARNESS.md §5 (orchestrator, architect, observer-dev, model-dev, differ-dev, impact-dev, adapter-dev, validator-dev, sim-dev, web-dev, mcp-dev, qa-engineer, reviewer, devops, scribe). Each file uses YAML frontmatter (`name`, `description`, `tools`, `model`) followed by ≤25 lines containing: role, **owned paths (write)**, read-only paths, workflow steps, quality bar, and the 5-line output contract. `qa-engineer` and `reviewer` must be explicitly forbidden from editing `src`. Use Haiku for scribe/devops, Opus for orchestrator/architect/reviewer, Sonnet for the rest.
+**`.claude/agents/`**: one file per agent in HARNESS.md §5 (orchestrator, architect, observer-dev, model-dev, differ-dev, impact-dev, adapter-dev, validator-dev, sim-dev, web-dev, mcp-dev, ledger-dev, auth-dev, qa-engineer, reviewer, devops, scribe). Each file uses YAML frontmatter (`name`, `description`, `tools`, `model`) followed by ≤25 lines containing: role, **owned paths (write)**, read-only paths, workflow steps, quality bar, and the 5-line output contract. `qa-engineer` and `reviewer` must be explicitly forbidden from editing `src`. Use Haiku for scribe/devops, Opus for orchestrator/architect/reviewer, Sonnet for the rest.
 
 **`.claude/commands/`**: slash commands (≤15 lines each):
 - `gsd-plan.md`: read STATE, expand the current sprint from HARNESS §11 into task blocks in `.harness/PLAN.md` using the §6.3 schema, compute waves.
