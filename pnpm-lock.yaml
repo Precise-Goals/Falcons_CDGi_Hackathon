@@ -237,6 +237,9 @@ importers:
 
   apps/web:
     dependencies:
+      '@intra/sdk':
+        specifier: workspace:*
+        version: link:../../packages/sdk
       '@intra/shared':
         specifier: workspace:*
         version: link:../../packages/shared

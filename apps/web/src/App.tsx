@@ -40,12 +40,17 @@ import {
   GeneratedApiSchema,
 } from './lib/apiGenerator';
 import {
+  generateSarvamDynamicApiSchema,
+  generateSarvamDynamicApiBatch,
+} from './lib/sarvamGenerator';
+import {
   runDynamicEvaluation,
   runBatchEvaluation,
   EvaluationResult,
   BatchEvaluationReport,
   EvalLogEntry,
 } from './lib/evalEngine';
+import { IntraClient } from '@intra/sdk';
 import {
   firebaseSignIn,
   firebaseSignUp,
@@ -60,6 +65,7 @@ import {
   signIdentityChallenge,
   mapWalletToFirebase,
   fetchMstBalance,
+  purchasePlanWithMstc,
   MST_CHAIN_ID_DEC,
 } from './lib/mstWallet';
 import { askSarvamAI } from './lib/sarvam';
@@ -216,6 +222,16 @@ export default function App() {
   const [walletError, setWalletError] = useState<string | null>(null);
   const [walletSuccess, setWalletSuccess] = useState<string | null>(null);
 
+  // MSTC Plan Purchase State
+  const [mstcPurchaseLoading, setMstcPurchaseLoading] = useState<boolean>(false);
+  const [mstcPurchaseSuccess, setMstcPurchaseSuccess] = useState<{
+    txHash: string;
+    checksum: string;
+    plan: string;
+    amountMstc: string;
+  } | null>(null);
+  const [mstcPurchaseError, setMstcPurchaseError] = useState<string | null>(null);
+
   // Agent State & Chat (Connected directly to Sarvam AI 105B LLM)
   const [agentPrompt, setAgentPrompt] = useState<string>('');
   const [agentLoading, setAgentLoading] = useState<boolean>(false);
@@ -259,6 +275,49 @@ export default function App() {
     '{\n  "id": "usr_99",\n  "display_name": "Marcus Vance",\n  "status": "active"\n}'
   );
 
+  // Live @intra/sdk Client instance for in-process runtime adaptation
+  const intraSdk = useRef<IntraClient | null>(null);
+  if (!intraSdk.current) {
+    const client = new IntraClient({
+      engineUrl: typeof window !== 'undefined' && window.location?.origin ? `${window.location.origin}/api/engine` : 'http://localhost:3001',
+      appName: 'intra-web-app',
+    });
+    client.registerAdapter('/users', (data: any) => {
+      if (!data) return data;
+      if (Array.isArray(data)) return data.map((item: any) => ({ ...item, name: item.display_name ?? item.name }));
+      return { ...data, name: data.display_name ?? data.name };
+    });
+    client.registerAdapter('/payments', (data: any) => {
+      if (!data) return data;
+      return {
+        ...data,
+        amount: typeof data.amount === 'number' ? Number((data.amount * 0.01).toFixed(2)) : data.amount,
+        cents_converted: true,
+      };
+    });
+    client.registerAdapter('/search', (data: any) => {
+      if (!data) return data;
+      return { ...data, offset: 0, offset_normalized: true };
+    });
+    intraSdk.current = client;
+  }
+
+  const getAdaptedSdkOutput = (): string => {
+    try {
+      const parsed = JSON.parse(sdkCustomInput);
+      const endpoint =
+        sdkSelectedMutation === 'M1' ? '/users' :
+        sdkSelectedMutation === 'M3' ? '/payments' :
+        sdkSelectedMutation === 'M5' ? '/search' : '/users';
+      const adapted = intraSdk.current ? intraSdk.current.adaptResponse(endpoint, parsed) : parsed;
+      return JSON.stringify(adapted, null, 2);
+    } catch {
+      return sdkSelectedMutation === 'M1'
+        ? '{\n  "id": "usr_99",\n  "name": "Marcus Vance",\n  "display_name": "Marcus Vance",\n  "status": "active"\n}'
+        : '{\n  "status": "adapted_successfully",\n  "safe": true\n}';
+    }
+  };
+
   // Helper: Log cryptographic ledger checksum
   const logLedgerChecksum = async (kind: string, payload: any) => {
     const jsonStr = typeof payload === 'string' ? payload : JSON.stringify(payload);
@@ -297,10 +356,12 @@ export default function App() {
   }, []);
 
   // Dynamic single-sample procedural generator & evaluator
-  const handleRunEvaluation = async (existingSchema?: GeneratedApiSchema) => {
+  const handleRunEvaluation = async (existingSchema?: GeneratedApiSchema, useSarvam = false) => {
     setEvalRunning(true);
     try {
-      const targetSchema = existingSchema || generateRandomApi();
+      const targetSchema =
+        existingSchema ||
+        (useSarvam ? await generateSarvamDynamicApiSchema() : generateRandomApi());
       setEvalSchema(targetSchema);
       const result = await runDynamicEvaluation(targetSchema);
       setEvalResult(result);
@@ -320,11 +381,15 @@ export default function App() {
   };
 
   // High-volume 50-60 random sample stress suite runner
-  const handleRunBatchEvaluation = async (count: number = batchSampleSize) => {
+  const handleRunBatchEvaluation = async (count: number = batchSampleSize, useSarvam = false) => {
     setBatchRunning(true);
     setBatchProgress({ completed: 0, total: count });
     try {
-      const batch = generateRandomApiBatch(count);
+      const batch = useSarvam
+        ? await generateSarvamDynamicApiBatch(count, (completed, total) => {
+            setBatchProgress({ completed, total });
+          })
+        : generateRandomApiBatch(count);
       const report = await runBatchEvaluation(batch, (progress) => {
         setBatchProgress(progress);
       });
@@ -1011,6 +1076,76 @@ export default function App() {
       setUser((prev) => (prev ? { ...prev, mstBalance: balance } : null));
     } catch (err) {
       console.warn('Failed to refresh MST balance:', err);
+    }
+  };
+
+  const handleBuyPlanWithMstc = async (plan: 'free' | 'starter' | 'business', amountMstc: string) => {
+    if (!user) {
+      setShowLoginModal(true);
+      return;
+    }
+    setMstcPurchaseLoading(true);
+    setMstcPurchaseError(null);
+    setMstcPurchaseSuccess(null);
+
+    try {
+      const walletState =
+        typeof window !== 'undefined' && ((window as any).bridgekey || (window as any).mst || (window as any).ethereum)
+          ? await connectBridgeKeyWallet()
+          : await connectBridgeKeyOperatorSession();
+
+      const result = await purchasePlanWithMstc(
+        walletState,
+        plan,
+        amountMstc,
+        user.uid,
+        user.idToken
+      );
+
+      const newLimit = result.nfts;
+      const newBalance = await fetchMstBalance(result.fromAddress);
+
+      const updatedUser: UserProfile = {
+        ...user,
+        tier: plan,
+        nftLimit: newLimit,
+        walletAddress: user.walletAddress || result.fromAddress,
+        mstBalance: newBalance,
+      };
+
+      setUser(updatedUser);
+      saveSession({
+        uid: updatedUser.uid,
+        email: updatedUser.email,
+        idToken: updatedUser.idToken,
+        refreshToken: '',
+        expiresAt: Date.now() + 3600 * 1000,
+        plan,
+        nfts: newLimit,
+        walletAddress: updatedUser.walletAddress,
+        walletSignature: updatedUser.walletSignature,
+        mstBalance: updatedUser.mstBalance,
+        mappedAt: updatedUser.mappedAt,
+      });
+
+      setMstcPurchaseSuccess({
+        txHash: result.txHash,
+        checksum: result.checksum,
+        plan,
+        amountMstc,
+      });
+
+      logLedgerChecksum(`mstc_plan_purchased_${plan}`, {
+        txHash: result.txHash,
+        checksum: result.checksum,
+        plan,
+        amountMstc,
+        nfts: newLimit,
+      });
+    } catch (err: any) {
+      setMstcPurchaseError(err.message || 'Failed to complete MSTC token purchase on MST Testnet.');
+    } finally {
+      setMstcPurchaseLoading(false);
     }
   };
 
@@ -1828,13 +1963,7 @@ intra.registerAdapter('/users', {
                       <span className="text-emerald-600 font-bold">NORMALIZED</span>
                     </div>
                     <pre className="p-3 rounded-2xl border border-emerald-600/30 bg-emerald-50/50 text-black font-mono text-xs h-[138px] overflow-x-auto whitespace-pre-wrap">
-                      {sdkSelectedMutation === 'M1'
-                        ? '{\n  "id": "usr_99",\n  "name": "Marcus Vance",\n  "display_name": "Marcus Vance",\n  "status": "active"\n}'
-                        : sdkSelectedMutation === 'M3'
-                        ? '{\n  "amount": 25.0,\n  "currency": "USD",\n  "cents_converted": true\n}'
-                        : sdkSelectedMutation === 'M5'
-                        ? '{\n  "items": [...],\n  "cursor": "MjA=",\n  "offset_normalized": true\n}'
-                        : '{\n  "status": "adapted_successfully",\n  "safe": true\n}'}
+                      {getAdaptedSdkOutput()}
                     </pre>
                   </div>
                 </div>
@@ -2022,12 +2151,35 @@ intra.registerAdapter('/users', {
               </div>
             </div>
 
+            {/* Purchase Notification Banner */}
+            {mstcPurchaseSuccess && (
+              <div className="p-4 rounded-2xl bg-emerald-50 border border-emerald-300 text-emerald-900 text-xs font-mono space-y-1">
+                <div className="font-bold flex items-center space-x-1.5">
+                  <Check className="w-4 h-4 text-emerald-600" />
+                  <span>Plan {mstcPurchaseSuccess.plan.toUpperCase()} Purchased with {mstcPurchaseSuccess.amountMstc} MSTC Tokens!</span>
+                </div>
+                <div className="text-[11px] text-emerald-700 truncate">
+                  TX Hash: {mstcPurchaseSuccess.txHash}
+                </div>
+                <div className="text-[10px] text-emerald-600 truncate">
+                  Ledger Seal: sha256:{mstcPurchaseSuccess.checksum}
+                </div>
+              </div>
+            )}
+            {mstcPurchaseError && (
+              <div className="p-4 rounded-2xl bg-rose-50 border border-rose-300 text-rose-900 text-xs font-mono flex items-center space-x-2">
+                <AlertTriangle className="w-4 h-4 text-rose-600 flex-shrink-0" />
+                <span>{mstcPurchaseError}</span>
+              </div>
+            )}
+
             {/* Pricing Cards Grid with Skeuomorphic Depth */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
               {[
                 {
                   id: 'free',
                   name: 'Free Starter',
+                  mstcPrice: '0',
                   priceMonthly: 0,
                   priceAnnual: 0,
                   limit: '15 NFTs / Quota Pool',
@@ -2044,6 +2196,7 @@ intra.registerAdapter('/users', {
                 {
                   id: 'starter',
                   name: 'Starter Pro',
+                  mstcPrice: '2.5',
                   priceMonthly: 49,
                   priceAnnual: 39,
                   limit: '30 NFTs / Quota Pool',
@@ -2061,6 +2214,7 @@ intra.registerAdapter('/users', {
                 {
                   id: 'business',
                   name: 'Business Enterprise',
+                  mstcPrice: '7.5',
                   priceMonthly: 199,
                   priceAnnual: 159,
                   limit: '45 NFTs / Quota Pool',
@@ -2100,9 +2254,18 @@ intra.registerAdapter('/users', {
                         </div>
                       </div>
 
-                      <div className="flex items-baseline space-x-1">
-                        <span className="font-display font-black text-4xl text-black">${price}</span>
-                        <span className="text-xs text-black/50 font-mono">/ month</span>
+                      <div className="space-y-1">
+                        <div className="flex items-baseline space-x-1">
+                          <span className="font-display font-black text-4xl text-black">${price}</span>
+                          <span className="text-xs text-black/50 font-mono">/ month</span>
+                        </div>
+                        <div className="flex items-center space-x-2 pt-0.5">
+                          <span className="px-2.5 py-0.5 rounded-full bg-crimson/10 border border-crimson/20 text-crimson font-mono text-xs font-bold flex items-center space-x-1">
+                            <Wallet className="w-3 h-3 text-crimson" />
+                            <span>{tier.mstcPrice} MSTC</span>
+                          </span>
+                          <span className="text-[10px] font-mono text-black/50">on MST Blockchain</span>
+                        </div>
                       </div>
 
                       <p className="text-xs text-black/60">{tier.desc}</p>
@@ -2117,59 +2280,81 @@ intra.registerAdapter('/users', {
                       </div>
                     </div>
 
-                    <button
-                      onClick={async () => {
-                        if (user) {
-                          const newTier = tier.id as 'free' | 'starter' | 'business';
-                          const newLimit = tier.id === 'free' ? 15 : tier.id === 'starter' ? 30 : 45;
-                          const updated = {
-                            ...user,
-                            tier: newTier,
-                            nftLimit: newLimit,
-                          };
-                          setUser(updated);
-                          saveSession({
-                            uid: updated.uid,
-                            email: updated.email,
-                            idToken: updated.idToken,
-                            refreshToken: '',
-                            expiresAt: Date.now() + 3600 * 1000,
-                            plan: newTier,
-                            nfts: newLimit,
-                            walletAddress: updated.walletAddress,
-                            walletSignature: updated.walletSignature,
-                            mstBalance: updated.mstBalance,
-                            mappedAt: updated.mappedAt,
-                          });
-                          try {
-                            await saveUserProfile(user.uid, user.idToken, {
-                              uid: user.uid,
-                              email: user.email,
+                    <div className="space-y-2 pt-2">
+                      <button
+                        onClick={async () => {
+                          if (user) {
+                            const newTier = tier.id as 'free' | 'starter' | 'business';
+                            const newLimit = tier.id === 'free' ? 15 : tier.id === 'starter' ? 30 : 45;
+                            const updated = {
+                              ...user,
+                              tier: newTier,
+                              nftLimit: newLimit,
+                            };
+                            setUser(updated);
+                            saveSession({
+                              uid: updated.uid,
+                              email: updated.email,
+                              idToken: updated.idToken,
+                              refreshToken: '',
+                              expiresAt: Date.now() + 3600 * 1000,
                               plan: newTier,
                               nfts: newLimit,
-                              walletAddress: user.walletAddress,
-                              walletSignature: user.walletSignature,
-                              mstBalance: user.mstBalance,
-                              updatedAt: new Date().toISOString(),
+                              walletAddress: updated.walletAddress,
+                              walletSignature: updated.walletSignature,
+                              mstBalance: updated.mstBalance,
+                              mappedAt: updated.mappedAt,
                             });
-                          } catch (e) {
-                            console.warn('Could not sync tier to Firebase RTDB:', e);
+                            try {
+                              await saveUserProfile(user.uid, user.idToken, {
+                                uid: user.uid,
+                                email: user.email,
+                                plan: newTier,
+                                nfts: newLimit,
+                                walletAddress: user.walletAddress,
+                                walletSignature: user.walletSignature,
+                                mstBalance: user.mstBalance,
+                                updatedAt: new Date().toISOString(),
+                              });
+                            } catch (e) {
+                              console.warn('Could not sync tier to Firebase RTDB:', e);
+                            }
+                            logLedgerChecksum(`tier_upgraded_${tier.id}`, { tier: tier.id, nfts: newLimit });
+                          } else {
+                            setShowLoginModal(true);
                           }
-                          logLedgerChecksum(`tier_upgraded_${tier.id}`, { tier: tier.id, nfts: newLimit });
-                        } else {
-                          setShowLoginModal(true);
-                        }
-                      }}
-                      className={`w-full py-3 rounded-full font-display font-bold text-xs transition ${
-                        isCurrent
-                          ? 'bg-emerald-600 text-white cursor-default'
-                          : tier.highlight
-                          ? 'skeuo-button-primary text-white'
-                          : 'skeuo-button-dark text-white'
-                      }`}
-                    >
-                      {isCurrent ? 'Current Active Plan' : `Select ${tier.name}`}
-                    </button>
+                        }}
+                        className={`w-full py-3 rounded-full font-display font-bold text-xs transition ${
+                          isCurrent
+                            ? 'bg-emerald-600 text-white cursor-default'
+                            : tier.highlight
+                            ? 'skeuo-button-primary text-white'
+                            : 'skeuo-button-dark text-white'
+                        }`}
+                      >
+                        {isCurrent ? 'Current Active Plan' : `Select ${tier.name}`}
+                      </button>
+
+                      {tier.id !== 'free' && (
+                        <button
+                          onClick={() => handleBuyPlanWithMstc(tier.id as any, tier.mstcPrice)}
+                          disabled={mstcPurchaseLoading || isCurrent}
+                          className="w-full py-2.5 rounded-full font-mono font-bold text-xs border border-crimson/30 bg-crimson/5 hover:bg-crimson/15 text-crimson transition flex items-center justify-center space-x-2 shadow-sm disabled:opacity-50"
+                        >
+                          {mstcPurchaseLoading ? (
+                            <>
+                              <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                              <span>Processing MSTC Transfer...</span>
+                            </>
+                          ) : (
+                            <>
+                              <Wallet className="w-3.5 h-3.5 text-crimson" />
+                              <span>Buy with {tier.mstcPrice} MSTC</span>
+                            </>
+                          )}
+                        </button>
+                      )}
+                    </div>
                   </div>
                 );
               })}
@@ -3083,6 +3268,17 @@ intra.registerAdapter('/users', {
                     <Sparkles className="w-3.5 h-3.5 text-crimson" />
                     <span className="hidden sm:inline">Single</span>
                   </button>
+
+                  {/* Sarvam 105B Procedural Live Generation */}
+                  <button
+                    onClick={() => handleRunEvaluation(undefined, true)}
+                    disabled={batchRunning || evalRunning}
+                    className="px-3.5 py-2.5 rounded-full border border-crimson/30 bg-crimson/5 hover:bg-crimson/10 text-xs font-mono text-crimson font-semibold flex items-center space-x-1.5 transition"
+                    title="Procedural Sarvam 105B Live Schema Generation"
+                  >
+                    <Sparkles className="w-3.5 h-3.5 text-crimson" />
+                    <span className="hidden sm:inline">Sarvam AI Gen</span>
+                  </button>
                 </div>
               </div>
 
@@ -3522,6 +3718,41 @@ intra.registerAdapter('/users', {
                             {evalResult.synthesizedAdapter}
                           </pre>
                         </div>
+
+                        {/* Stage 4: Live Customer MCP Tools Output */}
+                        <div className="p-6 rounded-[2rem] bg-white border border-black/10 shadow-card space-y-3">
+                          <div className="flex justify-between items-center">
+                            <span className="font-display font-bold text-xs uppercase tracking-wide text-black">
+                              Stage 4: Live MCP Server Tools (intra_get_contract & intra_recent_changes)
+                            </span>
+                            <span className="text-[10px] font-mono text-emerald-600 font-bold">
+                              {evalResult.mcpLiveOutput?.liveConnected ? 'LIVE 200 OK' : 'CONNECTED STREAMABLE'}
+                            </span>
+                          </div>
+                          <pre className="p-4 rounded-2xl bg-black text-cyan-300 font-mono text-[10px] leading-relaxed overflow-x-auto max-h-[160px]">
+                            {JSON.stringify(evalResult.mcpLiveOutput, null, 2)}
+                          </pre>
+                        </div>
+
+                        {/* Stage 8 & 9: Golden Equivalence Replay & SHA-256 Ledger Checksum */}
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                          <div className="p-4 rounded-2xl bg-white border border-black/10 shadow-card space-y-1">
+                            <span className="text-[10px] font-mono text-black/50 font-bold uppercase">
+                              Stage 8: Golden Test Replay
+                            </span>
+                            <div className={`font-mono text-xs font-bold ${evalResult.validationPassed ? 'text-emerald-600' : 'text-crimson'}`}>
+                              {evalResult.validationPassed ? 'PASS (Semantic Equivalence Confirmed)' : 'CIRCUIT BREAK / PENDING REVIEW'}
+                            </div>
+                          </div>
+                          <div className="p-4 rounded-2xl bg-white border border-black/10 shadow-card space-y-1">
+                            <span className="text-[10px] font-mono text-black/50 font-bold uppercase">
+                              Stage 9: WebCrypto SHA-256 Digest
+                            </span>
+                            <div className="font-mono text-[11px] text-black font-bold truncate" title={evalResult.sha256Digest}>
+                              sha256:{evalResult.sha256Digest}
+                            </div>
+                          </div>
+                        </div>
                       </div>
                     )}
                   </div>
@@ -3542,7 +3773,7 @@ intra.registerAdapter('/users', {
                       <div className="flex items-center gap-2 flex-wrap">
                         <div className="flex items-center space-x-1 bg-white/10 rounded-full px-2 py-1 text-[10px]">
                           <Filter className="w-3 h-3 text-white/50" />
-                          {['ALL', 'DIFF', 'POLICY', 'VALIDATE', 'SARVAM_AI', 'LEDGER'].map((st) => (
+                          {['ALL', 'OBSERVE', 'MODEL', 'PREDICT', 'MCP', 'DIFF', 'IMPACT', 'POLICY', 'ADAPTER', 'VALIDATE', 'SARVAM_AI', 'LEDGER'].map((st) => (
                             <button
                               key={st}
                               onClick={() => setLogFilterStage(st)}
@@ -3712,6 +3943,40 @@ intra.registerAdapter('/users', {
                         {t.toUpperCase()} ({t === 'free' ? 15 : t === 'starter' ? 30 : 45})
                       </button>
                     ))}
+                  </div>
+
+                  {/* MSTC Token Plan Purchase Trigger */}
+                  <div className="pt-2 border-t border-black/5 space-y-2">
+                    <div className="text-[10px] text-black/50 font-semibold uppercase">Purchase with MSTC Tokens (MST Testnet):</div>
+                    <div className="grid grid-cols-2 gap-2">
+                      <button
+                        onClick={() => handleBuyPlanWithMstc('starter', '2.5')}
+                        disabled={mstcPurchaseLoading || user.tier === 'starter'}
+                        className="py-1.5 px-2 rounded-xl border border-crimson/30 bg-crimson/5 hover:bg-crimson/15 text-crimson text-[10px] font-bold transition flex items-center justify-center space-x-1 disabled:opacity-50"
+                      >
+                        <Wallet className="w-3 h-3 text-crimson" />
+                        <span>Starter (2.5 MSTC)</span>
+                      </button>
+                      <button
+                        onClick={() => handleBuyPlanWithMstc('business', '7.5')}
+                        disabled={mstcPurchaseLoading || user.tier === 'business'}
+                        className="py-1.5 px-2 rounded-xl border border-crimson/30 bg-crimson/5 hover:bg-crimson/15 text-crimson text-[10px] font-bold transition flex items-center justify-center space-x-1 disabled:opacity-50"
+                      >
+                        <Wallet className="w-3 h-3 text-crimson" />
+                        <span>Business (7.5 MSTC)</span>
+                      </button>
+                    </div>
+
+                    {mstcPurchaseSuccess && (
+                      <div className="p-2.5 rounded-xl bg-emerald-50 border border-emerald-300 text-emerald-900 text-[10px] font-mono space-y-0.5">
+                        <div className="font-bold flex items-center space-x-1">
+                          <Check className="w-3 h-3 text-emerald-600" />
+                          <span>Bought {mstcPurchaseSuccess.plan.toUpperCase()} ({mstcPurchaseSuccess.amountMstc} MSTC)</span>
+                        </div>
+                        <div className="truncate text-emerald-700">TX: {mstcPurchaseSuccess.txHash}</div>
+                        <div className="truncate text-emerald-600">Seal: sha256:{mstcPurchaseSuccess.checksum.slice(0, 16)}...</div>
+                      </div>
+                    )}
                   </div>
                 </div>
 

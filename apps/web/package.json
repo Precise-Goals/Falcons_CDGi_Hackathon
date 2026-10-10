@@ -13,6 +13,7 @@
   },
   "dependencies": {
     "@intra/shared": "workspace:*",
+    "@intra/sdk": "workspace:*",
     "clsx": "^2.1.1",
     "ethers": "^6.17.0",
     "lucide-react": "^0.475.0",

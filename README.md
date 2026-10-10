@@ -83,11 +83,12 @@ pnpm demo
 ---
 
 ## Documentation
-- [Comprehensive User Guide (guide.md)](guide.md)
+- [Comprehensive User Guide (docs/guide.md)](docs/guide.md)
+- [Investor & Technical Pitch (docs/Pitch.md)](docs/Pitch.md)
 - [Simple Explanation (SimplePS.md)](docs/simpleps.md)
 - [Problem Statement (ps.md)](docs/ps.md)
 - [Architecture Deep-Dive](docs/Architecture.md)
-- [Harness Specifications](HARNESS.md)
+- [Harness Specifications](docs/HARNESS.md)
 - [Data Model & APIs](docs/DataModel.md)
 - [Demo Specification](docs/DemoSpec.md)
 - [Sprint Execution Plan](docs/SprintPlan.md)

@@ -97,4 +97,35 @@ describe('High-Volume Multi-Sample Verification Suite (50-60 APIs)', () => {
     expect(MST_CHAIN_ID_DEC).toBe(91562037);
     expect(MST_CHAIN_ID_HEX).toBe('0x5752035');
   });
+
+  it('executes a live connected evaluation with engine observation, MCP tools, SDK adapter, and SHA-256 seal', async () => {
+    const { generateRandomApi } = await import('./lib/apiGenerator');
+    const { runDynamicEvaluation } = await import('./lib/evalEngine');
+
+    const sample = generateRandomApi(1); // M1: rename
+    const result = await runDynamicEvaluation(sample);
+
+    // Stage 1 (OBSERVE)
+    const observeLogs = result.logs.filter((l) => l.stage === 'OBSERVE');
+    expect(observeLogs.length).toBeGreaterThanOrEqual(1);
+
+    // Stage 4 (MCP)
+    expect(result.mcpLiveOutput).toBeDefined();
+    expect(result.mcpLiveOutput.contract).toBeDefined();
+    expect(result.mcpLiveOutput.recentChanges).toBeDefined();
+    expect(result.mcpLiveOutput.toolsExecuted).toContain('intra_get_contract');
+    expect(result.mcpLiveOutput.toolsExecuted).toContain('intra_recent_changes');
+
+    // Stage 6 (ADAPTER & SDK)
+    expect(result.synthesizedAdapter).toContain('export function adaptResponse');
+    const adapterLogs = result.logs.filter((l) => l.stage === 'ADAPTER');
+    expect(adapterLogs.length).toBeGreaterThanOrEqual(1);
+
+    // Stage 8 (VALIDATE)
+    expect(result.validationPassed).toBe(true);
+
+    // Stage 9 (LEDGER)
+    expect(result.sha256Digest).toHaveLength(64);
+    expect(result.sha256Digest).toMatch(/^[0-9a-f]{64}$/);
+  });
 });

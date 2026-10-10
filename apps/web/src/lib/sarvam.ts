@@ -10,7 +10,8 @@ export interface SarvamResponse {
 export async function askSarvamAI(
   prompt: string,
   language = 'en',
-  history: Array<{ role: 'user' | 'assistant'; content: string }> = []
+  history: Array<{ role: 'user' | 'assistant'; content: string }> = [],
+  options?: { maxTokens?: number; temperature?: number }
 ): Promise<SarvamResponse> {
   const startTime = Date.now();
   const url = `${ENV.SARVAM_BASE_URL}/v1/chat/completions`;
@@ -32,8 +33,8 @@ export async function askSarvamAI(
     body: JSON.stringify({
       model: ENV.SARVAM_MODEL || 'sarvam-105b',
       messages,
-      max_tokens: 1024,
-      temperature: 0.3,
+      max_tokens: options?.maxTokens || 4096,
+      temperature: options?.temperature ?? 0.3,
     }),
   });
 

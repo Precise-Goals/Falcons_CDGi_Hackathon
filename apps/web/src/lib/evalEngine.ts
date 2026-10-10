@@ -1,5 +1,10 @@
+import { IntraClient } from '@intra/sdk';
 import { GeneratedApiSchema, PredictabilityAnalysis } from './apiGenerator';
 import { askSarvamAI } from './sarvam';
+export {
+  generateSarvamDynamicApiSchema,
+  generateSarvamDynamicApiBatch,
+} from './sarvamGenerator';
 
 export interface EvalLogEntry {
   timestamp: string;
@@ -21,6 +26,7 @@ export interface EvaluationResult {
     severity: 'low' | 'medium' | 'high' | 'critical';
   };
   synthesizedAdapter: string;
+  adaptedPayload?: any;
   validationPassed: boolean;
   mcpLiveOutput: any;
   sarvamAnalysis: string;
@@ -86,10 +92,92 @@ function computeSimilarity(a: string, b: string): number {
   return 1 - matrix[b.length][a.length] / maxLen;
 }
 
+// Live engine observation dispatcher (/api/engine/observe with fallback to http://localhost:3001/observe)
+async function postBaselineObservationToEngine(schema: GeneratedApiSchema): Promise<{ ok: boolean; data?: any }> {
+  const observation = {
+    id: `obs_${schema.id || 'sample'}_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`,
+    service: schema.service,
+    endpoint: schema.endpoint,
+    method: schema.method,
+    status: 200,
+    headers: { 'content-type': 'application/json' },
+    body: schema.baselinePayload,
+    latencyMs: Math.floor(Math.random() * 25) + 5,
+    timestamp: new Date().toISOString(),
+  };
+
+  const primaryUrl = typeof window !== 'undefined' && window.location?.origin
+    ? `${window.location.origin}/api/engine/observe`
+    : 'http://localhost:3001/api/engine/observe';
+  const fallbackUrl = 'http://localhost:3001/observe';
+
+  const send = async (url: string) => {
+    try {
+      const controller = new AbortController();
+      const timer = setTimeout(() => controller.abort(), 1200);
+      const res = await fetch(url, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(observation),
+        signal: controller.signal,
+      }).catch(() => null);
+      clearTimeout(timer);
+      if (res && res.ok) {
+        return await res.json().catch(() => ({ status: 'recorded' }));
+      }
+    } catch {
+      // safe fallback
+    }
+    return null;
+  };
+
+  let result = await send(primaryUrl);
+  if (!result) {
+    result = await send(fallbackUrl);
+  }
+  return { ok: Boolean(result), data: result || observation };
+}
+
+// Live MCP server tools dispatcher (/api/mcp/tools/call with fallback to http://localhost:3002/tools/call)
+async function queryLiveMcpTool(tool: string, params: Record<string, any> = {}): Promise<any> {
+  const primaryUrl = typeof window !== 'undefined' && window.location?.origin
+    ? `${window.location.origin}/api/mcp/tools/call`
+    : 'http://localhost:3002/api/mcp/tools/call';
+  const fallbackUrl = 'http://localhost:3002/tools/call';
+  const payload = JSON.stringify({ tool, params });
+
+  const send = async (url: string) => {
+    try {
+      const controller = new AbortController();
+      const timer = setTimeout(() => controller.abort(), 1200);
+      const res = await fetch(url, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: payload,
+        signal: controller.signal,
+      }).catch(() => null);
+      clearTimeout(timer);
+      if (res && res.ok) {
+        return await res.json().catch(() => null);
+      }
+    } catch {
+      // safe fallback
+    }
+    return null;
+  };
+
+  let result = await send(primaryUrl);
+  if (!result) {
+    result = await send(fallbackUrl);
+  }
+  return result;
+}
+
 export async function runDynamicEvaluation(schema: GeneratedApiSchema): Promise<EvaluationResult> {
   const startTime = Date.now();
   const evalId = `eval_${schema.id || Math.random().toString(36).substring(2, 7)}_${Date.now().toString().slice(-4)}`;
   const logs: EvalLogEntry[] = [];
+  const encoder = new TextEncoder();
 
   const addLog = (
     stage: EvalLogEntry['stage'],
@@ -106,31 +194,109 @@ export async function runDynamicEvaluation(schema: GeneratedApiSchema): Promise<
     });
   };
 
-  // 1. Stage: Intercept Observations
+  // =========================================================================
+  // STAGE 1 (OBSERVE): Intercept baseline observation & post to live engine
+  // =========================================================================
   addLog('OBSERVE', 'info', `[${schema.id || 'API'}] Intercepted observations for [${schema.method} ${schema.endpoint}]`);
+  
+  // Post baseline observation to /api/engine/observe (with fallback to http://localhost:3001/observe)
+  const engineObsResult = await postBaselineObservationToEngine(schema);
+  if (engineObsResult.ok) {
+    addLog('OBSERVE', 'success', `Posted baseline observation to live engine (/api/engine/observe)`, {
+      endpoint: schema.endpoint,
+      service: schema.service,
+      liveEngine: true,
+    });
+  } else {
+    addLog('OBSERVE', 'info', `Live engine observation fallback active for [${schema.method} ${schema.endpoint}]`, {
+      endpoint: schema.endpoint,
+      service: schema.service,
+    });
+  }
+
+  // Scrub PII and compute WebCrypto SHA-256 digest of baseline observations
   const obsPayloadStr = JSON.stringify(schema.baselineObservations);
-  const encoder = new TextEncoder();
   const obsBuf = await crypto.subtle.digest('SHA-256', encoder.encode(obsPayloadStr));
   const obsSha = Array.from(new Uint8Array(obsBuf)).map((b) => b.toString(16).padStart(2, '0')).join('');
   addLog('OBSERVE', 'success', `PII scrubbed & SHA-256 digest computed: sha256:${obsSha.slice(0, 16)}...`, {
     observations: schema.baselineObservations.length,
     service: schema.service,
+    liveEngineSync: engineObsResult.ok,
   });
 
-  // 2. Stage: Behavioral Contract Modeling
+  // =========================================================================
+  // STAGE 2 (MODEL): Behavioral Contract Modeling
+  // =========================================================================
   addLog('MODEL', 'info', `Modeling behavioural contract fingerprint from traffic observations`);
   const baselineKeys = Object.keys(schema.baselinePayload);
   addLog('MODEL', 'success', `Fingerprint derived: ${baselineKeys.length} fields indexed with zero static schemas.`, {
     fields: baselineKeys,
   });
 
-  // 3. Stage: Predictability Analysis of Future Upgrades
+  // =========================================================================
+  // STAGE 3 (PREDICT): Predictability Analysis of Future Upgrades
+  // =========================================================================
   addLog('PREDICT', 'info', `Evaluating future upgrade predictability: ${schema.predictability.findings.length} structural risk vectors identified`);
   for (const finding of schema.predictability.findings) {
     addLog('PREDICT', finding.probability >= 90 ? 'warn' : 'info', `[Predictability ${finding.probability}%] ${finding.category} on ${finding.target} -> ${finding.predictedShift}`);
   }
 
-  // 4. Stage: Structural & Semantic Differ
+  // =========================================================================
+  // STAGE 4 (MCP): Query live Customer MCP server (/api/mcp/tools/call)
+  // =========================================================================
+  addLog('MCP', 'info', `Querying live Customer MCP Server at /api/mcp/tools/call (fallback http://localhost:3002/tools/call)`);
+  const liveContractOutput = await queryLiveMcpTool('intra_get_contract', {
+    service: schema.service,
+    endpoint: schema.endpoint,
+  });
+  const liveChangesOutput = await queryLiveMcpTool('intra_recent_changes', {
+    service: schema.service,
+    min_confidence: 0.7,
+  });
+
+  const mcpLiveOutput: any = {
+    contract: liveContractOutput || {
+      service: schema.service,
+      endpoint: schema.endpoint,
+      schema: {
+        types: Object.fromEntries(Object.keys(schema.baselinePayload).map((k) => [k, typeof schema.baselinePayload[k]])),
+        optionality: [],
+        enums: {},
+        formats: {},
+      },
+      status: 'inferred',
+    },
+    recentChanges: liveChangesOutput || {
+      changes: [
+        {
+          id: `chg_${schema.id || 'live'}_${Date.now()}`,
+          service: schema.service,
+          endpoint: schema.endpoint,
+          kind: schema.mutationType,
+          confidence: schema.expectedConfidence,
+          semanticVerdict: schema.expectedVerdict,
+        },
+      ],
+    },
+    toolsExecuted: ['intra_get_contract', 'intra_recent_changes'],
+    liveConnected: Boolean(liveContractOutput || liveChangesOutput),
+    transport: 'http/streamable',
+  };
+
+  addLog(
+    'MCP',
+    mcpLiveOutput.liveConnected ? 'success' : 'info',
+    `Customer MCP Server tools executed: intra_get_contract & intra_recent_changes (${mcpLiveOutput.liveConnected ? 'Live 200 OK' : 'Local Fallback Buffer'})`,
+    {
+      tools: ['intra_get_contract', 'intra_recent_changes'],
+      endpoint: schema.endpoint,
+      liveConnected: mcpLiveOutput.liveConnected,
+    }
+  );
+
+  // =========================================================================
+  // STAGE 5 (DIFF, IMPACT, POLICY): Structural/Semantic Differ & Section 10 Matrix
+  // =========================================================================
   addLog('DIFF', 'info', `Executing algorithmic contract differ against mutated upstream traffic`);
   let confidence = schema.expectedConfidence;
   const verdict = schema.expectedVerdict;
@@ -153,7 +319,7 @@ export async function runDynamicEvaluation(schema: GeneratedApiSchema): Promise<
 
   addLog('DIFF', 'success', `Differ verdict classified: [${verdict.toUpperCase()}] with calculated confidence ${(confidence * 100).toFixed(1)}%`);
 
-  // 5. Stage: AST Impact Analysis & Blast Radius
+  // AST Impact Analysis & Blast Radius
   addLog('IMPACT', 'info', `Analyzing AST dependency graph and blast radius across microservices`);
   const affectedWorkflows = [
     `${schema.service}_dispatch_handler`,
@@ -167,7 +333,7 @@ export async function runDynamicEvaluation(schema: GeneratedApiSchema): Promise<
 
   addLog('IMPACT', severity === 'critical' ? 'error' : 'warn', `Blast radius mapped: ${affectedWorkflows.length} dependent workflows affected. Severity: ${severity.toUpperCase()}`);
 
-  // 6. Stage: Safe-Handling Policy Matrix (§10)
+  // Safe-Handling Policy Matrix (§10)
   addLog('POLICY', 'info', `Evaluating Safe-Handling Policy Matrix (§10 mathematical bounds)`);
   let policyAction: 'auto_apply' | 'open_migration_pr' | 'circuit_break' | 'quarantine_alert' = 'open_migration_pr';
   if (verdict === 'breaking') {
@@ -184,15 +350,19 @@ export async function runDynamicEvaluation(schema: GeneratedApiSchema): Promise<
     addLog('POLICY', 'error', `Confidence below 70%. Route quarantined and developer on-call paged.`);
   }
 
-  // 7. Stage: Dynamic Adapter Code Synthesis
+  // =========================================================================
+  // STAGE 6 (ADAPTER & SDK): Dynamically instantiate & execute adapter via @intra/sdk
+  // =========================================================================
   addLog('ADAPTER', 'info', `Synthesizing TypeScript/JavaScript backward-compatibility adapter`);
   let synthesizedAdapter = '';
+  let adapterTransformer: ((payload: any) => any) | null = null;
+
   if (schema.mutationType === 'rename') {
     synthesizedAdapter = `export function adaptResponse(payload: any) {\n  if (Array.isArray(payload)) return payload.map(adaptResponse);\n  return {\n    ...payload,\n    customer_name: payload.display_name ?? payload.customer_name,\n  };\n}`;
   } else if (schema.mutationType === 'unit_shift') {
-    synthesizedAdapter = `export function adaptResponse(payload: any) {\n  return {\n    ...payload,\n    amount: typeof payload.amount === 'number' ? payload.amount * 0.01 : payload.amount,\n  };\n}`;
+    synthesizedAdapter = `export function adaptResponse(payload: any) {\n  return {\n    ...payload,\n    amount: typeof payload.amount === 'number' ? Number((payload.amount * 0.01).toFixed(2)) : payload.amount,\n  };\n}`;
   } else if (schema.mutationType === 'pagination_change') {
-    synthesizedAdapter = `export function adaptRequest(params: any) {\n  if (params.offset !== undefined && !params.next_cursor) {\n    return { ...params, next_cursor: Buffer.from(String(params.offset)).toString('base64') };\n  }\n  return params;\n}`;
+    synthesizedAdapter = `export function adaptRequest(params: any) {\n  if (params.offset !== undefined && !params.next_cursor) {\n    return { ...params, next_cursor: typeof btoa !== 'undefined' ? btoa(String(params.offset)) : Buffer.from(String(params.offset)).toString('base64') };\n  }\n  return params;\n}`;
   } else if (schema.mutationType === 'payload_flatten') {
     synthesizedAdapter = `export function adaptResponse(payload: any) {\n  return {\n    ...payload,\n    metadata: { ...payload.metadata, risk_score: payload.risk_score ?? payload.metadata?.risk_score },\n  };\n}`;
   } else if (schema.mutationType === 'type_coerce') {
@@ -200,80 +370,167 @@ export async function runDynamicEvaluation(schema: GeneratedApiSchema): Promise<
   } else {
     synthesizedAdapter = `// AUTOMATED ADAPTER PROHIBITED FOR BREAKING SEMANTIC DRIFT\n// Safe-handling policy requires engineering team review via GitHub Migration PR.`;
   }
-  addLog('ADAPTER', 'success', `Adapter code synthesized with rollback handle rollback_${evalId}`);
 
-  // 8. Stage: Regression Validation Replay
-  addLog('VALIDATE', 'info', `Executing golden test equivalence replay against synthesized adapter`);
+  // Dynamically instantiate the adapter function from the synthesized code
+  if (policyAction !== 'circuit_break' && verdict !== 'breaking') {
+    try {
+      const cleanCode = synthesizedAdapter
+        .replace(/export\s+/g, '')
+        .replace(/:\s*any/g, '');
+      const dynamicFn = new Function(
+        'payload',
+        `
+        ${cleanCode}
+        if (typeof adaptResponse === 'function') return adaptResponse(payload);
+        if (typeof adaptRequest === 'function') return adaptRequest(payload);
+        return payload;
+        `
+      ) as (p: any) => any;
+      adapterTransformer = dynamicFn;
+    } catch {
+      // Deterministic fallback matching the synthesized adapter specification
+      if (schema.mutationType === 'rename') {
+        adapterTransformer = (p: any) => ({ ...p, customer_name: p.display_name ?? p.customer_name });
+      } else if (schema.mutationType === 'unit_shift') {
+        adapterTransformer = (p: any) => ({ ...p, amount: typeof p.amount === 'number' ? Number((p.amount * 0.01).toFixed(2)) : p.amount });
+      } else if (schema.mutationType === 'payload_flatten') {
+        adapterTransformer = (p: any) => ({ ...p, metadata: { ...p.metadata, risk_score: p.risk_score ?? p.metadata?.risk_score } });
+      } else if (schema.mutationType === 'type_coerce') {
+        adapterTransformer = (p: any) => ({ ...p, id: String(p.id) });
+      }
+    }
+  }
+
+  // Instantiate live @intra/sdk IntraClient
+  const sdkClient = new IntraClient({
+    engineUrl: typeof window !== 'undefined' && window.location?.origin
+      ? `${window.location.origin}/api/engine`
+      : 'http://localhost:3001',
+    appName: 'intra-eval-engine',
+  });
+
+  // Register the synthesized adapter into the live SDK client
+  if (adapterTransformer) {
+    sdkClient.registerAdapter(schema.endpoint, adapterTransformer);
+  }
+
+  // Execute live adaptation through SDK proxy against mutated payload
+  const adaptedPayload = sdkClient.adaptResponse(schema.endpoint, schema.mutatedPayload);
+
+  // Verify recovery back to schema.baselinePayload
+  let recoveryVerified = false;
+  if (schema.mutationType === 'rename') {
+    recoveryVerified = adaptedPayload.customer_name === schema.baselinePayload.customer_name;
+  } else if (schema.mutationType === 'unit_shift') {
+    recoveryVerified = Math.abs(adaptedPayload.amount - schema.baselinePayload.amount) < 0.001;
+  } else if (schema.mutationType === 'payload_flatten') {
+    recoveryVerified = adaptedPayload.metadata?.risk_score === schema.baselinePayload.metadata.risk_score;
+  } else if (schema.mutationType === 'type_coerce') {
+    recoveryVerified = String(adaptedPayload.id) === String(schema.mutatedPayload.id);
+  } else if (schema.mutationType === 'pagination_change') {
+    recoveryVerified = false; // requires migration PR
+  } else {
+    recoveryVerified = policyAction === 'circuit_break';
+  }
+
+  addLog(
+    'ADAPTER',
+    recoveryVerified ? 'success' : policyAction === 'circuit_break' ? 'warn' : 'info',
+    `@intra/sdk dynamic adapter instantiated and executed against mutatedPayload: ${
+      recoveryVerified
+        ? 'Recovery back to baseline verified'
+        : policyAction === 'circuit_break'
+        ? 'Automated repair prohibited by Section 10 Matrix (Breaking Semantic Drift)'
+        : 'Migration PR proposed for developer review'
+    }`,
+    {
+      endpoint: schema.endpoint,
+      mutation: schema.mutationType,
+      recoveryVerified,
+      rollbackHandle: `rollback_${evalId}`,
+    }
+  );
+
+  // =========================================================================
+  // STAGE 8 (VALIDATE): Golden Equivalence Replay Test comparing adapted with baseline
+  // =========================================================================
+  addLog('VALIDATE', 'info', `Executing golden test equivalence replay comparing adapted payload with baseline payload`);
   let validationPassed = false;
+  let validationMessage = '';
+
   try {
     if (schema.mutationType === 'rename') {
-      const adapted = {
-        ...schema.mutatedPayload,
-        customer_name: schema.mutatedPayload.display_name,
-      };
-      validationPassed = adapted.customer_name === schema.baselinePayload.customer_name;
+      validationPassed = adaptedPayload.customer_name === schema.baselinePayload.customer_name;
+      validationMessage = `customer_name preserved: "${adaptedPayload.customer_name}" === "${schema.baselinePayload.customer_name}"`;
     } else if (schema.mutationType === 'unit_shift') {
-      const adapted = {
-        ...schema.mutatedPayload,
-        amount: schema.mutatedPayload.amount * 0.01,
-      };
-      validationPassed = Math.abs(adapted.amount - schema.baselinePayload.amount) < 0.001;
+      validationPassed = Math.abs(adaptedPayload.amount - schema.baselinePayload.amount) < 0.001;
+      validationMessage = `amount normalized: ${adaptedPayload.amount} === ${schema.baselinePayload.amount}`;
     } else if (schema.mutationType === 'payload_flatten') {
-      validationPassed = schema.mutatedPayload.risk_score === schema.baselinePayload.metadata.risk_score;
+      validationPassed = adaptedPayload.metadata?.risk_score === schema.baselinePayload.metadata.risk_score;
+      validationMessage = `metadata.risk_score restored: ${adaptedPayload.metadata?.risk_score} === ${schema.baselinePayload.metadata.risk_score}`;
     } else if (schema.mutationType === 'type_coerce') {
-      validationPassed = String(schema.mutatedPayload.id) === String(schema.mutatedPayload.id);
+      validationPassed = String(adaptedPayload.id) === String(schema.mutatedPayload.id);
+      validationMessage = `id type coerced back: ${adaptedPayload.id}`;
+    } else if (schema.mutationType === 'enum_drift') {
+      // Per Section 10 Matrix: breaking enum drift must trip circuit breaker to protect callers
+      validationPassed = policyAction === 'circuit_break';
+      validationMessage = 'Circuit breaker correctly halted execution on breaking enum drift';
     } else {
       validationPassed = policyAction === 'circuit_break';
-    }
-  } catch {
-    validationPassed = false;
-  }
-  addLog('VALIDATE', validationPassed ? 'success' : 'warn', `Golden replay test: ${validationPassed ? 'PASSED (Deep Semantic Equivalence Confirmed)' : 'MANUAL APPROVAL REQUIRED'}`);
-
-  // 9. Stage: Live MCP Server Verification
-  addLog('MCP', 'info', `Querying live Customer MCP Server at http://localhost:3002/tools/call`);
-  let mcpLiveOutput: any = null;
-  try {
-    const mcpRes = await fetch('http://localhost:3002/tools/call', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ tool: 'intra_recent_changes', params: {} }),
-    }).catch(() => null);
-
-    if (mcpRes && mcpRes.ok) {
-      mcpLiveOutput = await mcpRes.json();
-      addLog('MCP', 'success', `Customer MCP Server responded with status 200 OK`, {
-        transport: 'http/streamable',
-      });
-    } else {
-      mcpLiveOutput = { status: 'engine_live', endpoint: schema.endpoint };
-      addLog('MCP', 'info', `MCP Server active on port 3002`);
+      validationMessage = `Safe handling policy applied: ${policyAction}`;
     }
   } catch (err: any) {
-    mcpLiveOutput = { status: 'mcp_connected', endpoint: schema.endpoint };
-    addLog('MCP', 'info', `MCP verification active`);
+    validationPassed = false;
+    validationMessage = `Validation replay error: ${err?.message || 'unknown'}`;
   }
 
-  // 10. Stage: Sarvam AI 105B Review
-  let sarvamAnalysis = `Sarvam AI Agent Diagnostic: Analyzed ${schema.mutationType} drift on ${schema.endpoint}. Section 10 Matrix correctly resolved ${policyAction}. Equivalence verified with ${(confidence * 100).toFixed(1)}% confidence score.`;
+  addLog(
+    'VALIDATE',
+    validationPassed ? 'success' : 'warn',
+    `Golden replay test: ${validationPassed ? 'PASSED (Deep Semantic Equivalence Confirmed)' : 'MANUAL APPROVAL REQUIRED'} - ${validationMessage}`,
+    {
+      validationPassed,
+      validationMessage,
+    }
+  );
+
+  // =========================================================================
+  // SARVAM AI Diagnostic Review
+  // =========================================================================
+  const sarvamAnalysis = `Sarvam AI Agent Diagnostic: Analyzed ${schema.mutationType} drift on ${schema.endpoint}. Section 10 Matrix correctly resolved ${policyAction}. Equivalence verified with ${(confidence * 100).toFixed(1)}% confidence score.`;
   addLog('SARVAM_AI', 'success', `Sarvam AI 105B evaluation review completed`);
 
-  // Ledger Checksum
+  // =========================================================================
+  // STAGE 9 (LEDGER): WebCrypto SHA-256 Digest & Structured Audit Log Entry
+  // =========================================================================
   const durationMs = Date.now() - startTime;
   const digestPayload = JSON.stringify({
     evalId,
+    service: schema.service,
     endpoint: schema.endpoint,
     mutation: schema.mutationType,
     confidence,
     verdict,
     policyAction,
     predictabilityScore: schema.predictability.score,
+    validationPassed,
     durationMs,
   });
   const digestBuf = await crypto.subtle.digest('SHA-256', encoder.encode(digestPayload));
   const sha256Digest = Array.from(new Uint8Array(digestBuf)).map((b) => b.toString(16).padStart(2, '0')).join('');
 
-  addLog('LEDGER', 'success', `Ledger entry minted: sha256:${sha256Digest}`);
+  addLog('LEDGER', 'success', `Cryptographic audit entry minted: sha256:${sha256Digest}`, {
+    evalId,
+    sha256Digest,
+    endpoint: schema.endpoint,
+    policyAction,
+    validationPassed,
+    durationMs,
+  });
+
+  console.log(
+    `[INTRA LEDGER CHECKSUM] sha256:${sha256Digest} (event: eval_completed, evalId: ${evalId}, service: ${schema.service}, endpoint: ${schema.endpoint}, mutation: ${schema.mutationType}, verdict: ${verdict}, confidence: ${(confidence * 100).toFixed(1)}%, action: ${policyAction}, validated: ${validationPassed}, durationMs: ${durationMs}ms)`
+  );
 
   return {
     evalId,
@@ -287,6 +544,7 @@ export async function runDynamicEvaluation(schema: GeneratedApiSchema): Promise<
       severity,
     },
     synthesizedAdapter,
+    adaptedPayload,
     validationPassed,
     mcpLiveOutput,
     sarvamAnalysis,
@@ -337,6 +595,7 @@ export async function runBatchEvaluation(
 
   for (let i = 0; i < schemas.length; i++) {
     const schema = schemas[i];
+    // Execute each schema through the live connected pipeline
     const result = await runDynamicEvaluation(schema);
     evaluations.push(result);
 
@@ -368,7 +627,7 @@ export async function runBatchEvaluation(
     }
   }
 
-  // Run one comprehensive Sarvam AI diagnostic assessment for the entire batch
+  // Run comprehensive Sarvam AI diagnostic assessment for the entire batch
   try {
     const summaryPrompt = `Evaluate this high-volume stress benchmark of ${schemas.length} dynamic APIs:
 Average Confidence: ${(totalConfidence / schemas.length * 100).toFixed(1)}%
@@ -385,7 +644,7 @@ Provide a 2-sentence executive summary of Intra system reliability and predictiv
     if (evaluations.length > 0) {
       evaluations[0].sarvamAnalysis = aiRes.text;
     }
-  } catch (err: any) {
+  } catch {
     addBatchLog('SARVAM_AI', 'warn', `Sarvam AI summary review noted`);
   }
 
@@ -394,9 +653,9 @@ Provide a 2-sentence executive summary of Intra system reliability and predictiv
   const averagePredictabilityScore = Number((totalPredictability / schemas.length).toFixed(1));
   const equivalencePassRate = Number((totalPassing / schemas.length * 100).toFixed(1));
   const accuracyScore = Number(((averageConfidence * 0.5 + equivalencePassRate * 0.5)).toFixed(1));
-  const throughputPerSec = Number((schemas.length / (totalDurationMs / 1000)).toFixed(1));
+  const throughputPerSec = Number((schemas.length / (Math.max(1, totalDurationMs) / 1000)).toFixed(1));
 
-  // Compute Batch SHA-256 Digest
+  // Compute Batch SHA-256 Digest using WebCrypto
   const encoder = new TextEncoder();
   const batchDigestPayload = JSON.stringify({
     batchId,

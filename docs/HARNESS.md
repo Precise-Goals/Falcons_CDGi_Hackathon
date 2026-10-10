@@ -8,12 +8,23 @@
 
 ## 0. Mission (never changes)
 
+> **Core Challenge & Specification:** Aligned strictly with [`docs/lock.md`](docs/lock.md) (*The Internet After the API: Help software survive undocumented changes in external services*).
+
 Build a system that implements this pipeline end to end:
 
 ```
 External service → Observed behaviour → Contract/behavioural model → Change detection
 → Impact analysis → Adapter or migration → Validation → Updated system
 ```
+
+### The 6 Locked Product Pillars
+The entire Intra ecosystem, architecture, and developer interface are structured strictly around 6 pillars:
+1. **Home**: Platform mission, architectural philosophy, value propositions, and runtime status.
+2. **Dashboard (API Observability Interface)**: Real-time telemetry observer, statistical contract fingerprinting, structural/semantic drift classification, AST blast-radius mapper, safe-handling policy engine, golden test replay, and interactive mutation switchboard (M1–M10).
+3. **Agent**: Autonomous Multi-Agent Adaptation Engine & CI/CD Quality Gate Runner (G1–G9) providing autonomous remediation, self-healing audit trails, and automated PR generation.
+4. **MCP**: Customer Model Context Protocol server (`mcpserver/`) exposing 7 specialized tools with Streamable HTTP transport for AI developer environments (Cursor, Claude Desktop).
+5. **SDK**: Lightweight client SDK (`@intra/sdk`) providing non-blocking observation capture, dynamic runtime adaptation, and drop-in HTTP client wrappers.
+6. **Docs**: Comprehensive interactive documentation, architectural blueprints, behavioral contract specs, and exact problem statement solutions per `docs/lock.md`.
 
 **Non-negotiables**
 1. Do NOT rely on documented schemas alone. Learn real behaviour from traffic (defaults, errors, pagination, rate limits, semantic drift in valid JSON).
@@ -62,17 +73,13 @@ External service → Observed behaviour → Contract/behavioural model → Chang
 |---|---|
 | Language | TypeScript (strict), Node 20+ everywhere (engine, web, MCP server) |
 | Repo | pnpm workspaces + Turborepo, Conventional Commits enforced (commitlint + husky) |
-| Core app | **Monolith**: one deployable `apps/engine` (Fastify) hosting observer, model, differ, impact, adapter, validator as in-process modules + REST/SSE API |
+| Core app | **In-process pipeline engine**: one deployable `apps/engine` (Fastify) hosting observer, model, differ, impact, adapter, validator as in-process modules + REST/SSE API |
 | Frontend | **React 18 + Vite + Tailwind + shadcn/ui** (`apps/web`, SPA) |
 | Animated UI | **React Bits** (primary), Magic UI / Aceternity (accents), Motion (framer-motion), GSAP (hero/scroll) |
 | 3D UI | three.js via `@react-three/fiber` + `@react-three/drei` (lazy-loaded, reduced-motion safe) |
 | State/data | TanStack Query + Zustand; SSE for live drift feed |
 | Storage | Postgres on Railway (Drizzle ORM); SQLite for local dev/tests |
 | Tests | Vitest (unit/int), Playwright (e2e), Testing Library (UI) |
-| Auth | **Firebase Authentication, strictly required** for every non-public route. Web: Firebase client SDK (config from `VITE_FIREBASE_*`). Engine/MCP: `firebase-admin` verifies ID tokens (config from env, never committed) |
-| Wallet | **BridgeKey wallet on MST Blockchain only**, via the MST SDK, behind a `WalletProvider` interface. Wallet is *linked to the Firebase user* by signing a server nonce; link is recorded, not used for login |
-| Ledger | `packages/ledger`: append-only **hash chain + signed entries**, local to the engine DB. **No public-chain writes in v1.** Checksum hashes are `console.log`ged (structured, hashes only) |
-| Product mode | **Real startup product**: multi-tenant (org → project), per-tenant API keys, audit log, retention policy, rate limits, error tracking |
 | Simulated services | Fastify mocks + mutation switchboard (`packages/sim-services`) |
 | MCP server | Separate folder `mcpserver/`, deployed to **Render**, Node/TS (`@modelcontextprotocol/sdk`), thin client of the engine REST API; shares zod types via `packages/shared` |
 | Hosting | `apps/web` → **Vercel**; `apps/engine` + Postgres → **Railway**; `mcpserver/` → **Render** |
@@ -97,6 +104,15 @@ External service → Observed behaviour → Contract/behavioural model → Chang
 
 ### 3.2 MCP server (LOCKED: Node/TS on Render)
 `mcpserver/` is a separate pnpm workspace package and separate deployable. Uses `@modelcontextprotocol/sdk` with Streamable HTTP transport (stdio for local dev), API-key auth, per-tenant scoping, audit log. It calls the engine only through its REST API (types from `packages/shared`), never importing engine internals. Render settings: root dir `mcpserver`, build `pnpm install && pnpm --filter mcpserver build`, start `node dist/index.js`, health route `/healthz`.
+
+### 3.3 The Six Core Product Pillars (LOCKED)
+The system is partitioned strictly across 6 operational pillars:
+1. **Home (`/`)**: Mission statement, problem orientation per `docs/lock.md`, core philosophy, and high-level architecture.
+2. **Dashboard (`/dashboard`)**: The comprehensive **API Observability Interface** that observes dependencies, fingerprints schemas, classifies structural/semantic drift, maps AST blast-radius, executes safe-handling policies, verifies golden test replay, and operates the simulated service mutation switchboard (M1–M10).
+3. **Agent (`/agent`)**: Autonomous multi-agent self-healing orchestration, automated remediation pipelines, CI/CD quality gate runner (G1–G9), and migration PR creation.
+4. **MCP (`/mcp`)**: Customer Model Context Protocol server exposing 7 discovery & adaptation tools for Claude Desktop, Cursor, and AI agents.
+5. **SDK (`/sdk`)**: Client SDK package (`@intra/sdk`) providing non-blocking telemetry capture and dynamic runtime adapter injection.
+6. **Docs (`/docs`)**: Interactive developer documentation, behavioral contract references, and direct problem statement solutions (`docs/lock.md`).
 
 ---
 
@@ -123,7 +139,7 @@ Intra/
 │  ├─ PROMPT_LOOP.md               # Ralph per-iteration prompt
 │  └─ loop.sh                      # Ralph driver
 ├─ apps/
-│  ├─ engine/                      # MONOLITH: observe→model→detect→impact→adapt→validate (Railway)
+│  ├─ engine/                      # In-process pipeline engine: observe→model→detect→impact→adapt→validate (Railway)
 │  ├─ web/                         # Vite + React website/dashboard (Vercel)
 │  └─ demo-app/                    # "Shipwell": app that depends on sim services
 ├─ mcpserver/                      # customer MCP server, separate deployable (Render)
@@ -169,8 +185,6 @@ Definitions live in `.claude/agents/<name>.md`. Each has: role, model, tools, **
 | `sim-dev` | Haiku→Sonnet | `packages/sim-services`, `apps/demo-app` | Simulated services + mutation switchboard + demo app. |
 | `web-dev` | Sonnet | `apps/web` | Website/dashboard UI. |
 | `mcp-dev` | Sonnet | `mcpserver/` | Customer MCP server tools/resources. |
-| `ledger-dev` | Sonnet | `packages/ledger` | Hash chain, entry signing, canonical hashing, checksum console logging, `WalletProvider` + MST adapter, verify/inclusion API. |
-| `auth-dev` | Sonnet | `apps/engine/src/auth/**`, `apps/web/src/auth/**` | Firebase login (web + token verification), tenancy (org/project), API keys, wallet link flow (nonce challenge). |
 | `qa-engineer` | Sonnet | `**/*.test.ts`, `tests/**` (tests only) | Independent verifier: writes missing unit tests, runs gates, **cannot edit src**; files failures back. |
 | `reviewer` | Opus | none (read-only) | Pre-PR review against ADRs + security + token/perf hygiene; works alongside CodeRabbit. |
 | `devops` | Haiku/Sonnet | `.github/**`, CI configs | Actions, CodeRabbit config, release pipeline. |
@@ -367,14 +381,6 @@ Use path filters + Turborepo remote/local cache to skip untouched packages (toke
 
 Every decision records: evidence (sample diffs), confidence breakdown, affected workflows, rollback handle. Validation failure after adapter → auto-rollback.
 
-### 10.1 Replay safety classes (hard rules)
-| Class | Meaning | Replay allowed |
-|---|---|---|
-| `safe` | read-only, idempotent (GET/HEAD) | Against live provider and against adapted proxy |
-| `sandbox-only` | state-changing but provider offers a sandbox/test mode | Sandbox only |
-| `shadow-only` | state-changing, no sandbox (payments, emails, deletes) | **Never replayed live**; validate adapter offline on recorded traces and compare in shadow mode |
-Unclassified calls default to `shadow-only`. Active probes (§11 Sprint 2) use `safe` calls only.
-
 ---
 
 ## 11. Sprint Board (agents, waves, exit criteria)
@@ -391,22 +397,16 @@ Unclassified calls default to `shadow-only`. Active probes (§11 Sprint 2) use `
 | W2 | qa-engineer | Validate scaffold: gates run green on empty packages |
 **Exit:** `pnpm -w typecheck lint test build` green; first PR merged via autonomous pipeline.
 
-### Sprint 1: Walking Skeleton (Observe, Simulate, thin end-to-end slice)
+### Sprint 1: Observe & Simulate
 | W | Agent | Task |
 |---|---|---|
 | W0 | architect | Interface review of observer/sim contracts |
 | W1 ∥ | observer-dev | HTTP capture proxy + SDK wrapper; webhook receiver; redaction of PII; storage to `observations` |
 | W1 ∥ | sim-dev | 4 simulated services: **Users**, **Payments**, **Search** (paginated), **Notifications webhook**; plus **MCP-tool service** |
 | W1 ∥ | sim-dev (2nd instance) | Mutation catalogue v1 (see §13) toggled via switchboard |
-| W1 ∥ | auth-dev | Firebase login end to end: web sign-in (env-config), engine token-verification middleware, tenant model (org/project), strict route guard, `.env.example`; tests with Firebase emulator |
-| W1 ∥ | web-dev | Site shell in Washi & Crimson: Home, Agent (placeholder), Docs (shell), Dashboard layout behind auth guard, Services list page |
+| W1 ∥ | web-dev | Dashboard shell: layout, auth stub, Services list page |
 | W2 | qa-engineer | Unit + integration tests for capture fidelity (headers, status, body, latency) |
-| W3 ∥ | differ-dev | **Thin slice**: minimal structural diff + rename-candidate detector (M1 only), no tuning |
-| W3 ∥ | impact-dev | **Thin slice**: AST scan of demo-app for `user.name` reads → workflow list |
-| W3 ∥ | adapter-dev | **Thin slice**: `rename` DSL op + apply in proxy |
-| W3 ∥ | validator-dev | **Thin slice**: replay one recorded read-only workflow; assert green after adapter |
-| W4 | qa-engineer | `pnpm demo:slice` e2e: inject M1 → detect → impact → adapt → validate → green, plus a "benign change must not alert" case |
-**Exit:** (a) traffic from demo-app to all sim services is captured with ≥ 99% fidelity; (b) **the whole pipeline works end to end for M1 (rename)** via `pnpm demo:slice`. Later sprints deepen each stage; they never delay the working slice.
+**Exit:** traffic from demo-app to all sim services is captured with ≥ 99% fidelity in tests.
 
 ### Sprint 2: Model (learn real behaviour)
 | W | Agent | Task |
@@ -414,8 +414,6 @@ Unclassified calls default to `shadow-only`. Active probes (§11 Sprint 2) use `
 | W1 ∥ | model-dev | Schema inference (types, optionality, enums, formats) |
 | W1 ∥ | model-dev (2nd) | Behavioural fingerprint (value distributions, units, defaults, cardinality) |
 | W1 ∥ | model-dev (3rd) | Error taxonomy, pagination detector (cursor/offset/page/link-header), rate-limit policy learner |
-| W1 ∥ | model-dev (4th) | **Byte-level fingerprints**: canonical + raw SHA-256, byte-length/encoding/compression profile, per-field numeric width (int32/int64/>2^53), string encoding |
-| W1 ∥ | observer-dev | **Active probes**: scheduled, allow-listed, rate-limited, **read-only (GET/HEAD) only** probes so quiet dependencies are still watched; per-tenant opt-in |
 | W1 ∥ | web-dev | Contract viewer page (per endpoint model, field stats) |
 | W2 | qa-engineer | Property-based tests on inference; stability under noisy data |
 **Exit:** model for each sim service built from observation only (docs ignored); contract viewer renders it.
@@ -426,10 +424,8 @@ Unclassified calls default to `shadow-only`. Active probes (§11 Sprint 2) use `
 | W1 ∥ | differ-dev | Structural diff (add/remove/type change/nullability) |
 | W1 ∥ | differ-dev (2nd) | **Semantic drift**: rename candidates (value-overlap + name-similarity), unit/scale shift, enum meaning change, default flip, timezone/format change |
 | W1 ∥ | differ-dev (3rd) | Behavioural diff: pagination change, error shape change, rate-limit change, silent truncation, latency regime shift |
-| W1 ∥ | differ-dev (4th) | **Mixed-version detection**: detect two coexisting response populations (old/new shape), classify as `rollout_in_progress`, track new-shape ratio over time, finalize verdict when stable; never alert-storm during rollout |
 | W1 ∥ | web-dev | Drift feed UI with severity + confidence |
 | W2 | differ-dev | Confidence scoring + false-positive suppression (statistical windows) |
-| W3 | qa-engineer | **Calibration report**: bin changes by predicted confidence, compare to ground-truth correctness; fail CI if any bin is off by more than 0.10 |
 | W3 | qa-engineer | Benign-change corpus (must NOT alert) + malicious-change corpus (must alert); precision/recall report |
 **Exit:** recall ≥ 0.95, precision ≥ 0.90 on the mutation catalogue; calibration report within ±0.10 per confidence bin; mixed-rollout cases do not alert-storm; all reported in CI artifact.
 
@@ -553,7 +549,7 @@ Resources: `intra://contracts/{service}`, `intra://changes/latest`. Auth: API ke
 
 ## 16. Open Items
 - [x] Frontend: React + Vite + Tailwind + shadcn + React Bits + R3F (locked)
-- [x] Core architecture: monolith engine; separate `mcpserver/` (locked)
+- [x] Core architecture: in-process pipeline engine; separate `mcpserver/` (locked)
 - [x] Hosting: Vercel (web), Railway (engine + Postgres), Render (MCP) (locked)
 - [x] MCP server language: Node/TS (locked)
 - [x] MCP transport: Streamable HTTP on Render; auth: API key (default, revisit later)

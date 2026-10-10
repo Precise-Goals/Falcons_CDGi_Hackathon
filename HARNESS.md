@@ -427,13 +427,14 @@ Every decision records: evidence (sample diffs), confidence breakdown, affected 
 | W1 ∥ | web-dev | Drift feed UI with severity + confidence |
 | W2 | differ-dev | Confidence scoring + false-positive suppression (statistical windows) |
 | W3 | qa-engineer | Benign-change corpus (must NOT alert) + malicious-change corpus (must alert); precision/recall report |
-**Exit:** recall ≥ 0.95, precision ≥ 0.90 on the mutation catalogue; reported in CI artifact.
+**Exit:** recall ≥ 0.95, precision ≥ 0.90 on the mutation catalogue; calibration report within ±0.10 per confidence bin; mixed-rollout cases do not alert-storm; all reported in CI artifact.
 
 ### Sprint 4: Impact & Adapt
 | W | Agent | Task |
 |---|---|---|
 | W1 ∥ | impact-dev | Static dependency scan (AST: field usage per workflow) + runtime trace correlation |
 | W1 ∥ | impact-dev (2nd) | Workflow graph + blast-radius query ("what depends on `name`?") |
+| W1 ∥ | impact-dev (3rd) | **Consumer expectations**: declarative per-field assertions (e.g. `user.name: non-empty string`, `payment.amount: integer cents`) stored with the app; feed impact severity and validation; catch meaning changes statistics miss |
 | W1 ∥ | adapter-dev | Adapter generators: rename, transform (unit/format), default injection, pagination normalizer, retry/backoff |
 | W1 ∥ | adapter-dev (2nd) | Safe-handling policy engine (§10), migration PR generator, rollback handles |
 | W1 ∥ | web-dev | Impact view + adapter/proposal review UI |
@@ -445,8 +446,12 @@ Every decision records: evidence (sample diffs), confidence breakdown, affected 
 |---|---|---|
 | W1 ∥ | validator-dev | Replay engine: recorded workflows vs adapted service; golden assertions |
 | W1 ∥ | validator-dev (2nd) | Semantic-equivalence checker (e.g. `name` vs `display_name` meaning preserved?) |
+| W1 ∥ | validator-dev (3rd) | **Replay safety classes** (§10.1): enforce `safe` / `sandbox-only` / `shadow-only`; hard-block live replay of state-changing calls |
 | W1 ∥ | sim-dev | Demo app **Shipwell** workflows (checkout, user-profile, search-browse, notification-ack, MCP-tool-call) |
 | W1 ∥ | mcp-dev | Customer MCP server (§12.2) |
+| W1 ∥ | ledger-dev | `packages/ledger`: canonical hashing, hash chain, Ed25519-signed entries, verify + inclusion check, structured checksum `console.log` (hashes only), `WalletProvider` interface + MST adapter (BridgeKey connect) once SDK docs are supplied |
+| W1 ∥ | auth-dev | Wallet link flow: server nonce → wallet signs → engine verifies → stores `uid ↔ address`; unlink; audit entries |
+| W2 | web-dev | Agent page (changes, impact, proposals, chat) and Verify page (hash/id → chain check) |
 | W1 ∥ | web-dev | Live demo console: mutation toggles, timeline, before/after |
 | W2 | validator-dev | `pnpm demo` one-command orchestration |
 | W3 | qa-engineer | E2E: full demo script assertions (§13) |
@@ -457,7 +462,9 @@ Every decision records: evidence (sample diffs), confidence breakdown, affected 
 |---|---|---|
 | W1 ∥ | qa-engineer | Chaos tests (flapping service, partial outage, combined mutations), perf budget |
 | W1 ∥ | reviewer | Security/threat model review (PII, SSRF in proxy, adapter code-injection) |
-| W1 ∥ | scribe | Docs, architecture diagram, quick-start, MCP usage guide |
+| W1 ∥ | scribe | Docs content, MDN-style: Concepts, Guides, Reference (REST, MCP tools, SDK, change kinds, adapter DSL, ledger), compatibility table |
+| W1 ∥ | web-dev | Docs site shell: MDX, Pagefind search, code-copy, sidebar; startup polish (empty states, error pages, a11y ≥95) |
+| W1 ∥ | devops | Startup ops: error tracking, structured logs, per-tenant rate limits, DB backups, staging env, secrets via platform vault |
 | W1 ∥ | devops | Release workflow, container images, deploy dashboard, tag v1.0.0 |
 | W2 | orchestrator | Final retro; `<promise>ALL_COMPLETE</promise>` after reviewer sign-off |
 **Exit:** v1.0.0 tagged, main green, demo reproducible from clean clone.
@@ -492,6 +499,7 @@ Tools (read-mostly, write only via safe proposals):
 - `intra_propose_adapter(change_id)`: returns adapter diff + validation plan (does not apply)
 - `intra_apply_adapter(proposal_id)`: gated by policy (§10) + explicit `confirm:true`
 - `intra_health()`: dependency health & rate-limit headroom
+- `intra_verify_proof(entry_id | hash)`: ledger chain/signature check
 Resources: `intra://contracts/{service}`, `intra://changes/latest`. Auth: API key; per-tenant scoping; audit log on every call.
 
 ---
@@ -546,3 +554,40 @@ Resources: `intra://contracts/{service}`, `intra://changes/latest`. Auth: API ke
 - [x] MCP server language: Node/TS (locked)
 - [x] MCP transport: Streamable HTTP on Render; auth: API key (default, revisit later)
 - [ ] Demo app theme (default: "Shipwell" logistics/commerce)
+- [ ] **MST JS SDK package name + BridgeKey connect docs** (owner to supply; ledger-dev codes against `WalletProvider` until then)
+
+
+---
+
+## 17. Auth, Wallet, Ledger & Startup Requirements (LOCKED v1.1)
+
+**Auth (Firebase, strict)**
+- Every route except landing/docs/status requires a valid Firebase ID token; engine rejects otherwise (401). Tenant resolved from token claims/DB, never from request body.
+- Config only from env. Client: `VITE_FIREBASE_API_KEY`, `VITE_FIREBASE_AUTH_DOMAIN`, `VITE_FIREBASE_PROJECT_ID`, `VITE_FIREBASE_APP_ID`. Server: `FIREBASE_PROJECT_ID`, `FIREBASE_CLIENT_EMAIL`, `FIREBASE_PRIVATE_KEY`. `.env*` gitignored; only `.env.example` committed; secrets live in Vercel/Railway/Render env.
+- MCP server: per-tenant API keys (hashed at rest), optionally exchanged for Firebase-verified identity. Tests use the Firebase Auth emulator.
+
+**Wallet (BridgeKey on MST only)**
+- `WalletProvider` interface: `connect()`, `getAddress()`, `signMessage(msg)`, `network`. One implementation: **MstBridgeKeyProvider** using the MST SDK. Network via `MST_NETWORK=testnet|mainnet` (default testnet).
+- Link flow: authenticated user requests nonce → wallet signs → engine verifies address recovery → stores `uid ↔ address` (one wallet per user in v1). Wallet is **not** used for login.
+- No transactions are sent in v1. No private keys handled by our code.
+
+**Ledger (v1, no public chain)**
+- Entry = `{seq, prevHash, kind, tenant, actor{uid, walletAddress?}, payloadHash, canonicalHash, rawHash, byteLength, ts}` → `entryHash = SHA-256(canonical(entry))`, signed with the server ledger key (`LEDGER_SIGNING_KEY`, Ed25519, from secrets).
+- Entry kinds: observation, change, impact, adapter_proposed, adapter_applied, validation, rollback, agent_action, wallet_linked.
+- **Console logging:** each entry's hashes are logged as one structured line (`level=info event=ledger.entry seq=… entryHash=… payloadHash=…`). Never log payloads, tokens, private keys, or Firebase credentials.
+- Honest scope: integrity of Intra's record, not correctness of the provider's data. Public anchoring is a post-v1 option.
+
+**Startup-grade baseline (v1)**
+Multi-tenancy (org → project) with row-level scoping tests; per-tenant rate limits and API keys; data retention + PII redaction; error tracking and structured logs; staging environment; DB backups; Terms/Privacy placeholders; pricing tiers designed but not billed.
+
+
+---
+
+## 18. Priorities & Cut Line (decided Oct 2026)
+
+**Core (never cut):** observe, learn, detect (structural/behavioural/semantic), impact, adapter DSL, safe-handling policy, validation with rollback, demo M1-M10, calibration report.
+**Added now:** walking skeleton first (Sprint 1), read-only active probes, mixed-version rollout detection, replay safety classes, consumer expectations, confidence calibration.
+**Startup layer (keep, but after core):** Firebase auth, tenancy, API keys, docs site, Verify page.
+**Cut first if time runs short:** wallet link (BridgeKey/MST), ledger polish, Agent chat, Status page.
+**Backlog (not v1):** learning from human approve/reject decisions to tune scoring; community contract registry; public chain anchoring.
+**Known limit to state in docs:** Intra can only adapt calls routed through its proxy/SDK; traffic it never sees is invisible except via probes.
