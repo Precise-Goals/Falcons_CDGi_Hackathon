@@ -81,3 +81,69 @@ body {
   box-shadow: 0 20px 45px -15px rgba(10, 10, 10, 0.04),
               0 0 0 1px rgba(255, 255, 255, 0.7) inset;
 }
+
+/* Skeuomorphic tactile button with physical depth and inner bevel */
+.skeuo-button-primary {
+  background: linear-gradient(180deg, #D41434 0%, #B00D26 100%);
+  box-shadow: 0 4px 14px 0 rgba(200, 16, 46, 0.35),
+              inset 0 1px 1px 0 rgba(255, 255, 255, 0.4),
+              inset 0 -2px 1px 0 rgba(0, 0, 0, 0.25);
+  border: 1px solid #990B20;
+  transition: all 0.15s cubic-bezier(0.4, 0, 0.2, 1);
+}
+.skeuo-button-primary:hover {
+  background: linear-gradient(180deg, #E0183A 0%, #BD0E2A 100%);
+  box-shadow: 0 6px 20px 0 rgba(200, 16, 46, 0.45),
+              inset 0 1px 1px 0 rgba(255, 255, 255, 0.5),
+              inset 0 -2px 1px 0 rgba(0, 0, 0, 0.3);
+}
+.skeuo-button-primary:active {
+  transform: translateY(1px);
+  box-shadow: 0 2px 8px 0 rgba(200, 16, 46, 0.3),
+              inset 0 2px 4px 0 rgba(0, 0, 0, 0.3);
+}
+
+.skeuo-button-dark {
+  background: linear-gradient(180deg, #1C1C1C 0%, #0A0A0A 100%);
+  box-shadow: 0 4px 12px 0 rgba(10, 10, 10, 0.2),
+              inset 0 1px 1px 0 rgba(255, 255, 255, 0.2),
+              inset 0 -2px 1px 0 rgba(0, 0, 0, 0.5);
+  border: 1px solid #000000;
+  transition: all 0.15s cubic-bezier(0.4, 0, 0.2, 1);
+}
+.skeuo-button-dark:hover {
+  background: linear-gradient(180deg, #2A2A2A 0%, #141414 100%);
+  box-shadow: 0 6px 18px 0 rgba(10, 10, 10, 0.3),
+              inset 0 1px 1px 0 rgba(255, 255, 255, 0.3);
+}
+.skeuo-button-dark:active {
+  transform: translateY(1px);
+  box-shadow: 0 2px 6px 0 rgba(10, 10, 10, 0.25),
+              inset 0 2px 3px 0 rgba(0, 0, 0, 0.6);
+}
+
+.skeuo-card {
+  background: linear-gradient(180deg, #FFFFFF 0%, #FBF9F5 100%);
+  border: 1px solid rgba(232, 226, 217, 0.9);
+  box-shadow: 0 16px 36px -8px rgba(10, 10, 10, 0.05),
+              0 1px 2px 0 rgba(10, 10, 10, 0.03),
+              inset 0 1px 1px 0 rgba(255, 255, 255, 0.95),
+              inset 0 -1px 1px 0 rgba(0, 0, 0, 0.02);
+}
+
+/* Autumn/Spring Floating Red Leaves */
+@keyframes floatLeaf {
+  0% { transform: translateY(0px) rotate(0deg); }
+  50% { transform: translateY(-14px) rotate(8deg); }
+  100% { transform: translateY(0px) rotate(0deg); }
+}
+
+.floating-leaf {
+  animation: floatLeaf 6s ease-in-out infinite;
+}
+.floating-leaf-delay-1 {
+  animation: floatLeaf 8s ease-in-out 1.5s infinite;
+}
+.floating-leaf-delay-2 {
+  animation: floatLeaf 7s ease-in-out 3s infinite;
+}
