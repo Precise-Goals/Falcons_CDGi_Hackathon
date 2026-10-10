@@ -129,7 +129,11 @@ export function buildEngineApp(pipeline = new PipelineEngine()): FastifyInstance
   return app;
 }
 
-if (process.env.NODE_ENV !== 'test' && !process.env.VITEST) {
+const isDirectRun =
+  process.argv[1] &&
+  (process.argv[1].endsWith('server.js') || process.argv[1].endsWith('server.ts'));
+
+if (isDirectRun && process.env.NODE_ENV !== 'test' && !process.env.VITEST) {
   const server = buildEngineApp();
   const port = parseInt(process.env.PORT || '3001', 10);
   server.listen({ port, host: '0.0.0.0' }, (err, address) => {
@@ -140,3 +144,4 @@ if (process.env.NODE_ENV !== 'test' && !process.env.VITEST) {
     console.log(`Intra Engine Monolith running at ${address}`);
   });
 }
+

@@ -10,7 +10,9 @@
     "test:int": "turbo run test:int",
     "lint": "turbo run lint",
     "typecheck": "turbo run typecheck",
-    "demo": "node scripts/demo.mjs"
+    "demo": "bun scripts/demo.mjs",
+    "serve": "bun scripts/serve.mjs",
+    "dev": "bun --filter @intra/web dev"
   },
   "devDependencies": {
     "@types/node": "^26.6.4",

@@ -136,7 +136,11 @@ export function buildMcpServer(config: McpServerConfig = { engineUrl: 'http://lo
   return app;
 }
 
-if (process.env.NODE_ENV !== 'test' && !process.env.VITEST) {
+const isDirectRun =
+  process.argv[1] &&
+  (process.argv[1].endsWith('server.js') || process.argv[1].endsWith('server.ts'));
+
+if (isDirectRun && process.env.NODE_ENV !== 'test' && !process.env.VITEST) {
   const server = buildMcpServer();
   const port = parseInt(process.env.MCP_PORT || '3002', 10);
   server.listen({ port, host: '0.0.0.0' }, (err, address) => {
@@ -147,3 +151,4 @@ if (process.env.NODE_ENV !== 'test' && !process.env.VITEST) {
     console.log(`Intra Customer MCP Server running at ${address} (health: /healthz)`);
   });
 }
+
