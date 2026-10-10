@@ -29,6 +29,7 @@ export default defineConfig(({ mode }) => {
         CHAIN_ID: env.CHAIN_ID || '91562037',
         OPERATOR_PRIVATE_KEY: env.OPERATOR_PRIVATE_KEY || '',
         MIN_BALANCE: env.MIN_BALANCE || '0.1',
+        INTRA_SUBSCRIPTION_NFT_ADDRESS: env.INTRA_SUBSCRIPTION_NFT_ADDRESS || '0x19e2613e9eD73d970Af06Bca28E799E5de3Fa89B',
       }),
     },
     server: {

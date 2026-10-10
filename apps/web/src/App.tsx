@@ -76,6 +76,8 @@ export default function App() {
         mstBalance: session.mstBalance,
         idToken: session.idToken,
         mappedAt: session.mappedAt,
+        activeTokenId: session.activeTokenId,
+        activeTokenUri: session.activeTokenUri,
       };
     }
     return null;
@@ -438,6 +440,8 @@ export default function App() {
         nftLimit: newLimit,
         walletAddress: user.walletAddress || result.fromAddress,
         mstBalance: newBalance,
+        activeTokenId: result.tokenId,
+        activeTokenUri: result.tokenUri,
       };
 
       setUser(updatedUser);
@@ -453,6 +457,8 @@ export default function App() {
         walletSignature: updatedUser.walletSignature,
         mstBalance: updatedUser.mstBalance,
         mappedAt: updatedUser.mappedAt,
+        activeTokenId: updatedUser.activeTokenId,
+        activeTokenUri: updatedUser.activeTokenUri,
       });
 
       setMstcPurchaseSuccess({
@@ -460,6 +466,8 @@ export default function App() {
         checksum: result.checksum,
         plan,
         amountMstc,
+        tokenId: result.tokenId,
+        tokenUri: result.tokenUri,
       });
 
       await logLedgerChecksum(`mstc_plan_purchased_${plan}`, {
@@ -468,6 +476,7 @@ export default function App() {
         plan,
         amountMstc,
         nfts: newLimit,
+        tokenId: result.tokenId,
       });
     } catch (err: any) {
       setMstcPurchaseError(err.message || 'Failed to complete MSTC token purchase on MST Testnet.');

@@ -12,6 +12,8 @@ export interface FirebaseUser {
   plan: 'free' | 'starter' | 'business';
   nfts: number; // 15, 30, 45
   mappedAt?: string;
+  activeTokenId?: number;
+  activeTokenUri?: string;
 }
 
 const STORAGE_KEY = 'intra_firebase_auth_user';
@@ -91,6 +93,8 @@ export async function firebaseSignIn(email: string, password: string): Promise<F
         plan: profile.plan || user.plan,
         nfts: profile.nfts || (profile.plan === 'business' ? 45 : profile.plan === 'starter' ? 30 : 15),
         mappedAt: profile.mappedAt,
+        activeTokenId: profile.activeTokenId,
+        activeTokenUri: profile.activeTokenUri,
       };
     }
   } catch (err) {

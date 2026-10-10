@@ -85,6 +85,8 @@ export function AuthModal({
         mstBalance: fbUser.mstBalance,
         idToken: fbUser.idToken,
         mappedAt: fbUser.mappedAt,
+        activeTokenId: fbUser.activeTokenId,
+        activeTokenUri: fbUser.activeTokenUri,
       };
 
       setUser(profile);
@@ -263,24 +265,32 @@ export function AuthModal({
               {/* MSTC Token Plan Purchase Trigger */}
               <div className="pt-2 border-t border-black/5 space-y-2">
                 <div className="text-[10px] text-black/50 font-semibold uppercase">
-                  Purchase with MSTC Tokens (MST Testnet):
+                  Mint Soulbound NFT with MSTC (MST Testnet 91562037):
                 </div>
-                <div className="grid grid-cols-2 gap-2">
+                <div className="grid grid-cols-3 gap-2">
                   <button
-                    onClick={() => onBuyPlanWithMstc('starter', '2.5')}
+                    onClick={() => onBuyPlanWithMstc('free', '2')}
+                    disabled={mstcPurchaseLoading || user.tier === 'free'}
+                    className="py-1.5 px-2 rounded-xl border border-black/20 bg-black/5 hover:bg-black/10 text-black text-[10px] font-bold transition flex items-center justify-center space-x-1 disabled:opacity-50"
+                  >
+                    <Wallet className="w-3 h-3 text-black" />
+                    <span>Free (2 MSTC)</span>
+                  </button>
+                  <button
+                    onClick={() => onBuyPlanWithMstc('starter', '3')}
                     disabled={mstcPurchaseLoading || user.tier === 'starter'}
                     className="py-1.5 px-2 rounded-xl border border-crimson/30 bg-crimson/5 hover:bg-crimson/15 text-crimson text-[10px] font-bold transition flex items-center justify-center space-x-1 disabled:opacity-50"
                   >
                     <Wallet className="w-3 h-3 text-crimson" />
-                    <span>Starter (2.5 MSTC)</span>
+                    <span>Starter (3 MSTC)</span>
                   </button>
                   <button
-                    onClick={() => onBuyPlanWithMstc('business', '7.5')}
+                    onClick={() => onBuyPlanWithMstc('business', '5')}
                     disabled={mstcPurchaseLoading || user.tier === 'business'}
                     className="py-1.5 px-2 rounded-xl border border-crimson/30 bg-crimson/5 hover:bg-crimson/15 text-crimson text-[10px] font-bold transition flex items-center justify-center space-x-1 disabled:opacity-50"
                   >
                     <Wallet className="w-3 h-3 text-crimson" />
-                    <span>Business (7.5 MSTC)</span>
+                    <span>Business (5 MSTC)</span>
                   </button>
                 </div>
 
@@ -289,7 +299,7 @@ export function AuthModal({
                     <div className="font-bold flex items-center space-x-1">
                       <Check className="w-3 h-3 text-emerald-600" />
                       <span>
-                        Bought {mstcPurchaseSuccess.plan.toUpperCase()} ({mstcPurchaseSuccess.amountMstc} MSTC)
+                        Minted NFT #{mstcPurchaseSuccess.tokenId ?? 1} for {mstcPurchaseSuccess.plan.toUpperCase()} ({mstcPurchaseSuccess.amountMstc} MSTC)
                       </span>
                     </div>
                     <div className="truncate text-emerald-700">TX: {mstcPurchaseSuccess.txHash}</div>
@@ -339,6 +349,12 @@ export function AuthModal({
                     <Check className="w-3 h-3" />
                     <span>MAPPED TO FIREBASE & SIGNED</span>
                   </div>
+                  {user.activeTokenId && (
+                    <div className="text-[10px] text-crimson flex items-center space-x-1 font-bold">
+                      <ShieldCheck className="w-3 h-3 text-crimson" />
+                      <span>SOULBOUND SUBSCRIPTION NFT #{user.activeTokenId} (CHAIN ID 91562037)</span>
+                    </div>
+                  )}
                 </div>
               ) : (
                 <div className="space-y-2">

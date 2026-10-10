@@ -54,13 +54,11 @@ export function Navbar({
             src="/logo.png"
             alt="Intra Emblem"
             className="w-5 h-5 object-contain"
+            style={{
+              borderRadius:"4rem"
+            }}
           />
-          <img
-            src="/logowithname.png"
-            alt="Intra"
-            className="h-4.5 max-h-5 object-contain hidden sm:inline"
-          />
-          <span className="font-display font-black text-xs tracking-wider text-black sm:hidden">
+          <span className="font-display font-black text-xs tracking-wider text-black ">
             INTRA
           </span>
         </div>
@@ -216,6 +214,11 @@ export function Navbar({
         >
           <UserIcon className="w-3 h-3 text-crimson" />
           <span className="hidden sm:inline">{user ? user.name.split(' ')[0] : 'Sign In'}</span>
+          {user?.activeTokenId && (
+            <span className="px-1.5 py-0.5 rounded-full bg-crimson/15 text-crimson text-[9px] font-mono font-bold border border-crimson/30">
+              #{user.activeTokenId}
+            </span>
+          )}
         </button>
       </nav>
     </header>

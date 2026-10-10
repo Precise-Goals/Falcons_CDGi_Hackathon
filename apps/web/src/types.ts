@@ -48,6 +48,8 @@ export interface UserProfile {
   mstBalance?: string;
   idToken: string;
   mappedAt?: string;
+  activeTokenId?: number;
+  activeTokenUri?: string;
 }
 
 export type MainTab = 'home' | 'agent' | 'mcp' | 'sdk' | 'docs' | 'pricing' | 'dashboard' | 'eval';
@@ -67,4 +69,6 @@ export interface MstcPurchaseSuccess {
   checksum: string;
   plan: string;
   amountMstc: string;
+  tokenId?: number;
+  tokenUri?: string;
 }

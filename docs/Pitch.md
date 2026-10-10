@@ -114,10 +114,12 @@ Unlike generic monitoring tools that alert developers after production fails, In
      - Users link their Web3 wallet to their Firebase UID via cryptographic nonce signing.
      - Production adapter approvals can be cryptographically signed by authorized wallet keypairs.
 
-3. **Tiered AI Subscription & NFT Rate Limits:**
-   - **Free Tier:** 15 NFT credits / AI adaptation requests.
-   - **Starter Tier:** 30 NFT credits / AI adaptation requests.
-   - **Business Tier:** 45 NFT credits / AI adaptation requests with high-throughput canary streaming.
+3. **Tiered AI Subscription & Soulbound NFT Rate Limits (MST Blockchain):**
+   - **Free Starter (2 MSTC):** 15 NFT credits / AI adaptation requests minted as on-chain Soulbound ERC-721 token.
+   - **Starter Pro (3 MSTC):** 30 NFT credits / AI adaptation requests with automated canary synthesis and GitHub PR automation.
+   - **Business Enterprise (5 MSTC):** 45 NFT credits / AI adaptation requests with high-throughput canary streaming and custom MCP integrations.
+   - **Live Verified Contract:** `0x19e2613e9eD73d970Af06Bca28E799E5de3Fa89B` on MST Blockchain Testnet (Chain ID `91562037`).
+   - **Explorer Verification:** [MST Scan Contract View](https://testnet.mstscan.com/address/0x19e2613e9eD73d970Af06Bca28E799E5de3Fa89B)
 
 ---
 
