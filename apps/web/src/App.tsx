@@ -1,19 +1,23 @@
 import { useState } from 'react';
 import {
+  Home,
+  Sparkles,
   Activity,
   Layers,
-  Sliders,
   Zap,
+  Sliders,
   Terminal,
   RefreshCw,
   CheckCircle2,
   AlertTriangle,
   Play,
   RotateCcw,
-  Sparkles,
+  ArrowRight,
+  ShieldCheck,
+  Code2,
+  Cpu,
 } from 'lucide-react';
 
-// Mutation definition
 interface MutationItem {
   id: string;
   name: string;
@@ -35,13 +39,13 @@ interface MutationItem {
 }
 
 export default function App() {
-  const [activeTab, setActiveTab] = useState<'overview' | 'drift' | 'impact' | 'adapters' | 'switchboard' | 'mcp'>('overview');
+  const [activeTab, setActiveTab] = useState<'home' | 'overview' | 'drift' | 'impact' | 'adapters' | 'switchboard' | 'mcp'>('home');
   const [selectedMutationId, setSelectedMutationId] = useState<string>('M1');
   const [selectedMcpTool, setSelectedMcpTool] = useState<string>('intra_recent_changes');
   const [autoAdapterEnabled, setAutoAdapterEnabled] = useState<boolean>(true);
   const [proposalApproved, setProposalApproved] = useState<Record<string, boolean>>({});
 
-  // Mutations state satisfying M1 through M10
+  // Mutations satisfying M1 through M10
   const [mutations, setMutations] = useState<MutationItem[]>([
     {
       id: 'M1',
@@ -153,7 +157,7 @@ export default function App() {
       adaptedSuccess: "Automated chunked batching fetches 5x20 items seamlessly",
       beforeSnippet: '{ "limit": 100, "returned": 100 }',
       afterSnippet: '{ "limit": 100, "returned": 20 }',
-      adapterCode: `export async function adaptClientCall(fetcher, query) {\n  // Fetches in automatic batches of 20 to satisfy 100 requirement\n  return fetcher.batchFetch(query, 20);\n}`,
+      adapterCode: `export async function adaptClientCall(fetcher, query) {\n  return fetcher.batchFetch(query, 20);\n}`,
       workflow: 'searchBrowse',
       workflowFile: 'apps/demo-app/src/workflows/searchBrowse.ts',
     },
@@ -191,7 +195,7 @@ export default function App() {
       adaptedSuccess: "Client SDK transparently backed off 2000ms using Retry-After header",
       beforeSnippet: 'Status: 200 OK (Uncapped rps)',
       afterSnippet: 'Status: 429 Too Many Requests (Retry-After: 2)',
-      adapterCode: `export async function adaptWithRetry(req) {\n  // Auto-intercepts 429, sleeps for Retry-After seconds, and retries\n  return retryWithBackoff(req);\n}`,
+      adapterCode: `export async function adaptWithRetry(req) {\n  return retryWithBackoff(req);\n}`,
       workflow: 'checkout',
       workflowFile: 'apps/demo-app/src/workflows/checkout.ts',
     },
@@ -256,29 +260,31 @@ export default function App() {
 
   return (
     <div className="min-h-screen bg-cream text-black dot-grid-pattern selection:bg-crimson/10 selection:text-crimson flex flex-col justify-between">
-      {/* 1. React Bits Floating Capsule Navbar */}
-      <div className="fixed top-4 left-0 right-0 z-50 flex justify-center px-4 pointer-events-none">
-        <header className="pointer-events-auto bg-white/90 backdrop-blur-xl border border-black/10 shadow-capsule rounded-full px-3 py-2 flex items-center justify-between gap-3 max-w-4xl w-full transition-all">
-          {/* Brand Mark */}
-          <div className="flex items-center space-x-2 pl-2">
-            <div className="w-7 h-7 rounded-full bg-black flex items-center justify-center font-display text-white font-extrabold text-xs shadow-sm">
+      {/* 1. React Bits Floating Capsule Navbar (Clean, Uncluttered Pill Dock) */}
+      <header className="fixed top-5 left-0 right-0 z-50 px-4 pointer-events-none">
+        <div className="max-w-7xl mx-auto flex items-center justify-between">
+          {/* Left Brand Badge */}
+          <div
+            onClick={() => setActiveTab('home')}
+            className="pointer-events-auto cursor-pointer flex items-center space-x-2 bg-white/90 backdrop-blur-xl border border-black/10 shadow-sm rounded-full px-3 py-1.5 hover:border-black/30 transition"
+          >
+            <div className="w-5 h-5 rounded-full bg-black flex items-center justify-center font-display text-white font-extrabold text-[10px]">
               <span className="text-crimson font-black">I</span>.
             </div>
-            <div className="flex items-center space-x-1.5">
-              <span className="font-display font-extrabold text-sm tracking-wider text-black">INTRA</span>
-              <span className="hidden md:inline-block verified-badge text-[9px]">MONOLITH</span>
-            </div>
+            <span className="font-display font-extrabold text-xs tracking-wider text-black">INTRA</span>
+            <span className="text-[9px] font-mono text-black/40 border-l border-black/10 pl-1.5 hidden sm:inline">v0.1</span>
           </div>
 
-          {/* Capsule Navigation Tabs */}
-          <nav className="flex items-center gap-1 p-1 bg-cream-subtle/80 rounded-full border border-black/5">
+          {/* Center: React Bits Capsule Dock */}
+          <nav className="pointer-events-auto bg-white/90 backdrop-blur-xl border border-black/10 shadow-capsule rounded-full p-1.5 flex items-center gap-1 sm:gap-1.5 transition-all">
             {[
+              { id: 'home', label: 'Home', icon: Home },
               { id: 'overview', label: 'Pipeline', icon: Sparkles },
-              { id: 'drift', label: 'Drift Feed', icon: Activity },
-              { id: 'impact', label: 'Blast Radius', icon: Layers },
-              { id: 'adapters', label: 'Safe Adapters', icon: Zap },
+              { id: 'drift', label: 'Drift', icon: Activity },
+              { id: 'impact', label: 'Impact', icon: Layers },
+              { id: 'adapters', label: 'Adapters', icon: Zap },
               { id: 'switchboard', label: 'Switchboard', icon: Sliders, badge: activeMutations.length },
-              { id: 'mcp', label: 'MCP Server', icon: Terminal },
+              { id: 'mcp', label: 'MCP', icon: Terminal },
             ].map((tab) => {
               const Icon = tab.icon;
               const isActive = activeTab === tab.id;
@@ -286,7 +292,7 @@ export default function App() {
                 <button
                   key={tab.id}
                   onClick={() => setActiveTab(tab.id as any)}
-                  className={`flex items-center space-x-1.5 text-xs font-medium px-3 py-1.5 rounded-full transition-all duration-200 ${
+                  className={`relative flex items-center space-x-1.5 text-xs font-medium px-3 py-1.5 rounded-full transition-all duration-200 ${
                     isActive
                       ? tab.id === 'switchboard'
                         ? 'bg-crimson text-white shadow-sm font-semibold'
@@ -294,8 +300,16 @@ export default function App() {
                       : 'text-black/70 hover:text-black hover:bg-black/5'
                   }`}
                 >
+                  {/* React Bits active tubelight glow lamp */}
+                  {isActive && (
+                    <span
+                      className={`absolute -top-1 left-1/2 -translate-x-1/2 w-4 h-[2px] rounded-full ${
+                        tab.id === 'switchboard' ? 'bg-crimson' : 'bg-black'
+                      } shadow-[0_0_8px_currentColor]`}
+                    />
+                  )}
                   <Icon className="w-3.5 h-3.5" />
-                  <span className="hidden sm:inline">{tab.label}</span>
+                  <span className="hidden md:inline">{tab.label}</span>
                   {tab.badge !== undefined && tab.badge > 0 && (
                     <span className="w-4 h-4 rounded-full bg-white text-crimson text-[10px] font-bold flex items-center justify-center">
                       {tab.badge}
@@ -306,51 +320,189 @@ export default function App() {
             })}
           </nav>
 
-          {/* Live Observer Status */}
-          <div className="flex items-center space-x-2 pr-1">
-            <div className="flex items-center space-x-1.5 px-2.5 py-1 bg-crimson/10 rounded-full text-crimson text-[11px] font-mono font-semibold">
-              <span className="w-2 h-2 rounded-full bg-crimson animate-pulse"></span>
-              <span className="hidden md:inline">LIVE OBSERVER</span>
-            </div>
-          </div>
-        </header>
-      </div>
-
-      {/* 2. Main Content Area */}
-      <main className="max-w-7xl mx-auto px-6 pt-28 pb-16 space-y-8 w-full flex-grow">
-        {/* Top Hero Banner */}
-        <div className="border border-black/10 bg-white p-7 rounded-2xl shadow-card flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
-          <div className="space-y-1.5">
-            <div className="flex items-center space-x-2">
-              <span className="verified-badge">AUTONOMOUS UPSTREAM RESILIENCE</span>
-              <span className="text-xs font-mono text-black/50">WCAG AA &bull; 6-STAGE ENGINE</span>
-            </div>
-            <h1 className="font-display text-2xl md:text-3xl font-extrabold tracking-tight text-black">
-              Help Software Survive Undocumented External API Changes
-            </h1>
-            <p className="text-sm text-black/60 max-w-2xl font-normal leading-relaxed">
-              Continuously learning behavioral models from live traffic, pinpointing semantic and structural drift, and auto-synthesizing backward-compatible adapters before production breaks.
-            </p>
-          </div>
-
-          <div className="flex items-center space-x-6 text-xs font-mono bg-cream-subtle p-3.5 rounded-xl border border-black/5">
-            <div className="text-center">
-              <div className="text-black/50 uppercase text-[10px] tracking-wider">Observed</div>
-              <div className="text-lg font-bold text-black font-display">5 Services</div>
-            </div>
-            <div className="text-center border-l border-black/10 pl-6">
-              <div className="text-black/50 uppercase text-[10px] tracking-wider">Confidence Gate</div>
-              <div className="text-lg font-bold text-crimson font-display">&ge; 90%</div>
-            </div>
-            <div className="text-center border-l border-black/10 pl-6">
-              <div className="text-black/50 uppercase text-[10px] tracking-wider">Canary Guard</div>
-              <div className="text-lg font-bold text-black font-display">Active</div>
-            </div>
+          {/* Right Live Observer Pill */}
+          <div className="pointer-events-auto hidden sm:flex items-center space-x-1.5 px-3 py-1.5 bg-white/90 backdrop-blur-xl rounded-full border border-black/10 shadow-sm text-crimson text-xs font-mono font-semibold">
+            <span className="w-2 h-2 rounded-full bg-crimson animate-pulse" />
+            <span className="text-[11px]">LIVE OBSERVER</span>
           </div>
         </div>
+      </header>
+
+      {/* 2. Main Content Container */}
+      <main className="max-w-7xl mx-auto px-6 pt-28 pb-16 space-y-8 w-full flex-grow">
+        {/* =========================================================================
+            TAB 0: HOMEPAGE (LANDING & MISSION CONTROL)
+           ========================================================================= */}
+        {activeTab === 'home' && (
+          <div className="space-y-12">
+            {/* Hero Section */}
+            <div className="border border-black/10 bg-white p-8 sm:p-12 rounded-3xl shadow-card text-center max-w-4xl mx-auto space-y-6">
+              <div className="inline-flex items-center space-x-2">
+                <span className="verified-badge">INTRODUCING INTRA v0.1.0</span>
+                <span className="text-xs font-mono text-black/50">AUTONOMOUS UPSTREAM RESILIENCE</span>
+              </div>
+
+              <h1 className="font-display text-4xl sm:text-6xl font-black tracking-tight text-black leading-tight">
+                Software That Heals Its Own Dependencies.
+              </h1>
+
+              <p className="text-base sm:text-lg text-black/70 max-w-2xl mx-auto font-normal leading-relaxed">
+                When upstream APIs flip defaults, alter pagination shapes, rename fields, or throttle rate limits, Intra automatically learns, isolates blast-radius, and synthesizes backward-compatible adapters before production crashes.
+              </p>
+
+              {/* Action Buttons */}
+              <div className="flex flex-wrap items-center justify-center gap-4 pt-4">
+                <button
+                  onClick={() => setActiveTab('switchboard')}
+                  className="flex items-center space-x-2 px-6 py-3 rounded-full bg-crimson text-white font-display font-bold text-sm hover:bg-crimson-hover transition shadow-sm"
+                >
+                  <Play className="w-4 h-4" />
+                  <span>Launch Live Simulation</span>
+                </button>
+                <button
+                  onClick={() => setActiveTab('overview')}
+                  className="flex items-center space-x-2 px-6 py-3 rounded-full bg-black text-white font-display font-bold text-sm hover:bg-black/80 transition shadow-sm"
+                >
+                  <Sparkles className="w-4 h-4" />
+                  <span>Explore 6-Stage Pipeline</span>
+                </button>
+                <button
+                  onClick={() => setActiveTab('drift')}
+                  className="flex items-center space-x-2 px-6 py-3 rounded-full border border-black/20 text-black font-display font-bold text-sm hover:bg-black/5 transition"
+                >
+                  <Activity className="w-4 h-4" />
+                  <span>View Drift Feed</span>
+                </button>
+              </div>
+
+              {/* Stats Bar */}
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 pt-8 border-t border-black/10 text-xs font-mono">
+                <div>
+                  <div className="text-black/40 uppercase text-[10px]">Observed Services</div>
+                  <div className="text-xl font-bold font-display text-black">5 Services</div>
+                </div>
+                <div>
+                  <div className="text-black/40 uppercase text-[10px]">Mutations Covered</div>
+                  <div className="text-xl font-bold font-display text-crimson">10 Catalogued</div>
+                </div>
+                <div>
+                  <div className="text-black/40 uppercase text-[10px]">Confidence Gate</div>
+                  <div className="text-xl font-bold font-display text-black">&ge; 90% Auto-Apply</div>
+                </div>
+                <div>
+                  <div className="text-black/40 uppercase text-[10px]">Verification</div>
+                  <div className="text-xl font-bold font-display text-crimson">100% CI Green</div>
+                </div>
+              </div>
+            </div>
+
+            {/* Three Value Pillars */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              <div className="border border-black/10 bg-white p-7 rounded-2xl shadow-card space-y-3">
+                <div className="w-10 h-10 rounded-xl bg-black text-white flex items-center justify-center font-bold">
+                  <Cpu className="w-5 h-5 text-white" />
+                </div>
+                <h3 className="font-display font-bold text-base text-black">Behavioral Ground Truth</h3>
+                <p className="text-xs text-black/60 leading-relaxed">
+                  Static OpenAPI specs and docs drift constantly. Intra observes real live HTTP payloads, discovering true distributions, nullabilities, pagination styles, and undocumented rate limits.
+                </p>
+              </div>
+
+              <div className="border border-black/10 bg-white p-7 rounded-2xl shadow-card space-y-3">
+                <div className="w-10 h-10 rounded-xl bg-crimson text-white flex items-center justify-center font-bold">
+                  <ShieldCheck className="w-5 h-5 text-white" />
+                </div>
+                <h3 className="font-display font-bold text-base text-black">Safe-Handling Policy Matrix</h3>
+                <p className="text-xs text-black/60 leading-relaxed">
+                  Never guess blindly. High confidence equivalent changes auto-apply with atomic rollback handles. Ambiguous or lossy changes generate human-reviewed Migration PR proposals.
+                </p>
+              </div>
+
+              <div className="border border-black/10 bg-white p-7 rounded-2xl shadow-card space-y-3">
+                <div className="w-10 h-10 rounded-xl bg-black text-white flex items-center justify-center font-bold">
+                  <Code2 className="w-5 h-5 text-white" />
+                </div>
+                <h3 className="font-display font-bold text-base text-black">Mathematical Golden Replay</h3>
+                <p className="text-xs text-black/60 leading-relaxed">
+                  Every synthesized adapter is validated against historical golden workflow traces to guarantee semantic equivalence before code touches production.
+                </p>
+              </div>
+            </div>
+
+            {/* Live Interactive Navigation Jump Cards */}
+            <div className="border border-black/10 bg-white p-8 rounded-2xl shadow-card space-y-6">
+              <h3 className="font-display font-bold text-base uppercase tracking-wide text-black">
+                Interactive System Navigation
+              </h3>
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                {[
+                  {
+                    title: '6-Stage Monolith Pipeline',
+                    desc: 'Observe -> Model -> Differ -> Impact -> Adapter -> Validate.',
+                    tab: 'overview',
+                    icon: Sparkles,
+                  },
+                  {
+                    title: 'Drift Feed & Diff Inspector',
+                    desc: 'Inspect detected renames, unit shifts, and confidence scores.',
+                    tab: 'drift',
+                    icon: Activity,
+                  },
+                  {
+                    title: 'AST Blast Radius Graph',
+                    desc: 'Trace upstream changes to internal codebase files & workflows.',
+                    tab: 'impact',
+                    icon: Layers,
+                  },
+                  {
+                    title: 'Safe Adapters & PRs',
+                    desc: 'Inspect Canary code, rollback handles, and pending migration PRs.',
+                    tab: 'adapters',
+                    icon: Zap,
+                  },
+                  {
+                    title: 'Mutation Switchboard (M1-M10)',
+                    desc: 'Toggle live API mutations and watch applications self-heal.',
+                    tab: 'switchboard',
+                    icon: Sliders,
+                  },
+                  {
+                    title: 'Customer MCP Server (7 Tools)',
+                    desc: 'Test Model Context Protocol tools for Cursor, Claude & AI agents.',
+                    tab: 'mcp',
+                    icon: Terminal,
+                  },
+                ].map((c) => {
+                  const Icon = c.icon;
+                  return (
+                    <button
+                      key={c.tab}
+                      onClick={() => setActiveTab(c.tab as any)}
+                      className="p-5 rounded-xl border border-black/10 bg-cream-subtle/50 text-left hover:border-black/30 hover:bg-cream-subtle transition flex flex-col justify-between space-y-3 group"
+                    >
+                      <div className="space-y-1.5">
+                        <div className="flex items-center space-x-2">
+                          <Icon className="w-4 h-4 text-crimson" />
+                          <h4 className="font-display font-bold text-sm text-black group-hover:text-crimson transition">
+                            {c.title}
+                          </h4>
+                        </div>
+                        <p className="text-xs text-black/60">{c.desc}</p>
+                      </div>
+                      <div className="flex items-center space-x-1 text-xs font-mono font-semibold text-black/80">
+                        <span>Open View</span>
+                        <ArrowRight className="w-3.5 h-3.5 group-hover:translate-x-1 transition" />
+                      </div>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* =========================================================================
-            TAB 1: OVERVIEW & 6-STAGE AUTONOMOUS PIPELINE
+            TAB 1: PIPELINE & ARCHITECTURE OVERVIEW
            ========================================================================= */}
         {activeTab === 'overview' && (
           <div className="space-y-8">
@@ -361,7 +513,7 @@ export default function App() {
                     The 6-Stage Autonomous Adaptation Engine
                   </h2>
                   <p className="text-xs text-black/60 mt-1">
-                    How Intra intercepts, finger-prints, classifies, isolates, and repairs undocumented API mutations.
+                    How Intra intercepts, fingerprints, classifies, isolates, and repairs undocumented API mutations.
                   </p>
                 </div>
                 <button
@@ -373,7 +525,7 @@ export default function App() {
                 </button>
               </div>
 
-              {/* 6 Pipeline Stage Cards */}
+              {/* 6 Stage Cards */}
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
                 {[
                   {
@@ -435,7 +587,7 @@ export default function App() {
               </div>
             </div>
 
-            {/* Live Downstream Application Resilience Card */}
+            {/* Downstream Resilience Card */}
             <div className="border border-black/10 bg-white rounded-2xl p-7 shadow-card space-y-5">
               <div className="flex justify-between items-center">
                 <div>
@@ -529,7 +681,7 @@ export default function App() {
            ========================================================================= */}
         {activeTab === 'drift' && (
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            {/* Left: Drift Event List */}
+            {/* Left: Drift List */}
             <div className="lg:col-span-1 space-y-3">
               <div className="border border-black/10 bg-white rounded-2xl p-5 shadow-card space-y-4">
                 <div className="flex justify-between items-center pb-2 border-b border-black/5">
@@ -585,7 +737,7 @@ export default function App() {
               </div>
             </div>
 
-            {/* Right: Detailed Drift Inspector */}
+            {/* Right: Detailed Inspector */}
             <div className="lg:col-span-2 space-y-6">
               <div className="border border-black/10 bg-white rounded-2xl p-7 shadow-card space-y-6">
                 <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 pb-4 border-b border-black/5">
@@ -619,7 +771,7 @@ export default function App() {
                   </div>
                 </div>
 
-                {/* Before vs After Payload Comparison */}
+                {/* Diff */}
                 <div className="space-y-2">
                   <h4 className="font-display font-bold text-xs uppercase tracking-wider text-black">
                     Live Payload Structural Diff
@@ -647,14 +799,14 @@ export default function App() {
                   </div>
                 </div>
 
-                {/* Evidence & Confidence Metrics */}
+                {/* Evidence Metrics */}
                 <div className="p-4 rounded-xl border border-black/10 bg-cream-subtle/70 space-y-2">
                   <h4 className="font-display font-bold text-xs uppercase tracking-wider text-black">
                     Statistical Evidence & Analysis
                   </h4>
                   <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs font-mono">
                     <div>
-                      <span className="text-black/50">String Levenshtein:</span>{' '}
+                      <span className="text-black/50">Levenshtein Similarity:</span>{' '}
                       <span className="font-bold text-black">{(selectedMutation.confidence * 0.98).toFixed(2)}</span>
                     </div>
                     <div>
@@ -668,7 +820,7 @@ export default function App() {
                   </div>
                 </div>
 
-                {/* Generated Compatibility Adapter */}
+                {/* Adapter Code */}
                 <div className="space-y-2">
                   <div className="flex justify-between items-center">
                     <h4 className="font-display font-bold text-xs uppercase tracking-wider text-black">
@@ -686,7 +838,7 @@ export default function App() {
         )}
 
         {/* =========================================================================
-            TAB 3: BLAST RADIUS & AST DEPENDENCY GRAPH
+            TAB 3: BLAST RADIUS & AST GRAPH
            ========================================================================= */}
         {activeTab === 'impact' && (
           <div className="border border-black/10 bg-white rounded-2xl p-7 shadow-card space-y-6">
@@ -788,7 +940,7 @@ export default function App() {
         )}
 
         {/* =========================================================================
-            TAB 4: SAFE-HANDLING ADAPTERS & MIGRATION PROPOSALS
+            TAB 4: SAFE ADAPTERS & MIGRATION PROPOSALS
            ========================================================================= */}
         {activeTab === 'adapters' && (
           <div className="space-y-6">
@@ -857,7 +1009,7 @@ export default function App() {
                 ))}
               </div>
 
-              {/* Pending Human-in-the-Loop Migration PRs */}
+              {/* Pending PRs */}
               <div className="space-y-4 pt-4 border-t border-black/5">
                 <h3 className="font-display font-bold text-xs uppercase tracking-wider text-crimson">
                   Pending Human Review Migration Proposals (Lossy or Breaking)
@@ -987,7 +1139,7 @@ export default function App() {
         )}
 
         {/* =========================================================================
-            TAB 6: CUSTOMER MCP SERVER TOOL PLAYGROUND
+            TAB 6: CUSTOMER MCP SERVER PLAYGROUND
            ========================================================================= */}
         {activeTab === 'mcp' && (
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -1039,7 +1191,6 @@ export default function App() {
                 <span className="verified-badge">RENDER / HEALTHZ OK</span>
               </div>
 
-              {/* Simulated Output per Tool */}
               <div className="space-y-2">
                 <h4 className="font-display font-bold text-xs uppercase tracking-wider text-black">
                   Tool Response JSON
@@ -1237,7 +1388,7 @@ export default function App() {
             </div>
           </div>
 
-          {/* Giant Antigravity "Intra." Headline with Red Gradient Background Clipping */}
+          {/* Giant Antigravity Headline */}
           <div className="relative overflow-hidden pt-6 pb-2 text-center select-none pointer-events-none">
             <span className="font-display font-black text-6xl sm:text-8xl md:text-[11rem] lg:text-[14rem] xl:text-[16rem] leading-none tracking-tighter antigravity-hero-text block">
               Intra.

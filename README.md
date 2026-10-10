@@ -83,7 +83,9 @@ pnpm demo
 ---
 
 ## Documentation
-- [Problem Statement](docs/ps.md)
+- [Comprehensive User Guide (guide.md)](guide.md)
+- [Simple Explanation (SimplePS.md)](docs/simpleps.md)
+- [Problem Statement (ps.md)](docs/ps.md)
 - [Architecture Deep-Dive](docs/Architecture.md)
 - [Harness Specifications](HARNESS.md)
 - [Data Model & APIs](docs/DataModel.md)
