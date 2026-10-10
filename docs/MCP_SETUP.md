@@ -6,10 +6,11 @@ Intra provides a dedicated **Customer Model Context Protocol (MCP) Server** comp
 
 ## 1. Deployed MCP Architecture
 
-When deployed (via Vercel, Render, or Railway):
-- **Transport**: Streamable HTTP & JSON REST
-- **Base Endpoint (Vercel Services)**: `https://<YOUR_DEPLOYED_DOMAIN>/api/mcp`
-- **Base Endpoint (Render / Railway)**: `https://<RENDER_SERVICE_URL>`
+When deployed on Vercel:
+- **Base Web URL**: `https://intra-vert.vercel.app`
+- **Customer MCP Server**: `https://intra-vert.vercel.app/api/mcp`
+- **Engine Core API**: `https://intra-vert.vercel.app/api/engine`
+- **Simulation Services**: `https://intra-vert.vercel.app/api/sim`
 - **Health Check**: `GET /healthz` (returns `{ status: "healthy", transport: "http/streamable" }`)
 - **Tool Catalog**: `GET /tools`
 - **Tool Invocation**: `POST /tools/call`
@@ -33,7 +34,7 @@ Claude Desktop connects to MCP servers over standard I/O (`stdio`). To connect C
       "command": "node",
       "args": [
         "D:/Workspace/Projects/Intra/scripts/mcp-remote-client.mjs",
-        "https://your-deployed-domain.vercel.app/api/mcp"
+        "https://intra-vert.vercel.app/api/mcp"
       ],
       "env": {
         "INTRA_API_KEY": "your-optional-api-key"
@@ -63,12 +64,12 @@ You can call the deployed MCP server directly from any application:
 
 ### List Available Tools
 ```bash
-curl -X GET https://your-deployed-domain.vercel.app/api/mcp/tools
+curl -X GET https://intra-vert.vercel.app/api/mcp/tools
 ```
 
 ### Call a Tool (e.g., `intra_recent_changes`)
 ```bash
-curl -X POST https://your-deployed-domain.vercel.app/api/mcp/tools/call \
+curl -X POST https://intra-vert.vercel.app/api/mcp/tools/call \
   -H "Content-Type: application/json" \
   -d '{
     "tool": "intra_recent_changes",
@@ -80,7 +81,7 @@ curl -X POST https://your-deployed-domain.vercel.app/api/mcp/tools/call \
 
 ### Apply an Adapter
 ```bash
-curl -X POST https://your-deployed-domain.vercel.app/api/mcp/tools/call \
+curl -X POST https://intra-vert.vercel.app/api/mcp/tools/call \
   -H "Content-Type: application/json" \
   -d '{
     "tool": "intra_apply_adapter",
@@ -98,5 +99,5 @@ curl -X POST https://your-deployed-domain.vercel.app/api/mcp/tools/call \
 Test and debug your deployed or local MCP server interactively:
 
 ```bash
-npx @modelcontextprotocol/inspector node scripts/mcp-remote-client.mjs https://your-deployed-domain.vercel.app/api/mcp
+npx @modelcontextprotocol/inspector node scripts/mcp-remote-client.mjs https://intra-vert.vercel.app/api/mcp
 ```

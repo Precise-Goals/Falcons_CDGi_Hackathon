@@ -4,7 +4,9 @@
 > **Tagline:** The Internet After the API — Helping Modern Software Survive Undocumented Upstream Changes with Zero Production Downtime.  
 > **Repository:** [https://github.com/Precise-Goals/Intra.git](https://github.com/Precise-Goals/Intra.git)  
 > **Problem Specification:** [`docs/lock.md`](docs/lock.md)  
-> **Live Interface:** [http://localhost:3000](http://localhost:3000)
+> **Live Deployment (Vercel):** [https://intra-vert.vercel.app](https://intra-vert.vercel.app)  
+> **Deployed MCP Server:** [https://intra-vert.vercel.app/api/mcp](https://intra-vert.vercel.app/api/mcp)  
+> **Local Interface:** [http://localhost:3000](http://localhost:3000)
 
 ---
 

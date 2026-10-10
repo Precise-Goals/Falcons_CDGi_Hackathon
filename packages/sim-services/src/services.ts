@@ -15,27 +15,26 @@ export function buildSimServicesApp(switchboard: Switchboard): FastifyInstance {
     }
   });
 
-  // Switchboard control endpoints
-  app.get('/sim/switchboard', async () => {
-    return { mutations: switchboard.list() };
-  });
-
-  app.post<{ Body: { mutationId: string; active: boolean } }>(
-    '/sim/switchboard/toggle',
-    async (req, reply) => {
-      const { mutationId, active } = req.body;
-      const success = switchboard.toggle(mutationId, active);
-      if (!success) {
-        return reply.status(404).send({ error: 'Mutation not found' });
-      }
-      return { success, mutation: switchboard.list().find((m) => m.id === mutationId) };
+  // Switchboard control endpoints (supporting /sim/switchboard, /switchboard, and /api/sim/switchboard)
+  const handleGetSwitchboard = async () => ({ mutations: switchboard.list() });
+  const handleToggleSwitchboard = async (req: any, reply: any) => {
+    const { mutationId, active } = req.body || {};
+    const success = switchboard.toggle(mutationId, active);
+    if (!success) {
+      return reply.status(404).send({ error: 'Mutation not found' });
     }
-  );
-
-  app.post('/sim/switchboard/reset', async () => {
+    return { success, mutation: switchboard.list().find((m) => m.id === mutationId) };
+  };
+  const handleResetSwitchboard = async () => {
     switchboard.resetAll();
     return { success: true, message: 'All mutations reset to baseline' };
-  });
+  };
+
+  for (const prefix of ['', '/sim', '/api/sim']) {
+    app.get(`${prefix}/switchboard`, handleGetSwitchboard);
+    app.post(`${prefix}/switchboard/toggle`, handleToggleSwitchboard);
+    app.post(`${prefix}/switchboard/reset`, handleResetSwitchboard);
+  }
 
   // 1. Users Service (M1: name -> display_name, M2: "Last, First", M10: enum semantics)
   app.get('/users', async () => {

@@ -342,10 +342,21 @@ export function ProductsContainer({
                 <span className="font-display font-bold uppercase text-[11px] text-black">Connection Config</span>
                 <span className="text-[10px] text-crimson font-bold">STREAMABLE HTTP</span>
               </div>
-              <div className="space-y-1.5 text-black/60 text-[11px]">
+              <div className="space-y-2 text-black/60 text-[11px]">
                 <div>Transport: <code className="text-black font-semibold">http/streamable</code></div>
-                <div>Endpoint: <code className="text-black font-semibold">http://localhost:3002/mcp</code></div>
+                <div>
+                  Deployed: <code className="text-crimson font-semibold">https://intra-vert.vercel.app/api/mcp</code>
+                </div>
+                <div>
+                  Local: <code className="text-black font-semibold">http://localhost:3002</code>
+                </div>
                 <div>Health: <code className="text-black font-semibold">GET /healthz (HTTP 200)</code></div>
+              </div>
+              <div className="pt-2 border-t border-black/5">
+                <div className="text-[10px] text-black/50 mb-1">Claude Desktop stdio Bridge:</div>
+                <div className="p-2 rounded-xl bg-black text-white text-[10px] overflow-x-auto">
+                  node scripts/mcp-remote-client.mjs https://intra-vert.vercel.app/api/mcp
+                </div>
               </div>
             </div>
           </div>

@@ -7,13 +7,13 @@
  *   node scripts/mcp-remote-client.mjs [MCP_SERVER_URL] [API_KEY]
  *
  * Examples:
+ *   node scripts/mcp-remote-client.mjs https://intra-vert.vercel.app/api/mcp
  *   node scripts/mcp-remote-client.mjs http://localhost:3002
- *   node scripts/mcp-remote-client.mjs https://intra-api.vercel.app/api/mcp
  */
 
 import readline from 'node:readline';
 
-const targetUrl = process.argv[2] || process.env.INTRA_MCP_URL || 'http://localhost:3002';
+const targetUrl = process.argv[2] || process.env.INTRA_MCP_URL || 'https://intra-vert.vercel.app/api/mcp';
 const apiKey = process.argv[3] || process.env.INTRA_API_KEY || '';
 
 const rl = readline.createInterface({
