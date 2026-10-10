@@ -1,0 +1,151 @@
+import { ethers } from 'ethers';
+import { ENV } from './config';
+import { saveUserProfile } from './firebase';
+
+export interface WalletState {
+  address: string;
+  balance: string;
+  chainId: number;
+  providerType: 'browser' | 'operator';
+  signature?: string;
+  mappedAt?: string;
+}
+
+export const MST_CHAIN_ID_HEX = '0x5752035'; // 91562037 in hex
+export const MST_CHAIN_ID_DEC = 91562037;
+
+export async function fetchMstBalance(address: string): Promise<string> {
+  try {
+    const provider = new ethers.JsonRpcProvider(ENV.MST_TESTNET_RPC);
+    const balanceWei = await provider.getBalance(address);
+    const formatted = ethers.formatEther(balanceWei);
+    return Number(formatted).toFixed(4);
+  } catch (err) {
+    console.warn('Could not fetch MST balance via JSON-RPC:', err);
+    return '0.0000';
+  }
+}
+
+export async function fetchMstBlockNumber(): Promise<number> {
+  try {
+    const provider = new ethers.JsonRpcProvider(ENV.MST_TESTNET_RPC);
+    return await provider.getBlockNumber();
+  } catch {
+    return 6134575;
+  }
+}
+
+export async function connectBrowserWallet(): Promise<WalletState> {
+  const eth = (window as any).ethereum;
+  if (!eth) {
+    throw new Error('No Web3 wallet extension found (e.g. MetaMask / BridgeKey).');
+  }
+
+  const browserProvider = new ethers.BrowserProvider(eth);
+  const accounts: string[] = await browserProvider.send('eth_requestAccounts', []);
+  if (!accounts || accounts.length === 0) {
+    throw new Error('No accounts selected.');
+  }
+
+  const address = ethers.getAddress(accounts[0]);
+
+  // Attempt to switch or add MST Blockchain network
+  try {
+    await eth.request({
+      method: 'wallet_switchEthereumChain',
+      params: [{ chainId: MST_CHAIN_ID_HEX }],
+    });
+  } catch (switchErr: any) {
+    if (switchErr?.code === 4902 || switchErr?.message?.includes('4902')) {
+      try {
+        await eth.request({
+          method: 'wallet_addEthereumChain',
+          params: [
+            {
+              chainId: MST_CHAIN_ID_HEX,
+              chainName: 'MST Blockchain Testnet',
+              rpcUrls: [ENV.MST_TESTNET_RPC],
+              nativeCurrency: { name: 'MST Token', symbol: 'MST', decimals: 18 },
+              blockExplorerUrls: ['https://testnet.mstscan.com'],
+            },
+          ],
+        });
+      } catch (addErr) {
+        console.warn('Could not auto-add MST network to wallet:', addErr);
+      }
+    }
+  }
+
+  const balance = await fetchMstBalance(address);
+
+  return {
+    address,
+    balance,
+    chainId: MST_CHAIN_ID_DEC,
+    providerType: 'browser',
+  };
+}
+
+export async function connectOperatorWallet(): Promise<WalletState> {
+  const wallet = new ethers.Wallet(ENV.OPERATOR_PRIVATE_KEY);
+  const address = wallet.address;
+  const balance = await fetchMstBalance(address);
+
+  return {
+    address,
+    balance,
+    chainId: MST_CHAIN_ID_DEC,
+    providerType: 'operator',
+  };
+}
+
+export async function signIdentityChallenge(
+  walletState: WalletState,
+  uid: string
+): Promise<{ signature: string; challenge: string; checksum: string }> {
+  const timestamp = new Date().toISOString();
+  const challenge = `Intra Identity Verification\nMapping BridgeKey Wallet: ${walletState.address}\nFirebase UID: ${uid}\nChain ID: ${MST_CHAIN_ID_DEC}\nTimestamp: ${timestamp}`;
+
+  let signature = '';
+  if (walletState.providerType === 'browser' && (window as any).ethereum) {
+    const browserProvider = new ethers.BrowserProvider((window as any).ethereum);
+    const signer = await browserProvider.getSigner();
+    signature = await signer.signMessage(challenge);
+  } else {
+    const operatorWallet = new ethers.Wallet(ENV.OPERATOR_PRIVATE_KEY);
+    signature = await operatorWallet.signMessage(challenge);
+  }
+
+  // Calculate SHA-256 Checksum for structured ledger audit
+  const encoder = new TextEncoder();
+  const hashBuffer = await crypto.subtle.digest('SHA-256', encoder.encode(`${challenge}|${signature}`));
+  const hashArray = Array.from(new Uint8Array(hashBuffer));
+  const checksum = hashArray.map((b) => b.toString(16).padStart(2, '0')).join('');
+
+  console.log(`[INTRA LEDGER CHECKSUM] sha256:${checksum} (event: wallet_linked, address: ${walletState.address}, uid: ${uid}, chain: ${MST_CHAIN_ID_DEC})`);
+
+  return { signature, challenge, checksum };
+}
+
+export async function mapWalletToFirebase(
+  uid: string,
+  idToken: string,
+  walletState: WalletState,
+  plan: string,
+  nfts: number,
+  signature: string
+): Promise<void> {
+  const mappedAt = new Date().toISOString();
+  const payload = {
+    uid,
+    walletAddress: walletState.address,
+    walletSignature: signature,
+    mstBalance: walletState.balance,
+    chainId: MST_CHAIN_ID_DEC,
+    plan,
+    nfts,
+    mappedAt,
+  };
+
+  await saveUserProfile(uid, idToken, payload);
+}

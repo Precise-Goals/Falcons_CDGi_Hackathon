@@ -27,7 +27,26 @@ import {
   TrendingUp,
   LogOut,
   DollarSign,
+  Loader2,
+  Key,
 } from 'lucide-react';
+import {
+  firebaseSignIn,
+  firebaseSignUp,
+  loadSession,
+  saveSession,
+  clearSession,
+  saveUserProfile,
+} from './lib/firebase';
+import {
+  connectBrowserWallet,
+  connectOperatorWallet,
+  signIdentityChallenge,
+  mapWalletToFirebase,
+  fetchMstBalance,
+  MST_CHAIN_ID_DEC,
+} from './lib/mstWallet';
+import { askSarvamAI } from './lib/sarvam';
 
 interface MutationItem {
   id: string;
@@ -68,12 +87,17 @@ interface EngineHealthResponse {
 }
 
 interface UserProfile {
+  uid: string;
   email: string;
   name: string;
   avatar: string;
   tier: 'free' | 'starter' | 'business';
   nftLimit: number;
-  walletAddress: string;
+  walletAddress?: string;
+  walletSignature?: string;
+  mstBalance?: string;
+  idToken: string;
+  mappedAt?: string;
 }
 
 type MainTab = 'home' | 'agent' | 'mcp' | 'sdk' | 'docs' | 'pricing' | 'dashboard';
@@ -125,31 +149,41 @@ export default function App() {
   // Pricing State
   const [pricingCycle, setPricingCycle] = useState<'monthly' | 'annual'>('annual');
 
-  // User Authentication & Session State
+  // User Authentication & Session State (Connected to real Firebase horizon-1ba53)
   const [user, setUser] = useState<UserProfile | null>(() => {
-    const saved = localStorage.getItem('intra_user_session');
-    if (saved) {
-      try {
-        return JSON.parse(saved);
-      } catch {
-        return null;
-      }
+    const session = loadSession();
+    if (session) {
+      return {
+        uid: session.uid,
+        email: session.email,
+        name: session.email.split('@')[0],
+        avatar: `https://api.dicebear.com/7.x/identicon/svg?seed=${session.uid}`,
+        tier: session.plan,
+        nftLimit: session.nfts,
+        walletAddress: session.walletAddress,
+        walletSignature: session.walletSignature,
+        mstBalance: session.mstBalance,
+        idToken: session.idToken,
+        mappedAt: session.mappedAt,
+      };
     }
-    return {
-      email: 'lead.architect@shipwell.io',
-      name: 'Elena Rostova',
-      avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100&auto=format&fit=crop&q=80',
-      tier: 'starter',
-      nftLimit: 30,
-      walletAddress: '0xc9b810a17bc68a8745424ee4cd0cad5dfccb843159280c971d1fe12dca9554e8',
-    };
+    return null; // Zero hardcoded fallback dummy user!
   });
   const [showLoginModal, setShowLoginModal] = useState<boolean>(false);
+  const [authMode, setAuthMode] = useState<'signin' | 'signup'>('signin');
   const [loginEmail, setLoginEmail] = useState<string>('');
   const [loginPassword, setLoginPassword] = useState<string>('');
+  const [authLoading, setAuthLoading] = useState<boolean>(false);
+  const [authError, setAuthError] = useState<string | null>(null);
 
-  // Agent State & Chat
+  // BridgeKey Wallet Link State (MST Blockchain Testnet)
+  const [walletLoading, setWalletLoading] = useState<boolean>(false);
+  const [walletError, setWalletError] = useState<string | null>(null);
+  const [walletSuccess, setWalletSuccess] = useState<string | null>(null);
+
+  // Agent State & Chat (Connected directly to Sarvam AI 105B LLM)
   const [agentPrompt, setAgentPrompt] = useState<string>('');
+  const [agentLoading, setAgentLoading] = useState<boolean>(false);
   const [chatMessages, setChatMessages] = useState<
     Array<{ sender: 'user' | 'agent'; text: string; mode: AgentMode; sha?: string; planSteps?: string[] }>
   >([
@@ -668,69 +702,175 @@ export default function App() {
     setTimeout(() => setCopiedKey(null), 2000);
   };
 
-  // Agent Chat / Plan submission
+  // Agent Chat / Plan submission (Direct to Sarvam AI 105B LLM)
   const handleAgentSubmit = async (promptText?: string) => {
     const textToSend = promptText || agentPrompt;
-    if (!textToSend.trim()) return;
+    if (!textToSend.trim() || agentLoading) return;
 
     const userMsg = { sender: 'user' as const, text: textToSend, mode: agentMode };
     setChatMessages((prev) => [...prev, userMsg]);
     setAgentPrompt('');
+    setAgentLoading(true);
 
-    const { sha } = await logLedgerChecksum(`agent_${agentMode}_query`, { query: textToSend, lang: agentLanguage });
-
-    setTimeout(() => {
+    try {
       if (agentMode === 'ask') {
-        const reply =
-          agentLanguage === 'hi'
-            ? `इंट्रा ऑटोनॉमस एजेंट: हमने अपस्ट्रीम एपीआई ड्रिफ्ट का विश्लेषण किया है। एंडपॉइंट्स पर लेवेनश्टाइन विश्वास 95% पाया गया है।`
-            : agentLanguage === 'es'
-            ? `Agente Autónomo Intra: Hemos analizado la deriva de la API ascendente. Confianza Levenshtein del 95% calculada.`
-            : `Intra Autonomous Agent: Observed dependency telemetry indicates a 95% semantic equivalence for field rename M1 (name -> display_name). Safe-Handling Matrix recommends automated Canary adapter injection with rollback handle rollback_M1_canary.`;
-        setChatMessages((prev) => [...prev, { sender: 'agent', text: reply, mode: 'ask', sha }]);
-      } else {
-        const planSteps = [
-          'Phase 1: Intercept incoming telemetry on /payments/charge & verify SHA-256 PII redaction.',
-          'Phase 2: Statically inspect AST blast radius in apps/demo-app/src/workflows/checkout.ts (Lines L42-L50).',
-          'Phase 3: Synthesize backward-compatible multiplier adapter: data.amount * 0.01.',
-          'Phase 4: Execute golden workflow replay test suite to assert semantic equivalence.',
-          'Phase 5: Register atomic rollback handle rollback_M3_cents_ok & open GitHub Migration PR.',
-        ];
+        const history = chatMessages.map((m) => ({
+          role: m.sender === 'user' ? ('user' as const) : ('assistant' as const),
+          content: m.text,
+        }));
+        const response = await askSarvamAI(textToSend, agentLanguage, history);
         setChatMessages((prev) => [
           ...prev,
           {
             sender: 'agent',
-            text: 'Structured Dependency Adaptation Plan Synthesized:',
-            mode: 'plan',
-            sha,
-            planSteps,
+            text: response.text,
+            mode: 'ask',
+            sha: response.checksum,
           },
         ]);
+        logLedgerChecksum('sarvam_agent_ask', { prompt: textToSend, lang: agentLanguage, sha: response.checksum });
+      } else {
+        const planPrompt = `Synthesize a structured 5-phase technical API remediation plan for: "${textToSend}". Detail: Phase 1: Telemetry Interception & SHA-256 Hashing, Phase 2: AST Blast Radius Mapping, Phase 3: In-Process Adapter Synthesis, Phase 4: Golden Test Equivalence Replay, Phase 5: GitHub Migration PR & Rollback Handles. Return formatted cleanly.`;
+        const response = await askSarvamAI(planPrompt, 'en');
+        const lines = response.text.split('\n').filter((l) => l.trim().length > 0);
+        const phases = lines.filter((l) => l.toLowerCase().includes('phase') || l.match(/^[0-9]\./));
+        setChatMessages((prev) => [
+          ...prev,
+          {
+            sender: 'agent',
+            text: response.text,
+            mode: 'plan',
+            sha: response.checksum,
+            planSteps: phases.length > 0 ? phases : undefined,
+          },
+        ]);
+        logLedgerChecksum('sarvam_agent_plan', { prompt: textToSend, sha: response.checksum });
       }
-    }, 500);
+    } catch (err: any) {
+      console.error('Sarvam AI execution error:', err);
+      setChatMessages((prev) => [
+        ...prev,
+        {
+          sender: 'agent',
+          text: `Sarvam AI Error: ${err.message || 'Service unreachable'}. Please verify connection to https://api.sarvam.ai.`,
+          mode: agentMode,
+        },
+      ]);
+    } finally {
+      setAgentLoading(false);
+    }
   };
 
-  // Login handler
-  const handleLoginSubmit = (e: React.FormEvent) => {
+  // Real Firebase Auth Handler (Sign In / Sign Up against horizon-1ba53)
+  const handleAuthSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    const newUser: UserProfile = {
-      email: loginEmail || 'lead.architect@shipwell.io',
-      name: loginEmail ? loginEmail.split('@')[0] : 'Elena Rostova',
-      avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100&auto=format&fit=crop&q=80',
-      tier: 'starter',
-      nftLimit: 30,
-      walletAddress: '0xc9b810a17bc68a8745424ee4cd0cad5dfccb843159280c971d1fe12dca9554e8',
-    };
-    setUser(newUser);
-    localStorage.setItem('intra_user_session', JSON.stringify(newUser));
-    setShowLoginModal(false);
-    logLedgerChecksum('user_authenticated', { email: newUser.email, tier: newUser.tier });
+    if (!loginEmail || !loginPassword) return;
+
+    setAuthLoading(true);
+    setAuthError(null);
+
+    try {
+      const fbUser =
+        authMode === 'signup'
+          ? await firebaseSignUp(loginEmail, loginPassword)
+          : await firebaseSignIn(loginEmail, loginPassword);
+
+      const profile: UserProfile = {
+        uid: fbUser.uid,
+        email: fbUser.email,
+        name: fbUser.email.split('@')[0],
+        avatar: `https://api.dicebear.com/7.x/identicon/svg?seed=${fbUser.uid}`,
+        tier: fbUser.plan,
+        nftLimit: fbUser.nfts,
+        walletAddress: fbUser.walletAddress,
+        walletSignature: fbUser.walletSignature,
+        mstBalance: fbUser.mstBalance,
+        idToken: fbUser.idToken,
+        mappedAt: fbUser.mappedAt,
+      };
+
+      setUser(profile);
+      setShowLoginModal(false);
+      setLoginEmail('');
+      setLoginPassword('');
+      logLedgerChecksum('firebase_auth_success', { uid: profile.uid, email: profile.email, tier: profile.tier });
+    } catch (err: any) {
+      setAuthError(err.message || 'Firebase authentication failed.');
+    } finally {
+      setAuthLoading(false);
+    }
   };
 
   const handleLogout = () => {
+    clearSession();
     setUser(null);
-    localStorage.removeItem('intra_user_session');
     setShowLoginModal(false);
+    logLedgerChecksum('user_logged_out', { ts: new Date().toISOString() });
+  };
+
+  // Real BridgeKey Wallet Mapping (MST Blockchain Testnet & Firebase Realtime Database)
+  const handleConnectWallet = async (type: 'browser' | 'operator') => {
+    if (!user) return;
+    setWalletLoading(true);
+    setWalletError(null);
+    setWalletSuccess(null);
+
+    try {
+      const walletState =
+        type === 'browser'
+          ? await connectBrowserWallet()
+          : await connectOperatorWallet();
+
+      const { signature, checksum } = await signIdentityChallenge(walletState, user.uid);
+
+      await mapWalletToFirebase(
+        user.uid,
+        user.idToken,
+        walletState,
+        user.tier,
+        user.nftLimit,
+        signature
+      );
+
+      const updatedUser: UserProfile = {
+        ...user,
+        walletAddress: walletState.address,
+        walletSignature: signature,
+        mstBalance: walletState.balance,
+        mappedAt: new Date().toISOString(),
+      };
+
+      setUser(updatedUser);
+      saveSession({
+        uid: updatedUser.uid,
+        email: updatedUser.email,
+        idToken: updatedUser.idToken,
+        refreshToken: '',
+        expiresAt: Date.now() + 3600 * 1000,
+        plan: updatedUser.tier,
+        nfts: updatedUser.nftLimit,
+        walletAddress: updatedUser.walletAddress,
+        walletSignature: updatedUser.walletSignature,
+        mstBalance: updatedUser.mstBalance,
+        mappedAt: updatedUser.mappedAt,
+      });
+
+      setWalletSuccess(`Wallet mapped to Firebase! Checksum sha256:${checksum.slice(0, 10)}... (Balance: ${walletState.balance} MST)`);
+    } catch (err: any) {
+      setWalletError(err.message || 'Failed to connect and map BridgeKey wallet.');
+    } finally {
+      setWalletLoading(false);
+    }
+  };
+
+  const handleRefreshMstBalance = async () => {
+    if (!user?.walletAddress) return;
+    try {
+      const balance = await fetchMstBalance(user.walletAddress);
+      setUser((prev) => (prev ? { ...prev, mstBalance: balance } : null));
+    } catch (err) {
+      console.warn('Failed to refresh MST balance:', err);
+    }
   };
 
   const activeMutations = mutations.filter((m) => m.active);
@@ -1266,6 +1406,21 @@ export default function App() {
                     </div>
                   </div>
                 ))}
+
+                {agentLoading && (
+                  <div className="flex flex-col items-start space-y-1.5">
+                    <div className="flex items-center space-x-1.5 text-[10px] font-mono text-crimson font-bold">
+                      <Loader2 className="w-3 h-3 animate-spin text-crimson" />
+                      <span>SARVAM-105B INFERRING RESPONSE...</span>
+                    </div>
+                    <div className="p-4 rounded-2xl max-w-xl text-xs leading-relaxed bg-cream-subtle border border-crimson/20 text-black rounded-bl-none shadow-sm flex items-center space-x-2.5">
+                      <div className="w-2 h-2 rounded-full bg-crimson animate-ping" />
+                      <span className="font-mono text-black/70">
+                        Querying https://api.sarvam.ai in language [{agentLanguage}] & computing SHA-256 ledger digest...
+                      </span>
+                    </div>
+                  </div>
+                )}
               </div>
 
               {/* Chat Input Field */}
@@ -1806,16 +1961,44 @@ intra.registerAdapter('/users', {
                     </div>
 
                     <button
-                      onClick={() => {
+                      onClick={async () => {
                         if (user) {
+                          const newTier = tier.id as 'free' | 'starter' | 'business';
+                          const newLimit = tier.id === 'free' ? 15 : tier.id === 'starter' ? 30 : 45;
                           const updated = {
                             ...user,
-                            tier: tier.id as any,
-                            nftLimit: tier.id === 'free' ? 15 : tier.id === 'starter' ? 30 : 45,
+                            tier: newTier,
+                            nftLimit: newLimit,
                           };
                           setUser(updated);
-                          localStorage.setItem('intra_user_session', JSON.stringify(updated));
-                          logLedgerChecksum(`tier_upgraded_${tier.id}`, { tier: tier.id });
+                          saveSession({
+                            uid: updated.uid,
+                            email: updated.email,
+                            idToken: updated.idToken,
+                            refreshToken: '',
+                            expiresAt: Date.now() + 3600 * 1000,
+                            plan: newTier,
+                            nfts: newLimit,
+                            walletAddress: updated.walletAddress,
+                            walletSignature: updated.walletSignature,
+                            mstBalance: updated.mstBalance,
+                            mappedAt: updated.mappedAt,
+                          });
+                          try {
+                            await saveUserProfile(user.uid, user.idToken, {
+                              uid: user.uid,
+                              email: user.email,
+                              plan: newTier,
+                              nfts: newLimit,
+                              walletAddress: user.walletAddress,
+                              walletSignature: user.walletSignature,
+                              mstBalance: user.mstBalance,
+                              updatedAt: new Date().toISOString(),
+                            });
+                          } catch (e) {
+                            console.warn('Could not sync tier to Firebase RTDB:', e);
+                          }
+                          logLedgerChecksum(`tier_upgraded_${tier.id}`, { tier: tier.id, nfts: newLimit });
                         } else {
                           setShowLoginModal(true);
                         }
@@ -2689,23 +2872,153 @@ intra.registerAdapter('/users', {
                   <img src={user.avatar} alt={user.name} className="w-full h-full object-cover rounded-full" />
                 </div>
                 <div>
-                  <h3 className="font-display font-bold text-lg text-black">{user.name}</h3>
-                  <div className="text-xs text-black/50 font-mono">{user.email}</div>
+                  <h3 className="font-display font-bold text-lg text-black">{user.email}</h3>
+                  <div className="text-[11px] text-black/50 font-mono">UID: {user.uid}</div>
+                  <div className="mt-1 inline-flex items-center space-x-1 px-2.5 py-0.5 rounded-full bg-emerald-50 border border-emerald-200 text-emerald-700 text-[10px] font-mono font-bold">
+                    <ShieldCheck className="w-3 h-3 text-emerald-600" />
+                    <span>FIREBASE AUTHENTICATED (HORIZON-1BA53)</span>
+                  </div>
                 </div>
 
-                <div className="p-4 rounded-2xl bg-cream-subtle text-left space-y-2 text-xs font-mono">
-                  <div className="flex justify-between">
-                    <span className="text-black/50">ACTIVE TIER:</span>
+                {/* Section 1: Active Subscription Tier & Rate Limits */}
+                <div className="p-4 rounded-2xl bg-cream-subtle text-left space-y-2.5 text-xs font-mono border border-black/5">
+                  <div className="flex justify-between items-center">
+                    <span className="text-black/60 font-semibold">SUBSCRIPTION TIER:</span>
                     <span className="font-bold text-crimson uppercase">{user.tier} ({user.nftLimit} NFTs)</span>
                   </div>
-                  <div className="flex justify-between">
-                    <span className="text-black/50">MST WALLET:</span>
-                    <span className="font-bold text-black truncate max-w-[170px]">{user.walletAddress}</span>
+                  <div className="grid grid-cols-3 gap-1.5 pt-1">
+                    {(['free', 'starter', 'business'] as const).map((t) => (
+                      <button
+                        key={t}
+                        onClick={async () => {
+                          const nfts = t === 'free' ? 15 : t === 'starter' ? 30 : 45;
+                          const updated = { ...user, tier: t, nftLimit: nfts };
+                          setUser(updated);
+                          saveSession({
+                            uid: updated.uid,
+                            email: updated.email,
+                            idToken: updated.idToken,
+                            refreshToken: '',
+                            expiresAt: Date.now() + 3600 * 1000,
+                            plan: t,
+                            nfts,
+                            walletAddress: updated.walletAddress,
+                            walletSignature: updated.walletSignature,
+                            mstBalance: updated.mstBalance,
+                            mappedAt: updated.mappedAt,
+                          });
+                          try {
+                            await saveUserProfile(user.uid, user.idToken, {
+                              uid: user.uid,
+                              email: user.email,
+                              plan: t,
+                              nfts,
+                              walletAddress: user.walletAddress,
+                              walletSignature: user.walletSignature,
+                              mstBalance: user.mstBalance,
+                              updatedAt: new Date().toISOString(),
+                            });
+                          } catch (err) {
+                            console.warn('Could not sync tier to RTDB:', err);
+                          }
+                          logLedgerChecksum(`tier_switched_${t}`, { tier: t, nfts });
+                        }}
+                        className={`py-1.5 rounded-lg text-[10px] font-mono font-bold border transition ${
+                          user.tier === t
+                            ? 'bg-crimson text-white border-crimson shadow-sm'
+                            : 'bg-white text-black/70 border-black/10 hover:border-black/30'
+                        }`}
+                      >
+                        {t.toUpperCase()} ({t === 'free' ? 15 : t === 'starter' ? 30 : 45})
+                      </button>
+                    ))}
                   </div>
-                  <div className="flex justify-between">
-                    <span className="text-black/50">SESSION:</span>
-                    <span className="text-emerald-600 font-bold">FIREBASE VERIFIED</span>
+                </div>
+
+                {/* Section 2: Real BridgeKey Wallet on MST Blockchain */}
+                <div className="p-4 rounded-2xl bg-cream-subtle text-left space-y-3 text-xs font-mono border border-black/5">
+                  <div className="flex justify-between items-center">
+                    <div className="flex items-center space-x-1.5">
+                      <Wallet className="w-3.5 h-3.5 text-crimson" />
+                      <span className="text-black/60 font-semibold">BRIDGEKEY WALLET</span>
+                    </div>
+                    <span className="text-[10px] text-black/40">CHAIN ID {MST_CHAIN_ID_DEC}</span>
                   </div>
+
+                  {user.walletAddress ? (
+                    <div className="space-y-2">
+                      <div className="p-2.5 rounded-xl bg-white border border-black/10 space-y-1">
+                        <div className="flex justify-between text-[11px]">
+                          <span className="text-black/50">ADDRESS:</span>
+                          <span className="font-bold text-black truncate max-w-[170px]" title={user.walletAddress}>
+                            {user.walletAddress}
+                          </span>
+                        </div>
+                        <div className="flex justify-between items-center text-[11px]">
+                          <span className="text-black/50">MST BALANCE:</span>
+                          <div className="flex items-center space-x-1.5">
+                            <span className="font-bold text-crimson">{user.mstBalance || '0.0000'} MST</span>
+                            <button
+                              onClick={handleRefreshMstBalance}
+                              title="Refresh live balance from RPC"
+                              className="p-1 hover:bg-black/5 rounded text-black/60"
+                            >
+                              <RefreshCw className="w-2.5 h-2.5" />
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className="text-[10px] text-emerald-600 flex items-center space-x-1 font-bold">
+                        <Check className="w-3 h-3" />
+                        <span>MAPPED TO FIREBASE & SIGNED</span>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="space-y-2">
+                      <p className="text-[11px] text-black/60 leading-tight">
+                        No BridgeKey wallet linked yet. Map your wallet address to this Firebase user via signed cryptographic nonce challenge.
+                      </p>
+
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 pt-1">
+                        <button
+                          onClick={() => handleConnectWallet('browser')}
+                          disabled={walletLoading}
+                          className="py-2 px-2.5 rounded-xl border border-black/15 bg-white hover:border-crimson hover:bg-crimson/5 text-[10px] font-bold text-black transition flex items-center justify-center space-x-1 shadow-sm"
+                        >
+                          <Wallet className="w-3 h-3 text-crimson" />
+                          <span>Browser Wallet</span>
+                        </button>
+                        <button
+                          onClick={() => handleConnectWallet('operator')}
+                          disabled={walletLoading}
+                          className="py-2 px-2.5 rounded-xl border border-black/15 bg-white hover:border-crimson hover:bg-crimson/5 text-[10px] font-bold text-black transition flex items-center justify-center space-x-1 shadow-sm"
+                        >
+                          <Key className="w-3 h-3 text-crimson" />
+                          <span>Platform Keypair</span>
+                        </button>
+                      </div>
+                    </div>
+                  )}
+
+                  {walletLoading && (
+                    <div className="p-2 rounded-xl bg-crimson/5 text-crimson text-[11px] flex items-center space-x-2">
+                      <Loader2 className="w-3.5 h-3.5 animate-spin flex-shrink-0" />
+                      <span>Signing nonce & mapping to Firebase Realtime DB...</span>
+                    </div>
+                  )}
+
+                  {walletError && (
+                    <div className="p-2 rounded-xl bg-crimson/10 border border-crimson/20 text-crimson text-[11px]">
+                      {walletError}
+                    </div>
+                  )}
+
+                  {walletSuccess && (
+                    <div className="p-2 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-700 text-[11px]">
+                      {walletSuccess}
+                    </div>
+                  )}
                 </div>
 
                 <button
@@ -2717,13 +3030,43 @@ intra.registerAdapter('/users', {
                 </button>
               </div>
             ) : (
-              <form onSubmit={handleLoginSubmit} className="space-y-4">
+              <form onSubmit={handleAuthSubmit} className="space-y-4">
                 <div className="text-left space-y-1">
-                  <span className="verified-badge">FIREBASE AUTHENTICATION</span>
-                  <h3 className="font-display font-bold text-xl text-black">Sign In to Intra</h3>
+                  <span className="verified-badge">FIREBASE AUTHENTICATION (HORIZON-1BA53)</span>
+                  <h3 className="font-display font-bold text-xl text-black">
+                    {authMode === 'signin' ? 'Sign In to Intra' : 'Create an Account'}
+                  </h3>
                   <p className="text-xs text-black/60">
-                    Sign in to link BridgeKey MST wallet keypairs and manage adaptation rate limits.
+                    Live Firebase authentication with real BridgeKey wallet mapping on MST Blockchain testnet.
                   </p>
+                </div>
+
+                {/* Tab Switcher: Sign In vs Sign Up */}
+                <div className="flex rounded-full bg-cream-subtle p-1 border border-black/10 text-xs font-mono font-semibold">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setAuthMode('signin');
+                      setAuthError(null);
+                    }}
+                    className={`flex-1 py-1.5 rounded-full transition ${
+                      authMode === 'signin' ? 'bg-black text-white shadow-sm' : 'text-black/60 hover:text-black'
+                    }`}
+                  >
+                    Sign In
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setAuthMode('signup');
+                      setAuthError(null);
+                    }}
+                    className={`flex-1 py-1.5 rounded-full transition ${
+                      authMode === 'signup' ? 'bg-crimson text-white shadow-sm' : 'text-black/60 hover:text-black'
+                    }`}
+                  >
+                    Create Account
+                  </button>
                 </div>
 
                 <div className="space-y-3 text-xs font-mono text-left">
@@ -2739,7 +3082,7 @@ intra.registerAdapter('/users', {
                     />
                   </div>
                   <div className="space-y-1">
-                    <label className="text-black/60 font-semibold">PASSWORD / API KEY</label>
+                    <label className="text-black/60 font-semibold">PASSWORD (MIN 6 CHARACTERS)</label>
                     <input
                       type="password"
                       required
@@ -2751,40 +3094,27 @@ intra.registerAdapter('/users', {
                   </div>
                 </div>
 
+                {authError && (
+                  <div className="p-3 rounded-xl bg-crimson/10 border border-crimson/20 text-crimson text-xs font-mono text-left">
+                    {authError}
+                  </div>
+                )}
+
                 <div className="pt-2">
                   <button
                     type="submit"
-                    className="skeuo-button-primary w-full py-3 rounded-full text-white font-mono text-xs font-bold"
+                    disabled={authLoading}
+                    className="skeuo-button-primary w-full py-3 rounded-full text-white font-mono text-xs font-bold flex items-center justify-center space-x-2"
                   >
-                    Authenticate & Link Session
+                    {authLoading ? (
+                      <>
+                        <Loader2 className="w-3.5 h-3.5 animate-spin text-white" />
+                        <span>Authenticating with Firebase...</span>
+                      </>
+                    ) : (
+                      <span>{authMode === 'signin' ? 'Sign In with Firebase' : 'Register Account on Firebase'}</span>
+                    )}
                   </button>
-                </div>
-
-                {/* Quick Profile Presets */}
-                <div className="pt-3 border-t border-black/5 text-center space-y-2">
-                  <span className="text-[10px] font-mono text-black/40 uppercase">Or quick sign-in as:</span>
-                  <div className="flex justify-center gap-2">
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setLoginEmail('lead.architect@shipwell.io');
-                        setLoginPassword('operator_pass_99');
-                      }}
-                      className="px-2.5 py-1 rounded-lg bg-black/5 hover:bg-black/10 text-[10px] font-mono text-black"
-                    >
-                      Shipwell Lead
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setLoginEmail('operator@mst.network');
-                        setLoginPassword('mst_validator_key');
-                      }}
-                      className="px-2.5 py-1 rounded-lg bg-black/5 hover:bg-black/10 text-[10px] font-mono text-black"
-                    >
-                      MST Operator
-                    </button>
-                  </div>
                 </div>
               </form>
             )}
