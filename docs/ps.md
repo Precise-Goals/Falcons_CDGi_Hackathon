@@ -1,6 +1,6 @@
 # PS.md: Problem Statement, Research & Approach
 
-**Project:** Intra, "The Internet After the API" **Tagline:** Help software survive undocumented changes in systems it does not control. **Last researched:** 10 Oct 2026 · **Version:** 1.2 (adds §12 Platform Vision; decisions locked in §12.10) · **Companion files:** `Harness.md` (how we build), `STACK.md`, `DESIGN.md`
+**Project:** Intra, "The Internet After the API" **Tagline:** Help software survive undocumented changes in systems it does not control. **Last researched:** 10 Oct 2026 · **Version:** 1.3 (adds §4.9 Forecasting) (adds §12 Platform Vision; decisions locked in §12.10) · **Companion files:** `Harness.md` (how we build), `STACK.md`, `DESIGN.md`
 
 ---
 
@@ -179,6 +179,18 @@ Confidence is a decomposed score (evidence volume, distribution match, name/stru
 
 Read-mostly tools (`intra_list_dependencies`, `intra_get_contract`, `intra_recent_changes`, `intra_impact`, `intra_propose_adapter`, gated `intra_apply_adapter`, `intra_health`), API-key auth, per-tenant scope, audit logging, and its own tool-definition pinning so *our* server doesn't become a rug-pull vector.
 
+### 4.9 Forecast: early warning, fire drills, pre-staging (answers "can it predict?")
+
+Reaction is not enough; where the world gives warning, Intra uses it. Honest framing: Intra cannot know a provider will change something with zero warning, but most changes leave footprints first and likely changes can be rehearsed.
+
+**Level 1: early warning from leading signals.** Signals: (a) **gradual rollout**, the share of responses using the new shape rising over time (strongest); (b) standard `Deprecation` / `Sunset` headers when a provider sends them; (c) new or changed version/rate-limit headers; (d) error or latency precursors on one endpoint; (e) provider hints (changelog, status page, published spec), treated as hints and never as truth; (f) the provider's change history/cadence. Output is a `Forecast`: likely change kind, **probability**, **ETA to full cutover**, evidence, affected workflows (impact graph), pre-stage status. Simple v1 model: fit a trend to the new-shape ratio and project when it reaches 100%; other signals adjust the probability; probabilities are calibrated (reliability table) so "80%" means about 80%.
+
+**Level 2: fire drills (what-if simulation).** Using the same mutation switchboard as the demo, Intra generates imagined changes for every field the app reads (remove, rename, null, ×100, format flip, page cap, 429s), runs workflows in **sim/sandbox only** (never live providers, §10.1 replay classes), and emits a **resilience scorecard**: workflow × drill → does it break? is a fix ready? This predicts the *impact* of future changes and ranks the most fragile dependencies today.
+
+**Level 3: pre-staged adapters.** For forecasts above a probability threshold, Intra builds and validates the adapter in **shadow mode** so activation takes seconds. A forecast **never applies a change by itself**; activation passes the §4.6 policy table like any other adapter.
+
+**Scoring:** because we control the simulators, ground truth (the rollout schedule) is known, so precision, recall, lead time, probability calibration and ETA error can be measured exactly (§6). Cut line: Level 1 and 2 are kept; Level 3 is cut first if time runs short.
+
 ---
 
 ## 5. Differentiation
@@ -203,6 +215,10 @@ Read-mostly tools (`intra_list_dependencies`, `intra_get_contract`, `intra_recen
 | **Unsafe auto-apply rate** | **0** (M2, M10 must be refused) | Safety tests |
 | Rollback success | 100% on injected bad adapters | Chaos test |
 | **Confidence calibration** | Each confidence bin within ±0.10 of actual correctness | Reliability table over the mutation catalogue plus fuzz set; reported in CI |
+| **Forecast precision** | ≥ 0.80 of raised forecasts come true | Ground-truth schedule from switchboard rollout mode |
+| **Forecast recall** | ≥ 0.90 of ramped mutations forecast before full cutover | Same |
+| **Forecast calibration / ETA** | Probability within ±0.10; ETA error ≤ \~30% | Reliability table + ETA residuals |
+| **Lead time & cutover impact** | Lead time measured (>0); **0 failed workflows at cutover** with pre-staging, vs measured no-forecast baseline | Demo M11 A/B run |
 | Overhead | \< 5 ms p95 added by proxy path | Perf budget |
 
 Ablations to report: structural-only vs +behavioural vs +semantic; with vs without consumer-aware impact; with vs without optional LLM proposer.
@@ -215,6 +231,7 @@ Ablations to report: structural-only vs +behavioural vs +semantic; with vs witho
 
 - **Auto-repaired:** `name`→`display_name`; dollars→cents; offset→cursor pagination; webhook nesting; MCP arg rename; new 429 policy.
 - **Refused and escalated:** `"Last, First"` name format (lossy); `active` enum meaning change (unknown).
+- **Forecasted (M11):** a gradual rollout of the rename; Intra raises a forecast early, pre-stages the adapter, and the app stays green at cutover, compared against a no-forecast baseline.
 - **Chaos:** a deliberately bad adapter that validation catches and rolls back.
 
 The dashboard shows the timeline (drift → impact → adapter → validation → green) and the MCP server returns the same facts to an external agent.
@@ -376,6 +393,8 @@ Validation (§4.7) already replays workflows. The ledger adds **proof of validat
 | Meaning cannot be proven from traffic | Similar value patterns suggest, not prove, equivalence | Confidence scoring; `unknown` and `lossy` verdicts never auto-apply; consumer expectations as extra evidence |
 | Live replay is unsafe or impossible for state-changing calls | A changed provider will not reproduce old responses; replay can cause side effects | Replay safety classes; offline trace validation; shadow mode |
 | Quiet endpoints may drift unseen | No traffic means no observations | Read-only active probes (opt-in) |
+| Changes with no warning cannot be predicted | No rollout, hint or precursor exists to observe | Fast detection + validated repair; forecasts only claim what signals support; `unknown` when evidence is thin |
+| Forecasts can be wrong | Trends can stall, reverse or be coincidence | Probability + calibration gate; pre-staging is shadow-only; a forecast never applies a change |
 | Gradual rollouts look like noise or flapping | Old and new shapes coexist | Mixed-version detection and `rollout_in_progress` state |
 | Adoption cost | Only traffic through the proxy/SDK is covered | One-command setup, drop-in SDK wrapper; stated plainly in docs |
 | Confidence could be miscalibrated | Heuristic scores drift | Calibration report gated in CI |
