@@ -437,7 +437,7 @@ export default function App() {
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                 {[
                   {
-                    title: '6-Stage Monolith Pipeline',
+                    title: '6-Stage Pipeline',
                     desc: 'Observe -> Model -> Differ -> Impact -> Adapter -> Validate.',
                     tab: 'overview',
                     icon: Sparkles,
@@ -1325,7 +1325,7 @@ export default function App() {
 
             <div className="space-y-2">
               <h4 className="font-display font-bold uppercase tracking-wider text-black text-[11px]">
-                Monolith Pipeline
+                Pipeline Architecture
               </h4>
               <ul className="space-y-1.5 text-black/60 font-mono text-[11px]">
                 <li>1. Non-blocking Traffic Observer</li>
