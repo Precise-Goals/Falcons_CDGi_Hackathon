@@ -8,6 +8,16 @@ export interface McpServerConfig {
 export function buildMcpServer(config: McpServerConfig = { engineUrl: 'http://localhost:3001' }): FastifyInstance {
   const app = Fastify({ logger: false });
 
+  // CORS headers and preflight handling
+  app.addHook('onRequest', async (req, reply) => {
+    reply.header('Access-Control-Allow-Origin', '*');
+    reply.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS, PATCH');
+    reply.header('Access-Control-Allow-Headers', 'Content-Type, Authorization, x-api-key, api-subscription-key');
+    if (req.method === 'OPTIONS') {
+      return reply.status(204).send();
+    }
+  });
+
   // 1. Health check for Render deployment
   app.get('/healthz', async () => {
     return { status: 'healthy', transport: 'http/streamable', timestamp: new Date().toISOString() };

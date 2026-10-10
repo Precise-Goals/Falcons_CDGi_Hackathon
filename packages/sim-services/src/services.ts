@@ -5,6 +5,16 @@ import { Switchboard } from './switchboard.js';
 export function buildSimServicesApp(switchboard: Switchboard): FastifyInstance {
   const app = Fastify({ logger: false });
 
+  // CORS headers and preflight handling
+  app.addHook('onRequest', async (req, reply) => {
+    reply.header('Access-Control-Allow-Origin', '*');
+    reply.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS, PATCH');
+    reply.header('Access-Control-Allow-Headers', 'Content-Type, Authorization, x-api-key, api-subscription-key');
+    if (req.method === 'OPTIONS') {
+      return reply.status(204).send();
+    }
+  });
+
   // Switchboard control endpoints
   app.get('/sim/switchboard', async () => {
     return { mutations: switchboard.list() };

@@ -34,6 +34,23 @@ export default defineConfig(({ mode }) => {
     server: {
       host: '0.0.0.0',
       port: 3000,
+      proxy: {
+        '/api/engine': {
+          target: 'http://localhost:3001',
+          changeOrigin: true,
+          rewrite: (path) => path.replace(/^\/api\/engine/, ''),
+        },
+        '/api/mcp': {
+          target: 'http://localhost:3002',
+          changeOrigin: true,
+          rewrite: (path) => path.replace(/^\/api\/mcp/, ''),
+        },
+        '/api/sim': {
+          target: 'http://localhost:4000',
+          changeOrigin: true,
+          rewrite: (path) => path.replace(/^\/api\/sim/, ''),
+        },
+      },
     },
   };
 });

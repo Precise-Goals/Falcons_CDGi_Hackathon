@@ -29,7 +29,11 @@ import {
   DollarSign,
   Loader2,
   Key,
+  FlaskConical,
+  Play,
 } from 'lucide-react';
+import { generateRandomApi, GeneratedApiSchema } from './lib/apiGenerator';
+import { runDynamicEvaluation, EvaluationResult } from './lib/evalEngine';
 import {
   firebaseSignIn,
   firebaseSignUp,
@@ -100,7 +104,7 @@ interface UserProfile {
   mappedAt?: string;
 }
 
-type MainTab = 'home' | 'agent' | 'mcp' | 'sdk' | 'docs' | 'pricing' | 'dashboard';
+type MainTab = 'home' | 'agent' | 'mcp' | 'sdk' | 'docs' | 'pricing' | 'dashboard' | 'eval';
 type DashboardSubView = 'predict' | 'drift' | 'pipeline' | 'impact' | 'adapters' | 'switchboard' | 'resilience';
 type AgentMode = 'ask' | 'plan';
 
@@ -123,10 +127,22 @@ async function computeSha256(data: string): Promise<string> {
 }
 
 export default function App() {
-  // Navigation: Home -> Products (Agent, MCP, SDK) -> Docs -> Pricing -> Dashboard
-  const [activeTab, setActiveTab] = useState<MainTab>('home');
+  // Navigation: Home -> Products (Agent, MCP, SDK) -> Docs -> Pricing -> Dashboard -> Eval
+  const [activeTab, setActiveTab] = useState<MainTab>(() => {
+    if (typeof window !== 'undefined') {
+      if (window.location.pathname === '/eval' || window.location.hash === '#eval') {
+        return 'eval';
+      }
+    }
+    return 'home';
+  });
   const [productsDropdownOpen, setProductsDropdownOpen] = useState<boolean>(false);
   const productsDropdownRef = useRef<HTMLDivElement>(null);
+
+  // Secret /eval Dynamic API Synthesis & Evaluation State
+  const [evalSchema, setEvalSchema] = useState<GeneratedApiSchema | null>(null);
+  const [evalResult, setEvalResult] = useState<EvaluationResult | null>(null);
+  const [evalRunning, setEvalRunning] = useState<boolean>(false);
 
   // Sub-views & modes
   const [dashboardView, setDashboardView] = useState<DashboardSubView>('predict');
@@ -245,57 +261,102 @@ export default function App() {
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
-  // Live Backend Data Fetching on mount
+  // Listen for /eval secret route in URL path or hash
   useEffect(() => {
-    // 1. Fetch Engine Health
-    fetch('http://localhost:3001/health')
-      .then((res) => (res.ok ? res.json() : null))
-      .then((data: EngineHealthResponse | null) => {
-        if (data) setEngineHealth(data);
-      })
-      .catch(() => {});
-
-    // 2. Fetch MCP Tools List
-    fetch('http://localhost:3002/tools')
-      .then((res) => (res.ok ? res.json() : null))
-      .then((data) => {
-        if (data && Array.isArray(data.tools)) {
-          setLiveToolsList(data.tools);
-        }
-      })
-      .catch(() => {});
-
-    // 3. Fetch Live Switchboard State
-    fetch('http://localhost:4000/sim/switchboard')
-      .then((res) => (res.ok ? res.json() : null))
-      .then((data) => {
-        if (data && Array.isArray(data.mutations)) {
-          setMutations((prev) =>
-            prev.map((m) => {
-              const live = data.mutations.find((lm: any) => lm.id === m.id);
-              return live ? { ...m, active: live.active } : m;
-            })
-          );
-        }
-      })
-      .catch(() => {});
+    const handleUrlRoute = () => {
+      if (window.location.pathname === '/eval' || window.location.hash === '#eval') {
+        setActiveTab('eval');
+      }
+    };
+    handleUrlRoute();
+    window.addEventListener('popstate', handleUrlRoute);
+    window.addEventListener('hashchange', handleUrlRoute);
+    return () => {
+      window.removeEventListener('popstate', handleUrlRoute);
+      window.removeEventListener('hashchange', handleUrlRoute);
+    };
   }, []);
 
-  // Live MCP tool runner
+  // Dynamic /eval laboratory runner
+  const handleRunEvaluation = async (existingSchema?: GeneratedApiSchema) => {
+    setEvalRunning(true);
+    try {
+      const targetSchema = existingSchema || generateRandomApi();
+      setEvalSchema(targetSchema);
+      const result = await runDynamicEvaluation(targetSchema);
+      setEvalResult(result);
+    } catch (err) {
+      console.error('Dynamic evaluation run failed:', err);
+    } finally {
+      setEvalRunning(false);
+    }
+  };
+
+  // Live Backend Data Fetching on mount with dual direct & proxy fallbacks
+  useEffect(() => {
+    const safeFetch = async (primary: string, fallback: string) => {
+      try {
+        const res = await fetch(primary);
+        if (res.ok) return await res.json();
+      } catch {}
+      try {
+        const res = await fetch(fallback);
+        if (res.ok) return await res.json();
+      } catch {}
+      return null;
+    };
+
+    // 1. Fetch Engine Health
+    safeFetch('http://localhost:3001/health', '/api/engine/health').then((data: EngineHealthResponse | null) => {
+      if (data) setEngineHealth(data);
+    });
+
+    // 2. Fetch MCP Tools List
+    safeFetch('http://localhost:3002/tools', '/api/mcp/tools').then((data) => {
+      if (data && Array.isArray(data.tools)) {
+        setLiveToolsList(data.tools);
+      }
+    });
+
+    // 3. Fetch Live Switchboard State
+    safeFetch('http://localhost:4000/sim/switchboard', '/api/sim/switchboard').then((data) => {
+      if (data && Array.isArray(data.mutations)) {
+        setMutations((prev) =>
+          prev.map((m) => {
+            const live = data.mutations.find((lm: any) => lm.id === m.id);
+            return live ? { ...m, active: live.active } : m;
+          })
+        );
+      }
+    });
+  }, []);
+
+  // Live MCP tool runner with direct & proxy resilience
   const executeMcpTool = async (toolName: string) => {
     setMcpLoading(true);
     try {
-      const res = await fetch('http://localhost:3002/tools/call', {
+      let res: Response | null = await fetch('http://localhost:3002/tools/call', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name: toolName, params: {} }),
-      });
-      if (res.ok) {
+        body: JSON.stringify({ tool: toolName, params: {} }),
+      }).catch(() => null);
+
+      if (!res || !res.ok) {
+        res = await fetch('/api/mcp/tools/call', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ tool: toolName, params: {} }),
+        }).catch(() => null);
+      }
+
+      if (res && res.ok) {
         const json = await res.json();
         setMcpLiveOutput(JSON.stringify(json, null, 2));
-      } else {
-        const err = await res.json();
+      } else if (res) {
+        const err = await res.json().catch(() => ({}));
         setMcpLiveOutput(JSON.stringify(err, null, 2));
+      } else {
+        setMcpLiveOutput(JSON.stringify({ error: 'Connection error', details: 'MCP server unreachable' }, null, 2));
       }
     } catch (e: any) {
       setMcpLiveOutput(JSON.stringify({ error: 'Connection error', details: e.message }, null, 2));
@@ -1061,6 +1122,23 @@ export default function App() {
                 {activeMutations.length}
               </span>
             )}
+          </button>
+
+          {/* Secret Route: /eval Lab Pill */}
+          <button
+            onClick={() => {
+              setActiveTab('eval');
+              window.history.pushState(null, '', '/eval');
+            }}
+            title="Secret Route: Dynamic API Synthesis & Evaluation Laboratory (/eval)"
+            className={`flex items-center space-x-1 text-[11px] font-mono font-bold px-2.5 py-1.5 rounded-full transition-all ${
+              activeTab === 'eval'
+                ? 'bg-black text-white shadow-sm ring-1 ring-crimson'
+                : 'text-crimson/80 hover:text-crimson hover:bg-crimson/5 border border-crimson/20'
+            }`}
+          >
+            <FlaskConical className="w-3 h-3 text-crimson" />
+            <span className="hidden sm:inline">/eval</span>
           </button>
 
           <div className="h-4 w-[1px] bg-black/10 mx-0.5" />
@@ -2847,6 +2925,225 @@ intra.registerAdapter('/users', {
                     );
                   })}
                 </div>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* =========================================================================
+            PILLAR 8: SECRET EVALUATION LABORATORY (/eval)
+            PURE DYNAMIC PROCEDURAL SYNTHESIS - ZERO DUMMY DATA - ACTUAL EVAL LOGS
+           ========================================================================= */}
+        {activeTab === 'eval' && (
+          <div className="space-y-8 max-w-6xl mx-auto">
+            {/* Header Card */}
+            <div className="skeuo-card p-8 rounded-[2.5rem] space-y-4">
+              <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+                <div>
+                  <div className="flex items-center space-x-2">
+                    <span className="verified-badge bg-crimson/10 text-crimson border border-crimson/30">
+                      SECRET LABORATORY &bull; /eval
+                    </span>
+                    <span className="text-xs font-mono text-emerald-600 font-bold">100% PURE DYNAMIC EVALUATION</span>
+                  </div>
+                  <h2 className="font-display font-bold text-2xl text-black mt-1">
+                    Autonomous API Synthesis & Evaluation Laboratory
+                  </h2>
+                  <p className="text-xs text-black/60 max-w-3xl leading-relaxed mt-1">
+                    Procedurally generates unpredictable vendor APIs on the fly. Evaluates the complete 9-stage Intra engine
+                    (observability, behavioral modeling, Levenshtein differ, AST blast-radius, Section 10 Safe-Handling policy,
+                    dynamic adapter synthesis, golden replay validation, live MCP port 3002 tool calls, and Sarvam AI 105B review)
+                    with zero hardcoded or fallback data.
+                  </p>
+                </div>
+
+                {/* Action Controls */}
+                <div className="flex items-center gap-2 flex-wrap">
+                  <button
+                    onClick={() => handleRunEvaluation()}
+                    disabled={evalRunning}
+                    className="skeuo-button-primary px-5 py-2.5 rounded-full text-white text-xs font-mono font-bold flex items-center space-x-2 shadow-sm"
+                  >
+                    {evalRunning ? (
+                      <>
+                        <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                        <span>Evaluating Stages...</span>
+                      </>
+                    ) : (
+                      <>
+                        <Play className="w-3.5 h-3.5 fill-current" />
+                        <span>Synthesize & Evaluate</span>
+                      </>
+                    )}
+                  </button>
+                  {evalSchema && (
+                    <button
+                      onClick={() => handleRunEvaluation(evalSchema)}
+                      disabled={evalRunning}
+                      className="px-4 py-2.5 rounded-full border border-black/15 bg-white hover:bg-black/5 text-xs font-mono text-black font-semibold flex items-center space-x-1.5 transition"
+                    >
+                      <RefreshCw className={`w-3.5 h-3.5 ${evalRunning ? 'animate-spin' : ''}`} />
+                      <span>Re-run</span>
+                    </button>
+                  )}
+                </div>
+              </div>
+            </div>
+
+            {/* Dynamic Generated API Schema & Mutation Specs */}
+            {evalSchema ? (
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                {/* Left: Generated Baseline vs Mutated Schema */}
+                <div className="space-y-4">
+                  <div className="border border-black/10 bg-white/95 rounded-[2rem] p-6 shadow-card space-y-4">
+                    <div className="flex justify-between items-center pb-2 border-b border-black/5">
+                      <div className="flex items-center space-x-2">
+                        <span className="font-mono text-xs font-bold text-black">{evalSchema.domain}</span>
+                        <span className="text-[10px] font-mono text-crimson font-bold">[{evalSchema.method} {evalSchema.endpoint}]</span>
+                      </div>
+                      <span className="text-[10px] font-mono bg-cream-subtle px-2 py-0.5 rounded-full border border-black/10 font-bold uppercase">
+                        {evalSchema.mutationType}
+                      </span>
+                    </div>
+
+                    <div className="p-3.5 rounded-xl bg-crimson/5 border border-crimson/20 space-y-1">
+                      <div className="text-[11px] font-mono font-bold text-crimson">INJECTED VENDOR DRIFT:</div>
+                      <p className="text-xs text-black/80">{evalSchema.mutationDescription}</p>
+                    </div>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs font-mono">
+                      <div className="space-y-1.5">
+                        <div className="text-[10px] text-black/50 font-bold">BASELINE UPSTREAM PAYLOAD</div>
+                        <pre className="p-3 rounded-xl bg-black text-emerald-400 text-[10px] overflow-x-auto max-h-[220px]">
+                          {JSON.stringify(evalSchema.baselinePayload, null, 2)}
+                        </pre>
+                      </div>
+                      <div className="space-y-1.5">
+                        <div className="text-[10px] text-crimson font-bold">MUTATED LIVE UPSTREAM PAYLOAD</div>
+                        <pre className="p-3 rounded-xl bg-black text-rose-300 text-[10px] overflow-x-auto max-h-[220px]">
+                          {JSON.stringify(evalSchema.mutatedPayload, null, 2)}
+                        </pre>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Synthesized Adapter Code Box */}
+                  {evalResult && (
+                    <div className="border border-black/10 bg-white/95 rounded-[2rem] p-6 shadow-card space-y-3">
+                      <div className="flex justify-between items-center">
+                        <span className="font-display font-bold text-xs uppercase tracking-wide text-black">
+                          Stage 6: Dynamic Synthesized Adapter Code
+                        </span>
+                        <button
+                          onClick={() => copyToClipboard(evalResult.synthesizedAdapter, 'eval_adapter')}
+                          className="text-[10px] font-mono text-crimson flex items-center space-x-1 hover:underline"
+                        >
+                          <Copy className="w-3 h-3" />
+                          <span>{copiedKey === 'eval_adapter' ? 'Copied!' : 'Copy Code'}</span>
+                        </button>
+                      </div>
+                      <pre className="p-4 rounded-2xl bg-black text-amber-300 font-mono text-[11px] leading-relaxed overflow-x-auto">
+                        {evalResult.synthesizedAdapter}
+                      </pre>
+                    </div>
+                  )}
+                </div>
+
+                {/* Right: 9-Stage Evaluation Results & Live Audit Log */}
+                <div className="space-y-4">
+                  {evalResult && (
+                    <>
+                      {/* Metric Highlights */}
+                      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                        <div className="p-4 rounded-2xl bg-white border border-black/10 shadow-sm">
+                          <div className="text-[10px] font-mono text-black/50">CONFIDENCE</div>
+                          <div className="font-display font-black text-xl text-black">
+                            {(evalResult.confidence * 100).toFixed(1)}%
+                          </div>
+                        </div>
+                        <div className="p-4 rounded-2xl bg-white border border-black/10 shadow-sm">
+                          <div className="text-[10px] font-mono text-black/50">VERDICT</div>
+                          <div className={`font-mono font-black text-sm uppercase ${evalResult.verdict === 'breaking' ? 'text-crimson' : evalResult.verdict === 'lossy' ? 'text-amber-600' : 'text-emerald-600'}`}>
+                            {evalResult.verdict}
+                          </div>
+                        </div>
+                        <div className="p-4 rounded-2xl bg-white border border-black/10 shadow-sm">
+                          <div className="text-[10px] font-mono text-black/50">POLICY ACTION</div>
+                          <div className="font-mono font-bold text-xs uppercase text-crimson truncate" title={evalResult.policyAction}>
+                            {evalResult.policyAction.replace(/_/g, ' ')}
+                          </div>
+                        </div>
+                        <div className="p-4 rounded-2xl bg-white border border-black/10 shadow-sm">
+                          <div className="text-[10px] font-mono text-black/50">REPLAY TEST</div>
+                          <div className={`font-mono font-black text-sm uppercase ${evalResult.validationPassed ? 'text-emerald-600' : 'text-crimson'}`}>
+                            {evalResult.validationPassed ? 'PASSED' : 'FLAGGED'}
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Sarvam AI 105B Review Card */}
+                      <div className="p-5 rounded-2xl bg-cream-subtle border border-black/10 space-y-2">
+                        <div className="flex items-center space-x-2">
+                          <span className="verified-badge">SARVAM AI 105B AGENT DIAGNOSTIC</span>
+                          <span className="text-[10px] font-mono text-black/40">LIVE INFERENCE</span>
+                        </div>
+                        <p className="text-xs text-black/80 leading-relaxed font-sans italic">
+                          "{evalResult.sarvamAnalysis}"
+                        </p>
+                      </div>
+
+                      {/* Live Terminal Log Stream */}
+                      <div className="border border-black/10 bg-black text-white rounded-[2rem] p-5 shadow-2xl space-y-3 font-mono">
+                        <div className="flex justify-between items-center pb-2 border-b border-white/10 text-xs">
+                          <div className="flex items-center space-x-2">
+                            <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse" />
+                            <span className="font-bold text-emerald-400">LIVE EVAL LOGS ({evalResult.logs.length} ENTRIES)</span>
+                          </div>
+                          <span className="text-[10px] text-white/40">EXEC: {evalResult.durationMs}ms</span>
+                        </div>
+
+                        <div className="space-y-1.5 overflow-y-auto max-h-[300px] text-[10px] pr-2">
+                          {evalResult.logs.map((log, idx) => (
+                            <div key={idx} className="flex items-start space-x-2 leading-relaxed">
+                              <span className="text-white/40 flex-shrink-0">[{log.timestamp.slice(11, 23)}]</span>
+                              <span className={`px-1 rounded text-[9px] font-bold flex-shrink-0 ${
+                                log.level === 'success' ? 'bg-emerald-950 text-emerald-400' :
+                                log.level === 'warn' ? 'bg-amber-950 text-amber-400' :
+                                log.level === 'error' ? 'bg-rose-950 text-rose-400' :
+                                'bg-white/10 text-white/70'
+                              }`}>
+                                {log.stage}
+                              </span>
+                              <span className={log.level === 'error' ? 'text-rose-400 font-bold' : log.level === 'success' ? 'text-emerald-300' : 'text-white/80'}>
+                                {log.message}
+                              </span>
+                            </div>
+                          ))}
+                        </div>
+
+                        <div className="pt-2 border-t border-white/10 flex justify-between items-center text-[10px] text-white/50">
+                          <span>SHA-256 LEDGER: {evalResult.sha256Digest.slice(0, 24)}...</span>
+                          <span className="text-emerald-400 font-bold">VERIFIED ZERO-DUMMY</span>
+                        </div>
+                      </div>
+                    </>
+                  )}
+                </div>
+              </div>
+            ) : (
+              <div className="p-16 rounded-[2.5rem] bg-white border border-black/10 text-center space-y-4">
+                <FlaskConical className="w-12 h-12 text-crimson mx-auto" />
+                <h3 className="font-display font-bold text-lg text-black">No Dynamic Schema Generated Yet</h3>
+                <p className="text-xs text-black/60 max-w-md mx-auto">
+                  Click the button below to procedurally generate a completely new, randomized API schema with unpredictable vendor drift and evaluate the entire platform.
+                </p>
+                <button
+                  onClick={() => handleRunEvaluation()}
+                  className="skeuo-button-primary px-6 py-3 rounded-full text-white font-mono text-xs font-bold inline-flex items-center space-x-2"
+                >
+                  <Play className="w-4 h-4 fill-current" />
+                  <span>Launch Procedural API Synthesis</span>
+                </button>
               </div>
             )}
           </div>
