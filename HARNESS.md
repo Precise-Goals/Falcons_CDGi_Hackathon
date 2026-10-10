@@ -8,12 +8,23 @@
 
 ## 0. Mission (never changes)
 
+> **Core Challenge & Specification:** Aligned strictly with [`docs/lock.md`](docs/lock.md) (*The Internet After the API: Help software survive undocumented changes in external services*).
+
 Build a system that implements this pipeline end to end:
 
 ```
 External service → Observed behaviour → Contract/behavioural model → Change detection
 → Impact analysis → Adapter or migration → Validation → Updated system
 ```
+
+### The 6 Locked Product Pillars
+The entire Intra ecosystem, architecture, and developer interface are structured strictly around 6 pillars:
+1. **Home**: Platform mission, architectural philosophy, value propositions, and runtime status.
+2. **Dashboard (API Observability Interface)**: Real-time telemetry observer, statistical contract fingerprinting, structural/semantic drift classification, AST blast-radius mapper, safe-handling policy engine, golden test replay, and interactive mutation switchboard (M1–M10).
+3. **Agent**: Autonomous Multi-Agent Adaptation Engine & CI/CD Quality Gate Runner (G1–G9) providing autonomous remediation, self-healing audit trails, and automated PR generation.
+4. **MCP**: Customer Model Context Protocol server (`mcpserver/`) exposing 7 specialized tools with Streamable HTTP transport for AI developer environments (Cursor, Claude Desktop).
+5. **SDK**: Lightweight client SDK (`@intra/sdk`) providing non-blocking observation capture, dynamic runtime adaptation, and drop-in HTTP client wrappers.
+6. **Docs**: Comprehensive interactive documentation, architectural blueprints, behavioral contract specs, and exact problem statement solutions per `docs/lock.md`.
 
 **Non-negotiables**
 1. Do NOT rely on documented schemas alone. Learn real behaviour from traffic (defaults, errors, pagination, rate limits, semantic drift in valid JSON).
@@ -62,7 +73,7 @@ External service → Observed behaviour → Contract/behavioural model → Chang
 |---|---|
 | Language | TypeScript (strict), Node 20+ everywhere (engine, web, MCP server) |
 | Repo | pnpm workspaces + Turborepo, Conventional Commits enforced (commitlint + husky) |
-| Core app | **Monolith**: one deployable `apps/engine` (Fastify) hosting observer, model, differ, impact, adapter, validator as in-process modules + REST/SSE API |
+| Core app | **In-process pipeline engine**: one deployable `apps/engine` (Fastify) hosting observer, model, differ, impact, adapter, validator as in-process modules + REST/SSE API |
 | Frontend | **React 18 + Vite + Tailwind + shadcn/ui** (`apps/web`, SPA) |
 | Animated UI | **React Bits** (primary), Magic UI / Aceternity (accents), Motion (framer-motion), GSAP (hero/scroll) |
 | 3D UI | three.js via `@react-three/fiber` + `@react-three/drei` (lazy-loaded, reduced-motion safe) |
@@ -94,6 +105,15 @@ External service → Observed behaviour → Contract/behavioural model → Chang
 ### 3.2 MCP server (LOCKED: Node/TS on Render)
 `mcpserver/` is a separate pnpm workspace package and separate deployable. Uses `@modelcontextprotocol/sdk` with Streamable HTTP transport (stdio for local dev), API-key auth, per-tenant scoping, audit log. It calls the engine only through its REST API (types from `packages/shared`), never importing engine internals. Render settings: root dir `mcpserver`, build `pnpm install && pnpm --filter mcpserver build`, start `node dist/index.js`, health route `/healthz`.
 
+### 3.3 The Six Core Product Pillars (LOCKED)
+The system is partitioned strictly across 6 operational pillars:
+1. **Home (`/`)**: Mission statement, problem orientation per `docs/lock.md`, core philosophy, and high-level architecture.
+2. **Dashboard (`/dashboard`)**: The comprehensive **API Observability Interface** that observes dependencies, fingerprints schemas, classifies structural/semantic drift, maps AST blast-radius, executes safe-handling policies, verifies golden test replay, and operates the simulated service mutation switchboard (M1–M10).
+3. **Agent (`/agent`)**: Autonomous multi-agent self-healing orchestration, automated remediation pipelines, CI/CD quality gate runner (G1–G9), and migration PR creation.
+4. **MCP (`/mcp`)**: Customer Model Context Protocol server exposing 7 discovery & adaptation tools for Claude Desktop, Cursor, and AI agents.
+5. **SDK (`/sdk`)**: Client SDK package (`@intra/sdk`) providing non-blocking telemetry capture and dynamic runtime adapter injection.
+6. **Docs (`/docs`)**: Interactive developer documentation, behavioral contract references, and direct problem statement solutions (`docs/lock.md`).
+
 ---
 
 ## 4. Architecture & Repo Layout
@@ -119,7 +139,7 @@ Intra/
 │  ├─ PROMPT_LOOP.md               # Ralph per-iteration prompt
 │  └─ loop.sh                      # Ralph driver
 ├─ apps/
-│  ├─ engine/                      # MONOLITH: observe→model→detect→impact→adapt→validate (Railway)
+│  ├─ engine/                      # In-process pipeline engine: observe→model→detect→impact→adapt→validate (Railway)
 │  ├─ web/                         # Vite + React website/dashboard (Vercel)
 │  └─ demo-app/                    # "Shipwell": app that depends on sim services
 ├─ mcpserver/                      # customer MCP server, separate deployable (Render)
@@ -521,7 +541,7 @@ Resources: `intra://contracts/{service}`, `intra://changes/latest`. Auth: API ke
 
 ## 16. Open Items
 - [x] Frontend: React + Vite + Tailwind + shadcn + React Bits + R3F (locked)
-- [x] Core architecture: monolith engine; separate `mcpserver/` (locked)
+- [x] Core architecture: in-process pipeline engine; separate `mcpserver/` (locked)
 - [x] Hosting: Vercel (web), Railway (engine + Postgres), Render (MCP) (locked)
 - [x] MCP server language: Node/TS (locked)
 - [x] MCP transport: Streamable HTTP on Render; auth: API key (default, revisit later)

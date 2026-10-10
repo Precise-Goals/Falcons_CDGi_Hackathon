@@ -77,45 +77,40 @@ The UI is built with:
 - **React Bits Capsule Navbar**: Uncluttered floating pill dock anchored at the top of the viewport.
 - **Antigravity-Style Footer**: 4-column system architecture with giant `Intra.` headline and red gradient text clipping.
 
-### 3.1 Navigation Tabs in the React Bits Capsule Navbar
+### 3.1 The Six Locked Product Pillars in the React Bits Capsule Navbar
 
 1. **Home (`Home` icon)**:
-   - High-impact mission landing page.
+   - High-impact mission landing page anchored on `docs/lock.md` (*The Internet After the API*).
    - Core value pillars: **Behavioral Ground Truth**, **Safe-Handling Policy Matrix**, and **Mathematical Golden Replay**.
-   - Quick jump links to every section of the platform.
+   - Jump cards directly navigating to all other 5 pillars.
 
-2. **Pipeline (`Sparkles` icon)**:
-   - Visual breakdown of the **6-Stage Autonomous Adaptation Loop**:
-     1. `Traffic Observer` — Capture & PII scrub.
-     2. `Behavioral Modeler` — Infer ground truth contracts.
-     3. `Semantic Differ` — Confidence scoring (0.0-1.0).
-     4. `AST Blast Radius` — Codebase impact graph.
-     5. `Safe-Handling Policy` — Canary synthesis vs Migration PR.
-     6. `Golden Replayer` — Mathematical equivalence check.
-   - **Downstream Application Health** card showing live Shipwell status with **Auto-Adapter Shield** toggle.
+2. **Dashboard (`Activity` icon)** — *API Observability Interface*:
+   - Comprehensive telemetry hub with live metric counters (14,892 observations, 5 contracts, active drifts).
+   - Unified sub-views accessible via pill dock:
+     - **Drift Inspector**: Live Before vs After payload structural diffs, Levenshtein distance, confidence scoring, and adapter code.
+     - **Pipeline Engine**: 6-Stage Autonomous Adaptation loop (Observer &rarr; Model &rarr; Differ &rarr; Impact &rarr; Adapter &rarr; Validator).
+     - **AST Blast Radius**: Codebase impact graph mapping external mutations to internal files (`userProfile.ts`, `checkout.ts`, `audit.ts`).
+     - **Safe Adapters & PRs**: Active Canary adapters with rollback handles and pending human review migration proposals.
+     - **Mutation Switchboard**: Interactive toggles for M1 through M10 with "Reset All to Baseline" button.
+     - **Downstream Resilience**: Live Shipwell application resilience simulator showing downstream workflows healing live from RED to GREEN.
 
-3. **Drift Feed (`Activity` icon)**:
-   - Live stream of detected mutations.
-   - Visual **Before vs After Payload Structural Diff**.
-   - Confidence score calculation (Levenshtein distance, sample overlap).
-   - Synthesized runtime TypeScript adapter code viewer.
+3. **Agent (`Cpu` icon)** — *Autonomous Multi-Agent Adaptation*:
+   - Section 8 quality gates runner (G1 Typecheck, G2 Lint, G3 Unit Tests, G4 Coverage, G8 Integration, G9 E2E Demo).
+   - Multi-agent coordination roster tracking `orchestrator`, `qa-engineer`, `differ-dev`, `adapter-dev`, `validator-dev`, and `sim-dev`.
+   - Autonomous self-healing audit trail and remediation PR generator.
 
-4. **Blast Radius (`Layers` icon)**:
-   - AST dependency graph tracing external mutations to internal files (`userProfile.ts`, `checkout.ts`, `audit.ts`).
-   - Severity ratings: `LOW`, `MEDIUM`, `CRITICAL`.
+4. **MCP (`Terminal` icon)** — *Customer Model Context Protocol Server*:
+   - Interactive runner for the 7 tools (`intra_list_dependencies`, `intra_get_contract`, `intra_recent_changes`, `intra_impact`, `intra_propose_adapter`, `intra_apply_adapter`, `intra_health`).
+   - Live JSON output viewer with syntax highlighting and copy function.
+   - Streamable HTTP connection details for Claude Desktop and Cursor.
 
-5. **Safe Adapters (`Zap` icon)**:
-   - Inspect active Canary adapters with atomic rollback handles.
-   - **Pending Migration Proposals**: Human-in-the-loop review for lossy or breaking changes.
-   - Interactive **"Approve & Apply Proposal"** button.
+5. **SDK (`Code2` icon)** — *Client SDK & Dynamic Runtime Proxy*:
+   - `@intra/sdk` client library documentation and drop-in `fetch` / `axios` wrappers.
+   - Interactive Live Adapter Playground: simulate upstream JSON payloads and verify runtime normalization in the browser.
 
-6. **Switchboard (`Sliders` icon)**:
-   - Interactive mutation toggles for all 10 deliberate mutations (**M1 through M10**).
-   - "Reset All to Baseline" button.
-
-7. **MCP Server (`Terminal` icon)**:
-   - Interactive playground for the 7 Customer MCP tools.
-   - Live formatted JSON execution output.
+6. **Docs (`BookOpen` icon)** — *Interactive Specification Guide*:
+   - Direct breakdown of `docs/lock.md`: The Problem, The Challenge, The 6-Stage Pipeline, and Safe-Handling Matrix.
+   - Catalogue of the 10 undocumented mutations (M1–M10) and mathematical golden replay verification.
 
 ---
 

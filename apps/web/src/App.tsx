@@ -1,12 +1,15 @@
 import { useState } from 'react';
 import {
   Home,
-  Sparkles,
   Activity,
+  Cpu,
+  Terminal,
+  Code2,
+  BookOpen,
+  Sparkles,
   Layers,
   Zap,
   Sliders,
-  Terminal,
   RefreshCw,
   CheckCircle2,
   AlertTriangle,
@@ -14,8 +17,9 @@ import {
   RotateCcw,
   ArrowRight,
   ShieldCheck,
-  Code2,
-  Cpu,
+  Check,
+  Copy,
+  GitPullRequest,
 } from 'lucide-react';
 
 interface MutationItem {
@@ -38,12 +42,27 @@ interface MutationItem {
   workflowFile: string;
 }
 
+type MainTab = 'home' | 'dashboard' | 'agent' | 'mcp' | 'sdk' | 'docs';
+type DashboardSubView = 'drift' | 'pipeline' | 'impact' | 'adapters' | 'switchboard' | 'resilience';
+
 export default function App() {
-  const [activeTab, setActiveTab] = useState<'home' | 'overview' | 'drift' | 'impact' | 'adapters' | 'switchboard' | 'mcp'>('home');
+  const [activeTab, setActiveTab] = useState<MainTab>('home');
+  const [dashboardView, setDashboardView] = useState<DashboardSubView>('drift');
   const [selectedMutationId, setSelectedMutationId] = useState<string>('M1');
   const [selectedMcpTool, setSelectedMcpTool] = useState<string>('intra_recent_changes');
   const [autoAdapterEnabled, setAutoAdapterEnabled] = useState<boolean>(true);
   const [proposalApproved, setProposalApproved] = useState<Record<string, boolean>>({});
+  const [copiedKey, setCopiedKey] = useState<string | null>(null);
+
+  // Agent Quality Gates Live Simulation State
+  const [runningGates, setRunningGates] = useState<boolean>(false);
+  const [gatesRan, setGatesRan] = useState<boolean>(true);
+
+  // SDK Dynamic Playground state
+  const [sdkSelectedMutation, setSdkSelectedMutation] = useState<string>('M1');
+  const [sdkCustomInput, setSdkCustomInput] = useState<string>(
+    '{\n  "id": "usr_99",\n  "display_name": "Marcus Vance",\n  "status": "active"\n}'
+  );
 
   // Mutations satisfying M1 through M10
   const [mutations, setMutations] = useState<MutationItem[]>([
@@ -255,6 +274,20 @@ export default function App() {
     setProposalApproved((prev) => ({ ...prev, [id]: true }));
   };
 
+  const copyToClipboard = (text: string, key: string) => {
+    navigator.clipboard?.writeText(text);
+    setCopiedKey(key);
+    setTimeout(() => setCopiedKey(null), 2000);
+  };
+
+  const runAllQualityGates = () => {
+    setRunningGates(true);
+    setTimeout(() => {
+      setRunningGates(false);
+      setGatesRan(true);
+    }, 1200);
+  };
+
   const activeMutations = mutations.filter((m) => m.active);
   const selectedMutation = mutations.find((m) => m.id === selectedMutationId) || mutations[0];
 
@@ -266,7 +299,7 @@ export default function App() {
           {/* Left Brand Badge */}
           <div
             onClick={() => setActiveTab('home')}
-            className="pointer-events-auto cursor-pointer flex items-center space-x-2 bg-white/90 backdrop-blur-xl border border-black/10 shadow-sm rounded-full px-3 py-1.5 hover:border-black/30 transition"
+            className="pointer-events-auto cursor-pointer flex items-center space-x-2 bg-white/95 backdrop-blur-xl border border-black/10 shadow-sm rounded-full px-3 py-1.5 hover:border-black/30 transition"
           >
             <div className="w-5 h-5 rounded-full bg-black flex items-center justify-center font-display text-white font-extrabold text-[10px]">
               <span className="text-crimson font-black">I</span>.
@@ -275,26 +308,25 @@ export default function App() {
             <span className="text-[9px] font-mono text-black/40 border-l border-black/10 pl-1.5 hidden sm:inline">v0.1</span>
           </div>
 
-          {/* Center: React Bits Capsule Dock */}
-          <nav className="pointer-events-auto bg-white/90 backdrop-blur-xl border border-black/10 shadow-capsule rounded-full p-1.5 flex items-center gap-1 sm:gap-1.5 transition-all">
+          {/* Center: React Bits Capsule Dock (Exactly 6 Core Pillars) */}
+          <nav className="pointer-events-auto bg-white/95 backdrop-blur-xl border border-black/10 shadow-capsule rounded-full p-1.5 flex items-center gap-1 sm:gap-1.5 transition-all">
             {[
               { id: 'home', label: 'Home', icon: Home },
-              { id: 'overview', label: 'Pipeline', icon: Sparkles },
-              { id: 'drift', label: 'Drift', icon: Activity },
-              { id: 'impact', label: 'Impact', icon: Layers },
-              { id: 'adapters', label: 'Adapters', icon: Zap },
-              { id: 'switchboard', label: 'Switchboard', icon: Sliders, badge: activeMutations.length },
+              { id: 'dashboard', label: 'Dashboard', icon: Activity, badge: activeMutations.length },
+              { id: 'agent', label: 'Agent', icon: Cpu },
               { id: 'mcp', label: 'MCP', icon: Terminal },
+              { id: 'sdk', label: 'SDK', icon: Code2 },
+              { id: 'docs', label: 'Docs', icon: BookOpen },
             ].map((tab) => {
               const Icon = tab.icon;
               const isActive = activeTab === tab.id;
               return (
                 <button
                   key={tab.id}
-                  onClick={() => setActiveTab(tab.id as any)}
+                  onClick={() => setActiveTab(tab.id as MainTab)}
                   className={`relative flex items-center space-x-1.5 text-xs font-medium px-3 py-1.5 rounded-full transition-all duration-200 ${
                     isActive
-                      ? tab.id === 'switchboard'
+                      ? tab.id === 'dashboard'
                         ? 'bg-crimson text-white shadow-sm font-semibold'
                         : 'bg-black text-white shadow-sm font-semibold'
                       : 'text-black/70 hover:text-black hover:bg-black/5'
@@ -304,7 +336,7 @@ export default function App() {
                   {isActive && (
                     <span
                       className={`absolute -top-1 left-1/2 -translate-x-1/2 w-4 h-[2px] rounded-full ${
-                        tab.id === 'switchboard' ? 'bg-crimson' : 'bg-black'
+                        tab.id === 'dashboard' ? 'bg-crimson' : 'bg-black'
                       } shadow-[0_0_8px_currentColor]`}
                     />
                   )}
@@ -321,7 +353,7 @@ export default function App() {
           </nav>
 
           {/* Right Live Observer Pill */}
-          <div className="pointer-events-auto hidden sm:flex items-center space-x-1.5 px-3 py-1.5 bg-white/90 backdrop-blur-xl rounded-full border border-black/10 shadow-sm text-crimson text-xs font-mono font-semibold">
+          <div className="pointer-events-auto hidden sm:flex items-center space-x-1.5 px-3 py-1.5 bg-white/95 backdrop-blur-xl rounded-full border border-black/10 shadow-sm text-crimson text-xs font-mono font-semibold">
             <span className="w-2 h-2 rounded-full bg-crimson animate-pulse" />
             <span className="text-[11px]">LIVE OBSERVER</span>
           </div>
@@ -331,15 +363,15 @@ export default function App() {
       {/* 2. Main Content Container */}
       <main className="max-w-7xl mx-auto px-6 pt-28 pb-16 space-y-8 w-full flex-grow">
         {/* =========================================================================
-            TAB 0: HOMEPAGE (LANDING & MISSION CONTROL)
+            PILLAR 1: HOMEPAGE (LANDING & MISSION CONTROL)
            ========================================================================= */}
         {activeTab === 'home' && (
           <div className="space-y-12">
             {/* Hero Section */}
             <div className="border border-black/10 bg-white p-8 sm:p-12 rounded-3xl shadow-card text-center max-w-4xl mx-auto space-y-6">
               <div className="inline-flex items-center space-x-2">
-                <span className="verified-badge">INTRODUCING INTRA v0.1.0</span>
-                <span className="text-xs font-mono text-black/50">AUTONOMOUS UPSTREAM RESILIENCE</span>
+                <span className="verified-badge">THE INTERNET AFTER THE API</span>
+                <span className="text-xs font-mono text-black/50">PROBLEM SPECIFICATION (docs/lock.md)</span>
               </div>
 
               <h1 className="font-display text-4xl sm:text-6xl font-black tracking-tight text-black leading-tight">
@@ -347,138 +379,142 @@ export default function App() {
               </h1>
 
               <p className="text-base sm:text-lg text-black/70 max-w-2xl mx-auto font-normal leading-relaxed">
-                When upstream APIs flip defaults, alter pagination shapes, rename fields, or throttle rate limits, Intra automatically learns, isolates blast-radius, and synthesizes backward-compatible adapters before production crashes.
+                Modern software relies on APIs, SDKs, MCP servers, and webhooks that change without warning. Intra observes actual traffic, models behavioral contracts, classifies semantic drift, and synthesizes safe runtime adapters before production crashes.
               </p>
 
               {/* Action Buttons */}
               <div className="flex flex-wrap items-center justify-center gap-4 pt-4">
                 <button
-                  onClick={() => setActiveTab('switchboard')}
+                  onClick={() => {
+                    setActiveTab('dashboard');
+                    setDashboardView('switchboard');
+                  }}
                   className="flex items-center space-x-2 px-6 py-3 rounded-full bg-crimson text-white font-display font-bold text-sm hover:bg-crimson-hover transition shadow-sm"
                 >
                   <Play className="w-4 h-4" />
-                  <span>Launch Live Simulation</span>
+                  <span>Launch Observability Dashboard</span>
                 </button>
                 <button
-                  onClick={() => setActiveTab('overview')}
+                  onClick={() => setActiveTab('agent')}
                   className="flex items-center space-x-2 px-6 py-3 rounded-full bg-black text-white font-display font-bold text-sm hover:bg-black/80 transition shadow-sm"
                 >
-                  <Sparkles className="w-4 h-4" />
-                  <span>Explore 6-Stage Pipeline</span>
+                  <Cpu className="w-4 h-4" />
+                  <span>Autonomous Agent Gates</span>
                 </button>
                 <button
-                  onClick={() => setActiveTab('drift')}
-                  className="flex items-center space-x-2 px-6 py-3 rounded-full border border-black/20 text-black font-display font-bold text-sm hover:bg-black/5 transition"
+                  onClick={() => setActiveTab('docs')}
+                  className="flex items-center space-x-2 px-6 py-3 rounded-full border border-black/20 text-black font-display font-semibold text-sm hover:bg-black/5 transition"
                 >
-                  <Activity className="w-4 h-4" />
-                  <span>View Drift Feed</span>
+                  <BookOpen className="w-4 h-4" />
+                  <span>Problem Statement Docs</span>
                 </button>
               </div>
 
-              {/* Stats Bar */}
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 pt-8 border-t border-black/10 text-xs font-mono">
-                <div>
-                  <div className="text-black/40 uppercase text-[10px]">Observed Services</div>
-                  <div className="text-xl font-bold font-display text-black">5 Services</div>
+              {/* Status Indicators */}
+              <div className="pt-6 border-t border-black/5 flex flex-wrap items-center justify-center gap-6 text-xs font-mono text-black/60">
+                <div className="flex items-center space-x-2">
+                  <span className="w-2 h-2 rounded-full bg-emerald-500" />
+                  <span>Core Pipeline: Active</span>
                 </div>
-                <div>
-                  <div className="text-black/40 uppercase text-[10px]">Mutations Covered</div>
-                  <div className="text-xl font-bold font-display text-crimson">10 Catalogued</div>
+                <div className="flex items-center space-x-2">
+                  <span className="w-2 h-2 rounded-full bg-crimson" />
+                  <span>Simulated Mutations: 10 Types (M1-M10)</span>
                 </div>
-                <div>
-                  <div className="text-black/40 uppercase text-[10px]">Confidence Gate</div>
-                  <div className="text-xl font-bold font-display text-black">&ge; 90% Auto-Apply</div>
-                </div>
-                <div>
-                  <div className="text-black/40 uppercase text-[10px]">Verification</div>
-                  <div className="text-xl font-bold font-display text-crimson">100% CI Green</div>
+                <div className="flex items-center space-x-2">
+                  <span className="w-2 h-2 rounded-full bg-emerald-500" />
+                  <span>Customer MCP Server: 7 Tools</span>
                 </div>
               </div>
             </div>
 
-            {/* Three Value Pillars */}
+            {/* Core Value Pillars Grid */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
               <div className="border border-black/10 bg-white p-7 rounded-2xl shadow-card space-y-3">
-                <div className="w-10 h-10 rounded-xl bg-black text-white flex items-center justify-center font-bold">
-                  <Cpu className="w-5 h-5 text-white" />
+                <div className="w-10 h-10 rounded-xl bg-crimson/10 flex items-center justify-center text-crimson">
+                  <Activity className="w-5 h-5" />
                 </div>
                 <h3 className="font-display font-bold text-base text-black">Behavioral Ground Truth</h3>
                 <p className="text-xs text-black/60 leading-relaxed">
-                  Static OpenAPI specs and docs drift constantly. Intra observes real live HTTP payloads, discovering true distributions, nullabilities, pagination styles, and undocumented rate limits.
+                  Never trust outdated OpenAPI specs. Intra continuously fingerprints HTTP status codes, defaults, distributions, pagination shapes, and error taxonomies from real non-blocking traffic.
                 </p>
               </div>
 
               <div className="border border-black/10 bg-white p-7 rounded-2xl shadow-card space-y-3">
-                <div className="w-10 h-10 rounded-xl bg-crimson text-white flex items-center justify-center font-bold">
-                  <ShieldCheck className="w-5 h-5 text-white" />
+                <div className="w-10 h-10 rounded-xl bg-black/5 flex items-center justify-center text-black">
+                  <ShieldCheck className="w-5 h-5" />
                 </div>
                 <h3 className="font-display font-bold text-base text-black">Safe-Handling Policy Matrix</h3>
                 <p className="text-xs text-black/60 leading-relaxed">
-                  Never guess blindly. High confidence equivalent changes auto-apply with atomic rollback handles. Ambiguous or lossy changes generate human-reviewed Migration PR proposals.
+                  Mathematical safety bounds: high confidence (≥90%) equivalent changes auto-apply canary adapters. Ambiguous or lossy changes auto-generate PR proposals with rollback handles.
                 </p>
               </div>
 
               <div className="border border-black/10 bg-white p-7 rounded-2xl shadow-card space-y-3">
-                <div className="w-10 h-10 rounded-xl bg-black text-white flex items-center justify-center font-bold">
-                  <Code2 className="w-5 h-5 text-white" />
+                <div className="w-10 h-10 rounded-xl bg-black/5 flex items-center justify-center text-black">
+                  <RotateCcw className="w-5 h-5" />
                 </div>
                 <h3 className="font-display font-bold text-base text-black">Mathematical Golden Replay</h3>
                 <p className="text-xs text-black/60 leading-relaxed">
-                  Every synthesized adapter is validated against historical golden workflow traces to guarantee semantic equivalence before code touches production.
+                  Synthesized adapters must pass exhaustive golden test suites replaying recorded production requests. If semantic equivalence fails, the adapter is rolled back instantly.
                 </p>
               </div>
             </div>
 
-            {/* Live Interactive Navigation Jump Cards */}
+            {/* Interactive System Navigation Jump Cards */}
             <div className="border border-black/10 bg-white p-8 rounded-2xl shadow-card space-y-6">
               <h3 className="font-display font-bold text-base uppercase tracking-wide text-black">
-                Interactive System Navigation
+                The Six Pillars of the Intra Platform
               </h3>
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                 {[
                   {
-                    title: '6-Stage Pipeline',
-                    desc: 'Observe -> Model -> Differ -> Impact -> Adapter -> Validate.',
-                    tab: 'overview',
-                    icon: Sparkles,
-                  },
-                  {
-                    title: 'Drift Feed & Diff Inspector',
-                    desc: 'Inspect detected renames, unit shifts, and confidence scores.',
-                    tab: 'drift',
+                    title: 'Dashboard: API Observability Interface',
+                    desc: 'Live traffic telemetry, structural payload diffs, Levenshtein scoring, and AST blast-radius.',
+                    tab: 'dashboard',
+                    subView: 'drift',
                     icon: Activity,
                   },
                   {
-                    title: 'AST Blast Radius Graph',
-                    desc: 'Trace upstream changes to internal codebase files & workflows.',
-                    tab: 'impact',
-                    icon: Layers,
+                    title: 'Agent: Autonomous Self-Healing',
+                    desc: 'Autonomous multi-agent loop running G1-G9 quality gates and generating migration PRs.',
+                    tab: 'agent',
+                    icon: Cpu,
                   },
                   {
-                    title: 'Safe Adapters & PRs',
-                    desc: 'Inspect Canary code, rollback handles, and pending migration PRs.',
-                    tab: 'adapters',
-                    icon: Zap,
-                  },
-                  {
-                    title: 'Mutation Switchboard (M1-M10)',
-                    desc: 'Toggle live API mutations and watch applications self-heal.',
-                    tab: 'switchboard',
-                    icon: Sliders,
-                  },
-                  {
-                    title: 'Customer MCP Server (7 Tools)',
-                    desc: 'Test Model Context Protocol tools for Cursor, Claude & AI agents.',
+                    title: 'Customer MCP Server',
+                    desc: '7 discovery and adaptation tools for Claude Desktop, Cursor, and AI developer workflows.',
                     tab: 'mcp',
                     icon: Terminal,
+                  },
+                  {
+                    title: 'Client SDK & Proxy Wrapper',
+                    desc: '@intra/sdk client library providing dynamic adapter injection and non-blocking telemetry.',
+                    tab: 'sdk',
+                    icon: Code2,
+                  },
+                  {
+                    title: 'Problem Statement Docs (lock.md)',
+                    desc: 'Full challenge alignment, architectural specifications, and mutation catalogue.',
+                    tab: 'docs',
+                    icon: BookOpen,
+                  },
+                  {
+                    title: 'Interactive Mutation Switchboard',
+                    desc: 'Live toggles for M1 through M10 with downstream application self-healing simulator.',
+                    tab: 'dashboard',
+                    subView: 'switchboard',
+                    icon: Sliders,
                   },
                 ].map((c) => {
                   const Icon = c.icon;
                   return (
                     <button
-                      key={c.tab}
-                      onClick={() => setActiveTab(c.tab as any)}
-                      className="p-5 rounded-xl border border-black/10 bg-cream-subtle/50 text-left hover:border-black/30 hover:bg-cream-subtle transition flex flex-col justify-between space-y-3 group"
+                      key={c.title}
+                      onClick={() => {
+                        setActiveTab(c.tab as MainTab);
+                        if (c.subView) setDashboardView(c.subView as DashboardSubView);
+                      }}
+                      className="p-5 rounded-xl border border-black/10 bg-cream-subtle hover:border-black/30 hover:bg-white text-left transition group flex flex-col justify-between space-y-4 shadow-sm"
                     >
                       <div className="space-y-1.5">
                         <div className="flex items-center space-x-2">
@@ -490,7 +526,7 @@ export default function App() {
                         <p className="text-xs text-black/60">{c.desc}</p>
                       </div>
                       <div className="flex items-center space-x-1 text-xs font-mono font-semibold text-black/80">
-                        <span>Open View</span>
+                        <span>Open Section</span>
                         <ArrowRight className="w-3.5 h-3.5 group-hover:translate-x-1 transition" />
                       </div>
                     </button>
@@ -502,334 +538,1081 @@ export default function App() {
         )}
 
         {/* =========================================================================
-            TAB 1: PIPELINE & ARCHITECTURE OVERVIEW
+            PILLAR 2: DASHBOARD (API OBSERVABILITY INTERFACE)
            ========================================================================= */}
-        {activeTab === 'overview' && (
+        {activeTab === 'dashboard' && (
           <div className="space-y-8">
-            <div className="border border-black/10 bg-white rounded-2xl p-7 shadow-card space-y-6">
-              <div className="flex justify-between items-center pb-4 border-b border-black/5">
+            {/* Dashboard Header & Telemetry Strip */}
+            <div className="border border-black/10 bg-white rounded-2xl p-6 shadow-card space-y-6">
+              <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                 <div>
-                  <h2 className="font-display font-bold text-black text-lg uppercase tracking-wide">
-                    The 6-Stage Autonomous Adaptation Engine
-                  </h2>
-                  <p className="text-xs text-black/60 mt-1">
-                    How Intra intercepts, fingerprints, classifies, isolates, and repairs undocumented API mutations.
-                  </p>
-                </div>
-                <button
-                  onClick={() => setActiveTab('switchboard')}
-                  className="flex items-center space-x-1.5 px-3.5 py-1.5 text-xs font-semibold bg-crimson text-white rounded-full hover:bg-crimson-hover transition shadow-sm"
-                >
-                  <Play className="w-3.5 h-3.5" />
-                  <span>Launch Live Simulation</span>
-                </button>
-              </div>
-
-              {/* 6 Stage Cards */}
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
-                {[
-                  {
-                    num: '01',
-                    title: 'Traffic Observer',
-                    pkg: '@intra/observer',
-                    desc: 'Non-blocking async capture of HTTP, webhook, and MCP traffic. Automatically strips and redacts PII/tokens before storage.',
-                    signal: 'Deep PII Redaction & Latency Index',
-                  },
-                  {
-                    num: '02',
-                    title: 'Behavioral Modeler',
-                    pkg: '@intra/model',
-                    desc: 'Derives statistical ground truth contracts from real payload observations. Infers nullability, value distributions, cardinalities, and pagination styles.',
-                    signal: 'Statistical Behavioral Fingerprints',
-                  },
-                  {
-                    num: '03',
-                    title: 'Semantic Differ',
-                    pkg: '@intra/differ',
-                    desc: 'Discovers renames, unit shifts, default flips, and enum drift. Assigns confidence scores (0.0-1.0) and 4-tier semantic verdicts.',
-                    signal: 'Confidence Gated Scoring (0.0 - 1.0)',
-                  },
-                  {
-                    num: '04',
-                    title: 'AST Blast Radius',
-                    pkg: '@intra/impact',
-                    desc: 'Analyzes application code AST and dependency graphs to map which workflows and files touch changed fields.',
-                    signal: 'Pinpoint Workflow Risk Graph',
-                  },
-                  {
-                    num: '05',
-                    title: 'Safe-Handling Policy',
-                    pkg: '@intra/adapter',
-                    desc: 'Synthesizes runtime compatibility adapters with atomic rollback handles. Enforces Canary auto-apply or escalates to Migration PRs.',
-                    signal: 'Canary Auto-Apply & Rollback Handles',
-                  },
-                  {
-                    num: '06',
-                    title: 'Golden Replayer',
-                    pkg: '@intra/validator',
-                    desc: 'Executes recorded golden workflow traces through synthesized adapters to guarantee semantic equivalence before deployment.',
-                    signal: 'Mathematical Equivalence Verification',
-                  },
-                ].map((st) => (
-                  <div key={st.num} className="p-5 border border-black/10 rounded-xl bg-cream-subtle/60 hover:border-black/30 transition space-y-3">
-                    <div className="flex justify-between items-center">
-                      <span className="font-display font-extrabold text-sm text-crimson">{st.num}</span>
-                      <span className="font-mono text-[10px] text-black/50 px-2 py-0.5 rounded bg-black/5">{st.pkg}</span>
-                    </div>
-                    <h3 className="font-display font-bold text-sm text-black">{st.title}</h3>
-                    <p className="text-xs text-black/60 leading-relaxed">{st.desc}</p>
-                    <div className="pt-2 border-t border-black/5 flex items-center space-x-1.5 text-[11px] font-mono font-semibold text-black/80">
-                      <span className="w-1.5 h-1.5 rounded-full bg-crimson" />
-                      <span>{st.signal}</span>
-                    </div>
+                  <div className="flex items-center space-x-2">
+                    <span className="verified-badge">OBSERVABILITY PLATFORM</span>
+                    <span className="text-xs font-mono text-black/50">LIVE TELEMETRY & ADAPTATION</span>
                   </div>
-                ))}
-              </div>
-            </div>
-
-            {/* Downstream Resilience Card */}
-            <div className="border border-black/10 bg-white rounded-2xl p-7 shadow-card space-y-5">
-              <div className="flex justify-between items-center">
-                <div>
-                  <h3 className="font-display font-bold text-black text-base uppercase tracking-wide">
-                    Downstream Application Health (Shipwell Logistics App)
-                  </h3>
-                  <p className="text-xs text-black/60 mt-1">
-                    Simulates real-world application resilience when external dependencies mutate in production.
+                  <h2 className="font-display font-bold text-xl text-black mt-1">
+                    API Observability Interface
+                  </h2>
+                  <p className="text-xs text-black/60 mt-0.5">
+                    Continuous behavioral telemetry, semantic drift classification, AST dependency blast-radius mapping, and self-healing runtime adaptation.
                   </p>
                 </div>
-                <div className="flex items-center space-x-2">
-                  <span className="text-xs font-mono text-black/60">Auto-Adapter Shield:</span>
+
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={resetAll}
+                    className="flex items-center space-x-1.5 px-3 py-1.5 text-xs font-mono font-semibold rounded-lg border border-black/20 hover:bg-black/5 transition"
+                  >
+                    <RefreshCw className="w-3 h-3" />
+                    <span>Reset All Mutations</span>
+                  </button>
                   <button
                     onClick={() => setAutoAdapterEnabled(!autoAdapterEnabled)}
-                    className={`px-3 py-1 rounded-full text-xs font-mono font-bold transition ${
-                      autoAdapterEnabled ? 'bg-black text-white' : 'bg-crimson text-white'
+                    className={`flex items-center space-x-1.5 px-3 py-1.5 text-xs font-mono font-bold rounded-lg transition ${
+                      autoAdapterEnabled ? 'bg-crimson text-white' : 'border border-black/20 text-black'
                     }`}
                   >
-                    {autoAdapterEnabled ? 'ENABLED (SHIELD ON)' : 'DISABLED (RAW TRAFFIC)'}
+                    <Zap className="w-3 h-3" />
+                    <span>Auto-Adapt: {autoAdapterEnabled ? 'ON' : 'OFF'}</span>
                   </button>
                 </div>
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                {[
-                  {
-                    name: 'UserProfile Workflow',
-                    ep: 'GET /users',
-                    m: mutations.find((m) => m.id === 'M1')!,
-                  },
-                  {
-                    name: 'Checkout Workflow',
-                    ep: 'POST /payments/charge',
-                    m: mutations.find((m) => m.id === 'M3')!,
-                  },
-                  {
-                    name: 'UserAudit Security Workflow',
-                    ep: 'GET /users (status)',
-                    m: mutations.find((m) => m.id === 'M10')!,
-                  },
-                ].map((item) => {
-                  const isMutated = item.m.active;
-                  const isShielded = autoAdapterEnabled && item.m.verdict !== 'breaking';
-                  const isHealthy = !isMutated || isShielded;
+              {/* Telemetry Metric Cards */}
+              <div className="grid grid-cols-2 sm:grid-cols-5 gap-3 pt-4 border-t border-black/5 text-xs font-mono">
+                <div className="p-3 rounded-xl bg-cream-subtle border border-black/5">
+                  <div className="text-black/50 text-[10px] uppercase">Observations</div>
+                  <div className="font-bold text-base text-black">14,892</div>
+                  <div className="text-[10px] text-emerald-600 font-semibold">100% PII Masked</div>
+                </div>
+                <div className="p-3 rounded-xl bg-cream-subtle border border-black/5">
+                  <div className="text-black/50 text-[10px] uppercase">Contracts</div>
+                  <div className="font-bold text-base text-black">5 Active</div>
+                  <div className="text-[10px] text-black/60 font-semibold">Behavioral Inferred</div>
+                </div>
+                <div className="p-3 rounded-xl bg-cream-subtle border border-black/5">
+                  <div className="text-black/50 text-[10px] uppercase">Active Drift</div>
+                  <div className="font-bold text-base text-crimson">{activeMutations.length} Detected</div>
+                  <div className="text-[10px] text-black/60 font-semibold">Structural + Semantic</div>
+                </div>
+                <div className="p-3 rounded-xl bg-cream-subtle border border-black/5">
+                  <div className="text-black/50 text-[10px] uppercase">Canary Adapters</div>
+                  <div className="font-bold text-base text-black">
+                    {activeMutations.filter((m) => m.adapted).length} Live
+                  </div>
+                  <div className="text-[10px] text-emerald-600 font-semibold">Replay Verified</div>
+                </div>
+                <div className="p-3 rounded-xl bg-cream-subtle border border-black/5 col-span-2 sm:col-span-1">
+                  <div className="text-black/50 text-[10px] uppercase">Breaker Status</div>
+                  <div className="font-bold text-base text-crimson">
+                    {mutations.find((m) => m.id === 'M10')?.active ? 'TRIPPED (M10)' : 'ARMED'}
+                  </div>
+                  <div className="text-[10px] text-black/60 font-semibold">Zero Bypass</div>
+                </div>
+              </div>
 
+              {/* Sub-Navigation Pill Dock for Dashboard Views */}
+              <div className="flex flex-wrap items-center gap-1.5 pt-2 border-t border-black/5">
+                {[
+                  { id: 'drift', label: 'Drift Inspector', icon: Activity },
+                  { id: 'pipeline', label: 'Pipeline Engine', icon: Sparkles },
+                  { id: 'impact', label: 'AST Blast Radius', icon: Layers },
+                  { id: 'adapters', label: 'Safe Adapters & PRs', icon: Zap },
+                  { id: 'switchboard', label: 'Mutation Switchboard', icon: Sliders, badge: activeMutations.length },
+                  { id: 'resilience', label: 'Downstream Resilience', icon: ShieldCheck },
+                ].map((tab) => {
+                  const Icon = tab.icon;
+                  const isSelected = dashboardView === tab.id;
                   return (
-                    <div
-                      key={item.name}
-                      className={`p-5 border rounded-xl space-y-3 transition ${
-                        isHealthy ? 'border-black/10 bg-cream-subtle' : 'border-crimson bg-crimson/5'
+                    <button
+                      key={tab.id}
+                      onClick={() => setDashboardView(tab.id as DashboardSubView)}
+                      className={`flex items-center space-x-1.5 px-3 py-1.5 rounded-full text-xs font-semibold transition ${
+                        isSelected
+                          ? 'bg-black text-white shadow-sm'
+                          : 'bg-black/5 text-black/70 hover:bg-black/10 hover:text-black'
                       }`}
                     >
-                      <div className="flex justify-between items-center">
-                        <span className="font-mono font-bold text-xs text-black">{item.name}</span>
-                        <span
-                          className={`text-[9px] font-mono px-2 py-0.5 rounded-full font-bold uppercase tracking-wider ${
-                            isHealthy ? 'bg-black text-white' : 'bg-crimson text-white'
-                          }`}
-                        >
-                          {isHealthy ? 'GREEN / OPERATIONAL' : 'RED / BROKEN'}
+                      <Icon className="w-3.5 h-3.5" />
+                      <span>{tab.label}</span>
+                      {tab.badge !== undefined && tab.badge > 0 && (
+                        <span className="w-4 h-4 rounded-full bg-crimson text-white text-[10px] font-bold flex items-center justify-center">
+                          {tab.badge}
                         </span>
-                      </div>
-                      <div className="font-mono text-[11px] text-black/50">{item.ep}</div>
-                      <div className="text-xs">
-                        {isHealthy ? (
-                          <div className="text-black/70 flex items-start space-x-1.5">
-                            <CheckCircle2 className="w-3.5 h-3.5 text-black mt-0.5 flex-shrink-0" />
-                            <span>
-                              {isMutated
-                                ? `Self-healed via synthesized runtime adapter (${item.m.id})`
-                                : 'Consuming standard baseline upstream contract'}
-                            </span>
-                          </div>
-                        ) : (
-                          <div className="text-crimson font-medium flex items-start space-x-1.5">
-                            <AlertTriangle className="w-3.5 h-3.5 text-crimson mt-0.5 flex-shrink-0" />
-                            <span>{item.m.brokenError}</span>
-                          </div>
-                        )}
-                      </div>
-                    </div>
+                      )}
+                    </button>
                   );
                 })}
+              </div>
+            </div>
+
+            {/* Sub-view: Drift Inspector */}
+            {dashboardView === 'drift' && (
+              <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                {/* Left: Drift List */}
+                <div className="lg:col-span-1 space-y-3">
+                  <div className="border border-black/10 bg-white rounded-2xl p-5 shadow-card space-y-4">
+                    <div className="flex justify-between items-center pb-2 border-b border-black/5">
+                      <h3 className="font-display font-bold text-xs uppercase tracking-wider text-black">
+                        Detected Drift Events ({mutations.length})
+                      </h3>
+                      <span className="text-[10px] font-mono text-black/50">M1–M10 CATALOGUE</span>
+                    </div>
+
+                    <div className="space-y-2">
+                      {mutations.map((m) => {
+                        const isSelected = m.id === selectedMutationId;
+                        return (
+                          <button
+                            key={m.id}
+                            onClick={() => setSelectedMutationId(m.id)}
+                            className={`w-full text-left p-3 rounded-xl border transition ${
+                              isSelected
+                                ? 'border-crimson bg-crimson/5 shadow-sm'
+                                : 'border-black/5 bg-cream-subtle hover:border-black/20'
+                            }`}
+                          >
+                            <div className="flex justify-between items-start">
+                              <span className="font-mono font-bold text-xs text-crimson">{m.id}</span>
+                              <div className="flex items-center space-x-1">
+                                {m.active && (
+                                  <span className="w-2 h-2 rounded-full bg-crimson animate-pulse" />
+                                )}
+                                <span
+                                  className={`text-[10px] font-mono uppercase px-1.5 py-0.5 rounded ${
+                                    m.verdict === 'breaking'
+                                      ? 'bg-crimson text-white font-bold'
+                                      : m.verdict === 'lossy'
+                                      ? 'border border-crimson/30 text-crimson font-medium'
+                                      : 'bg-black text-white font-medium'
+                                  }`}
+                                >
+                                  {m.verdict}
+                                </span>
+                              </div>
+                            </div>
+                            <div className="font-display font-semibold text-xs text-black mt-1">
+                              {m.name}
+                            </div>
+                            <div className="text-[11px] font-mono text-black/50 mt-0.5">
+                              {m.endpoint} &bull; {(m.confidence * 100).toFixed(0)}% conf
+                            </div>
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+                </div>
+
+                {/* Right: Detailed Inspector */}
+                <div className="lg:col-span-2 space-y-6">
+                  <div className="border border-black/10 bg-white rounded-2xl p-7 shadow-card space-y-6">
+                    <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 pb-4 border-b border-black/5">
+                      <div>
+                        <div className="flex items-center space-x-2">
+                          <span className="font-mono font-bold text-sm text-crimson">{selectedMutation.id}</span>
+                          <h3 className="font-display font-bold text-base text-black">{selectedMutation.name}</h3>
+                        </div>
+                        <p className="text-xs text-black/60 mt-0.5 font-mono">
+                          {selectedMutation.service} &bull; {selectedMutation.endpoint}
+                        </p>
+                      </div>
+
+                      <div className="flex items-center space-x-2">
+                        <span className="text-xs font-mono text-black/50">State:</span>
+                        <span
+                          className={`text-xs font-mono font-bold px-2.5 py-1 rounded-full ${
+                            selectedMutation.active ? 'bg-crimson text-white' : 'bg-black/10 text-black'
+                          }`}
+                        >
+                          {selectedMutation.active ? 'MUTATED UPSTREAM' : 'BASELINE STABLE'}
+                        </span>
+                      </div>
+                    </div>
+
+                    {/* Diff Viewer */}
+                    <div className="space-y-2">
+                      <h4 className="font-display font-bold text-xs uppercase tracking-wider text-black">
+                        Live Payload Structural Diff
+                      </h4>
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 font-mono text-xs">
+                        <div className="p-4 rounded-xl border border-black/10 bg-cream-subtle space-y-2">
+                          <div className="flex justify-between items-center text-black/50 text-[11px]">
+                            <span>BASELINE CONTRACT</span>
+                            <span className="font-semibold text-emerald-600">ORIGINAL</span>
+                          </div>
+                          <pre className="text-black overflow-x-auto whitespace-pre-wrap">
+                            {selectedMutation.beforeSnippet}
+                          </pre>
+                        </div>
+
+                        <div className="p-4 rounded-xl border border-crimson/30 bg-crimson/5 space-y-2">
+                          <div className="flex justify-between items-center text-crimson text-[11px]">
+                            <span>OBSERVED TELEMETRY</span>
+                            <span className="font-bold">UNDOCUMENTED</span>
+                          </div>
+                          <pre className="text-black overflow-x-auto whitespace-pre-wrap">
+                            {selectedMutation.afterSnippet}
+                          </pre>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Evidence Metrics */}
+                    <div className="p-4 rounded-xl border border-black/10 bg-cream-subtle/70 space-y-2">
+                      <h4 className="font-display font-bold text-xs uppercase tracking-wider text-black">
+                        Statistical Evidence & Classification
+                      </h4>
+                      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs font-mono">
+                        <div>
+                          <span className="text-black/50">Levenshtein Similarity:</span>{' '}
+                          <span className="font-bold text-black">{(selectedMutation.confidence * 0.98).toFixed(2)}</span>
+                        </div>
+                        <div>
+                          <span className="text-black/50">Confidence Score:</span>{' '}
+                          <span className="font-bold text-crimson">{(selectedMutation.confidence * 100).toFixed(0)}%</span>
+                        </div>
+                        <div>
+                          <span className="text-black/50">Safe-Handling Action:</span>{' '}
+                          <span className="font-bold text-black">
+                            {selectedMutation.verdict === 'breaking'
+                              ? 'Circuit Breaker'
+                              : selectedMutation.verdict === 'lossy'
+                              ? 'Migration PR'
+                              : 'Auto-Apply Canary'}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Adapter Code */}
+                    <div className="space-y-2">
+                      <div className="flex justify-between items-center">
+                        <h4 className="font-display font-bold text-xs uppercase tracking-wider text-black">
+                          Synthesized Compatibility Adapter
+                        </h4>
+                        <button
+                          onClick={() => copyToClipboard(selectedMutation.adapterCode, 'adapter')}
+                          className="flex items-center space-x-1 text-xs font-mono text-black/60 hover:text-black"
+                        >
+                          {copiedKey === 'adapter' ? <Check className="w-3 h-3 text-emerald-600" /> : <Copy className="w-3 h-3" />}
+                          <span>{copiedKey === 'adapter' ? 'Copied' : 'Copy Code'}</span>
+                        </button>
+                      </div>
+                      <pre className="p-4 rounded-xl border border-black/10 bg-cream-subtle font-mono text-xs text-black overflow-x-auto whitespace-pre-wrap">
+                        {selectedMutation.adapterCode}
+                      </pre>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Sub-view: Pipeline Engine */}
+            {dashboardView === 'pipeline' && (
+              <div className="space-y-8">
+                <div className="border border-black/10 bg-white rounded-2xl p-7 shadow-card space-y-6">
+                  <div>
+                    <span className="verified-badge">END-TO-END SPECIFICATION</span>
+                    <h2 className="font-display font-bold text-lg text-black mt-1">
+                      The 6-Stage Autonomous Adaptation Pipeline
+                    </h2>
+                    <p className="text-xs text-black/60 mt-1">
+                      How Intra intercepts, fingerprints, classifies, isolates, and repairs undocumented API mutations.
+                    </p>
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+                    {[
+                      {
+                        step: '01',
+                        name: 'Traffic Observer',
+                        pkg: '@intra/observer',
+                        desc: 'Non-blocking proxy & SDK wrapper capturing latency, headers, status codes, and payloads with automatic SHA-256 PII masking.',
+                      },
+                      {
+                        step: '02',
+                        name: 'Contract Fingerprint',
+                        pkg: '@intra/model',
+                        desc: 'Learns behavioral ground truth: value distributions, enum sets, error taxonomies, nullability, and pagination schemes.',
+                      },
+                      {
+                        step: '03',
+                        name: 'Differ & Classifier',
+                        pkg: '@intra/differ',
+                        desc: 'Compares sliding windows against baseline. Emits typed Change records with Levenshtein confidence and semantic verdicts.',
+                      },
+                      {
+                        step: '04',
+                        name: 'AST Blast Radius',
+                        pkg: '@intra/impact',
+                        desc: 'Static TypeScript parser tracing field references through Shipwell workflow ASTs to pin-point affected code lines.',
+                      },
+                      {
+                        step: '05',
+                        name: 'Safe-Handling Policy',
+                        pkg: '@intra/adapter',
+                        desc: 'Synthesizes versioned compatibility adapters with unique rollback handles. High confidence auto-applies; lossy generates PRs.',
+                      },
+                      {
+                        step: '06',
+                        name: 'Golden Replay Replay',
+                        pkg: '@intra/validator',
+                        desc: 'Replays recorded production workflows against the adapted service. Asserts strict mathematical and semantic equivalence.',
+                      },
+                    ].map((stage) => (
+                      <div
+                        key={stage.step}
+                        className="p-5 rounded-xl border border-black/10 bg-cream-subtle/50 space-y-3 relative group hover:border-black/30 transition shadow-sm"
+                      >
+                        <div className="flex justify-between items-center">
+                          <span className="font-mono font-black text-sm text-crimson">{stage.step}</span>
+                          <span className="text-[10px] font-mono text-black/40 uppercase">{stage.pkg}</span>
+                        </div>
+                        <h3 className="font-display font-bold text-sm text-black">{stage.name}</h3>
+                        <p className="text-xs text-black/65 leading-relaxed">{stage.desc}</p>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Sub-view: AST Blast Radius */}
+            {dashboardView === 'impact' && (
+              <div className="border border-black/10 bg-white rounded-2xl p-7 shadow-card space-y-6">
+                <div>
+                  <div className="flex items-center space-x-2">
+                    <span className="verified-badge">STATIC AST PARSER</span>
+                    <span className="text-xs font-mono text-black/50">AST BLAST-RADIUS ENGINE</span>
+                  </div>
+                  <h2 className="font-display font-bold text-lg text-black mt-1">
+                    Application Workflow Blast-Radius Graph
+                  </h2>
+                  <p className="text-xs text-black/60 mt-1">
+                    Intra inspects the downstream codebase to identify which internal workflows, functions, and files are broken by the upstream drift.
+                  </p>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {[
+                    {
+                      mutation: 'M1 Field Rename (name -> display_name)',
+                      workflow: 'userProfile',
+                      file: 'apps/demo-app/src/workflows/userProfile.ts',
+                      lines: 'L18-L24',
+                      severity: 'low',
+                      fields: ['users.name'],
+                      status: 'HEALED VIA ADAPTER',
+                    },
+                    {
+                      mutation: 'M3 Unit Shift ($ float -> cents integer)',
+                      workflow: 'checkout',
+                      file: 'apps/demo-app/src/workflows/checkout.ts',
+                      lines: 'L42-L50',
+                      severity: 'high',
+                      fields: ['payments.amount'],
+                      status: 'HEALED VIA ADAPTER',
+                    },
+                    {
+                      mutation: 'M5 Pagination (offset -> opaque cursor)',
+                      workflow: 'searchBrowse',
+                      file: 'apps/demo-app/src/workflows/searchBrowse.ts',
+                      lines: 'L65-L72',
+                      severity: 'medium',
+                      fields: ['search.offset'],
+                      status: 'HEALED VIA ADAPTER',
+                    },
+                    {
+                      mutation: 'M10 Enum Semantics (active silently includes suspended)',
+                      workflow: 'userAudit',
+                      file: 'apps/demo-app/src/workflows/audit.ts',
+                      lines: 'L88-L96',
+                      severity: 'critical',
+                      fields: ['users.status'],
+                      status: 'CIRCUIT BREAKER ENGAGED',
+                    },
+                  ].map((impact, i) => (
+                    <div
+                      key={i}
+                      className="p-5 rounded-xl border border-black/10 bg-cream-subtle/50 space-y-3 shadow-sm"
+                    >
+                      <div className="flex justify-between items-center">
+                        <span className="font-mono text-xs font-bold text-black">{impact.workflow}</span>
+                        <span
+                          className={`text-[10px] font-mono uppercase px-2 py-0.5 rounded font-bold ${
+                            impact.severity === 'critical'
+                              ? 'bg-crimson text-white'
+                              : impact.severity === 'high'
+                              ? 'border border-crimson text-crimson'
+                              : 'bg-black text-white'
+                          }`}
+                        >
+                          {impact.severity}
+                        </span>
+                      </div>
+                      <div className="text-xs font-semibold text-black">{impact.mutation}</div>
+                      <div className="p-2.5 rounded-lg bg-white border border-black/10 font-mono text-[11px] text-black/70 space-y-1">
+                        <div>
+                          <span className="text-black/40">File:</span> {impact.file}
+                        </div>
+                        <div>
+                          <span className="text-black/40">Lines:</span> {impact.lines}
+                        </div>
+                        <div>
+                          <span className="text-black/40">Touched:</span> {impact.fields.join(', ')}
+                        </div>
+                      </div>
+                      <div className="text-[11px] font-mono font-bold text-crimson">
+                        Status: {impact.status}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Sub-view: Safe Adapters & PRs */}
+            {dashboardView === 'adapters' && (
+              <div className="space-y-6">
+                <div className="border border-black/10 bg-white rounded-2xl p-7 shadow-card space-y-6">
+                  <div>
+                    <span className="verified-badge">SECTION 10 SAFE-HANDLING</span>
+                    <h2 className="font-display font-bold text-lg text-black mt-1">
+                      Active Adapters & Pending Migration Proposals
+                    </h2>
+                    <p className="text-xs text-black/60 mt-1">
+                      Safe-Handling Matrix guarantees zero unintended mutations in production. Only verified equivalent adaptations auto-apply.
+                    </p>
+                  </div>
+
+                  <div className="space-y-4">
+                    <h3 className="font-display font-bold text-xs uppercase tracking-wider text-black">
+                      Active Canary Adapters (Self-Healing Runtime)
+                    </h3>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      {mutations
+                        .filter((m) => m.adapted)
+                        .map((m) => (
+                          <div
+                            key={m.id}
+                            className="p-5 rounded-xl border border-black/10 bg-white space-y-3 shadow-sm"
+                          >
+                            <div className="flex justify-between items-center">
+                              <span className="font-mono font-bold text-xs text-crimson">ADAPTER_{m.id}</span>
+                              <span className="verified-badge">CANARY LIVE</span>
+                            </div>
+                            <div className="font-display font-semibold text-xs text-black">{m.name}</div>
+                            <pre className="p-3 bg-cream-subtle border border-black/10 rounded-lg font-mono text-[11px] text-black overflow-x-auto">
+                              {m.adapterCode}
+                            </pre>
+                            <div className="text-[10px] font-mono text-black/50">
+                              Rollback Handle: <code className="text-black font-semibold">rollback_{m.id}_canary_ok</code>
+                            </div>
+                          </div>
+                        ))}
+                    </div>
+                  </div>
+
+                  {/* Pending PRs */}
+                  <div className="space-y-4 pt-4 border-t border-black/5">
+                    <h3 className="font-display font-bold text-xs uppercase tracking-wider text-crimson">
+                      Pending Human Review Migration Proposals (Lossy or Breaking)
+                    </h3>
+                    {[
+                      {
+                        id: 'PR-102',
+                        title: 'M2 Name Format Inversion (Last, First -> First Last)',
+                        diff: '+++ export function adaptName(val) {\n+++   const [l, f] = val.split(", ");\n+++   return `${f} ${l}`;\n+++ }',
+                        risk: 'MEDIUM (Lossy formatting)',
+                        mutationId: 'M2',
+                      },
+                      {
+                        id: 'PR-103',
+                        title: 'M10 Security Alert: Enum Semantics Drift on status=active',
+                        diff: '--- user.status === "active"\n+++ user.status === "active" && !user.isSuspended // MANUAL SANITY FIX',
+                        risk: 'CRITICAL (Security Isolation)',
+                        mutationId: 'M10',
+                      },
+                    ].map((pr) => {
+                      const isApproved = proposalApproved[pr.id];
+                      return (
+                        <div
+                          key={pr.id}
+                          className="p-5 rounded-xl border border-crimson/20 bg-crimson/5 space-y-3"
+                        >
+                          <div className="flex justify-between items-center">
+                            <div className="flex items-center space-x-2">
+                              <GitPullRequest className="w-4 h-4 text-crimson" />
+                              <span className="font-mono font-bold text-xs text-crimson">{pr.id}</span>
+                              <span className="font-semibold text-xs text-black">{pr.title}</span>
+                            </div>
+                            <span className="text-[10px] font-mono font-bold text-crimson px-2 py-0.5 rounded bg-white border border-crimson/20">
+                              {pr.risk}
+                            </span>
+                          </div>
+                          <pre className="p-3 bg-white border border-black/10 rounded-lg font-mono text-[11px] text-black overflow-x-auto">
+                            {pr.diff}
+                          </pre>
+                          <div className="flex justify-between items-center pt-2">
+                            <span className="text-xs font-mono text-black/50">
+                              Status: {isApproved ? 'APPROVED & MERGED' : 'AWAITING HUMAN REVIEW'}
+                            </span>
+                            <button
+                              onClick={() => approveProposal(pr.id)}
+                              disabled={isApproved}
+                              className={`px-4 py-1.5 rounded-full text-xs font-mono font-bold transition ${
+                                isApproved
+                                  ? 'bg-emerald-600 text-white cursor-default'
+                                  : 'bg-black text-white hover:bg-black/80'
+                              }`}
+                            >
+                              {isApproved ? 'Merged to Production' : 'Approve PR Proposal'}
+                            </button>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Sub-view: Mutation Switchboard */}
+            {dashboardView === 'switchboard' && (
+              <div className="border border-black/10 bg-white rounded-2xl p-7 shadow-card space-y-6">
+                <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+                  <div>
+                    <span className="verified-badge">SIMULATED EXTERNAL SERVICES</span>
+                    <h2 className="font-display font-bold text-lg text-black mt-1">
+                      Mutation Switchboard (M1 through M10)
+                    </h2>
+                    <p className="text-xs text-black/60 mt-1">
+                      Inject live undocumented upstream changes into users, payments, search, notifications, and MCP services.
+                    </p>
+                  </div>
+                  <button
+                    onClick={resetAll}
+                    className="flex items-center space-x-1.5 px-4 py-2 text-xs font-mono font-bold rounded-full bg-crimson text-white hover:bg-crimson-hover transition shadow-sm"
+                  >
+                    <RefreshCw className="w-3.5 h-3.5" />
+                    <span>Reset All to Baseline</span>
+                  </button>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {mutations.map((m) => (
+                    <div
+                      key={m.id}
+                      className={`p-4 border rounded-xl flex items-center justify-between transition duration-200 ${
+                        m.active
+                          ? 'border-crimson bg-crimson/5 shadow-sm'
+                          : 'border-black/10 bg-white hover:border-black/20'
+                      }`}
+                    >
+                      <div className="space-y-1 pr-4">
+                        <div className="flex items-center space-x-2">
+                          <span className="font-mono font-bold text-xs text-crimson">{m.id}</span>
+                          <span className="font-semibold text-xs text-black">{m.name}</span>
+                          <span className="text-[10px] font-mono text-black/40 uppercase">[{m.service}]</span>
+                        </div>
+                        <div className="text-xs text-black/60">{m.desc}</div>
+                      </div>
+                      <button
+                        onClick={() => toggleMutation(m.id)}
+                        className={`px-3 py-1.5 text-xs font-mono font-bold rounded-full transition ${
+                          m.active
+                            ? 'bg-crimson text-white shadow-sm'
+                            : 'border border-black/20 text-black hover:bg-black/5'
+                        }`}
+                      >
+                        {m.active ? 'MUTATED' : 'BASELINE'}
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Sub-view: Downstream Resilience */}
+            {dashboardView === 'resilience' && (
+              <div className="border border-black/10 bg-white rounded-2xl p-7 shadow-card space-y-6">
+                <div>
+                  <span className="verified-badge">SHIPWELL APPLICATION STATUS</span>
+                  <h2 className="font-display font-bold text-lg text-black mt-1">
+                    Live Downstream Application Resilience Simulator
+                  </h2>
+                  <p className="text-xs text-black/60 mt-1">
+                    Verify that downstream client applications stay operational when upstream dependencies mutate.
+                  </p>
+                </div>
+
+                <div className="space-y-4">
+                  {[
+                    {
+                      mutationId: 'M1',
+                      workflow: 'userProfile',
+                      name: 'Fetch User Profile',
+                      endpoint: 'GET /users',
+                    },
+                    {
+                      mutationId: 'M3',
+                      workflow: 'checkout',
+                      name: 'Submit Order Payment',
+                      endpoint: 'POST /payments/charge',
+                    },
+                    {
+                      mutationId: 'M5',
+                      workflow: 'searchBrowse',
+                      name: 'Catalog Pagination',
+                      endpoint: 'GET /search',
+                    },
+                    {
+                      mutationId: 'M7',
+                      workflow: 'notificationAck',
+                      name: 'Webhook Event Dispatch',
+                      endpoint: 'POST /notifications/webhook',
+                    },
+                    {
+                      mutationId: 'M9',
+                      workflow: 'mcpAssistantCall',
+                      name: 'MCP Assistant Tool Call',
+                      endpoint: 'POST /mcp-tool/execute',
+                    },
+                  ].map((item) => {
+                    const mut = mutations.find((m) => m.id === item.mutationId)!;
+                    const isMutated = mut.active;
+                    const isSelfHealed = mut.adapted && autoAdapterEnabled;
+                    return (
+                      <div
+                        key={item.workflow}
+                        className={`p-4 rounded-xl border transition ${
+                          isMutated && !isSelfHealed
+                            ? 'border-crimson bg-crimson/5'
+                            : isMutated && isSelfHealed
+                            ? 'border-emerald-500/40 bg-emerald-50/40'
+                            : 'border-black/10 bg-white'
+                        }`}
+                      >
+                        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2">
+                          <div>
+                            <div className="flex items-center space-x-2">
+                              <span className="font-display font-bold text-xs text-black">{item.name}</span>
+                              <span className="font-mono text-[10px] text-black/50">({item.endpoint})</span>
+                            </div>
+                            <div className="text-xs text-black/60 font-mono mt-0.5">
+                              Workflow: <code className="text-black font-semibold">{item.workflow}</code>
+                            </div>
+                          </div>
+
+                          <div className="flex items-center space-x-2">
+                            {isMutated && !isSelfHealed ? (
+                              <span className="flex items-center space-x-1.5 px-3 py-1 rounded-full bg-crimson text-white text-xs font-mono font-bold">
+                                <AlertTriangle className="w-3 h-3" />
+                                <span>BROKEN (NO ADAPTER)</span>
+                              </span>
+                            ) : isMutated && isSelfHealed ? (
+                              <span className="flex items-center space-x-1.5 px-3 py-1 rounded-full bg-emerald-600 text-white text-xs font-mono font-bold">
+                                <CheckCircle2 className="w-3 h-3" />
+                                <span>SELF-HEALED (GREEN)</span>
+                              </span>
+                            ) : (
+                              <span className="flex items-center space-x-1.5 px-3 py-1 rounded-full bg-black/10 text-black text-xs font-mono font-medium">
+                                <CheckCircle2 className="w-3 h-3" />
+                                <span>HEALTHY BASELINE</span>
+                              </span>
+                            )}
+                          </div>
+                        </div>
+
+                        <div className="mt-3 pt-3 border-t border-black/5 text-xs font-mono">
+                          {isMutated && !isSelfHealed ? (
+                            <div className="text-crimson">{mut.brokenError}</div>
+                          ) : isMutated && isSelfHealed ? (
+                            <div className="text-emerald-700">{mut.adaptedSuccess}</div>
+                          ) : (
+                            <div className="text-black/50">Operating smoothly against stable baseline API specification.</div>
+                          )}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* =========================================================================
+            PILLAR 3: AGENT (AUTONOMOUS MULTI-AGENT ADAPTATION & CI/CD RUNNER)
+           ========================================================================= */}
+        {activeTab === 'agent' && (
+          <div className="space-y-8">
+            {/* Header */}
+            <div className="border border-black/10 bg-white rounded-2xl p-7 shadow-card space-y-6">
+              <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+                <div>
+                  <div className="flex items-center space-x-2">
+                    <span className="verified-badge">AUTONOMOUS AGENT ENGINE</span>
+                    <span className="text-xs font-mono text-black/50">MULTI-AGENT REMEDIATION</span>
+                  </div>
+                  <h2 className="font-display font-bold text-xl text-black mt-1">
+                    Autonomous Adaptation Agent & CI/CD Gate Runner
+                  </h2>
+                  <p className="text-xs text-black/60 mt-1 max-w-2xl">
+                    Autonomous multi-agent orchestration and rigorous quality gate enforcement ensuring zero regression, deterministic adapter generation, and safe self-healing.
+                  </p>
+                </div>
+
+                <button
+                  onClick={runAllQualityGates}
+                  disabled={runningGates}
+                  className="flex items-center space-x-2 px-6 py-2.5 rounded-full bg-crimson text-white font-mono font-bold text-xs hover:bg-crimson-hover transition shadow-sm"
+                >
+                  <RotateCcw className={`w-3.5 h-3.5 ${runningGates ? 'animate-spin' : ''}`} />
+                  <span>{runningGates ? 'Executing Gates...' : 'Run All CI/CD Quality Gates'}</span>
+                </button>
+              </div>
+
+              {/* Quality Gates Grid */}
+              <div className="space-y-3 pt-4 border-t border-black/5">
+                <div className="flex justify-between items-center">
+                  <h3 className="font-display font-bold text-xs uppercase tracking-wider text-black">
+                    Multi-Stage Quality Gates (Section 8 Enforcement)
+                  </h3>
+                  <span className="text-xs font-mono text-emerald-600 font-bold">ALL GATES VERIFIED GREEN</span>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                  {[
+                    {
+                      id: 'G1',
+                      name: 'Typecheck',
+                      cmd: 'pnpm -w typecheck',
+                      desc: 'Full TypeScript strict compiler check across all 13 workspace packages.',
+                      status: gatesRan ? 'PASS' : 'PENDING',
+                      tasks: '22/22 Turbo tasks green',
+                    },
+                    {
+                      id: 'G2',
+                      name: 'Lint & Schema Hygeine',
+                      cmd: 'pnpm -w lint',
+                      desc: 'Enforces strict Zod contracts and unused import pruning.',
+                      status: gatesRan ? 'PASS' : 'PENDING',
+                      tasks: 'Zero lint warnings',
+                    },
+                    {
+                      id: 'G3',
+                      name: 'Unit Tests',
+                      cmd: 'pnpm -w test',
+                      desc: 'Vitest unit tests covering differ, model, observer, and adapter packages.',
+                      status: gatesRan ? 'PASS' : 'PENDING',
+                      tasks: '22 test suites, 110 tests passed',
+                    },
+                    {
+                      id: 'G4',
+                      name: 'Safety-Critical Coverage',
+                      cmd: 'pnpm -w test:coverage',
+                      desc: 'Guarantees ≥85% code coverage on differ, adapter, and validator.',
+                      status: gatesRan ? 'PASS' : 'PENDING',
+                      tasks: '92.4% line coverage',
+                    },
+                    {
+                      id: 'G8',
+                      name: 'Integration Pipeline',
+                      cmd: 'pnpm -w test:int',
+                      desc: 'End-to-end integration tests between Fastify sim services and engine REST API.',
+                      status: gatesRan ? 'PASS' : 'PENDING',
+                      tasks: 'All mock endpoints responsive',
+                    },
+                    {
+                      id: 'G9',
+                      name: 'E2E Demo Replay',
+                      cmd: 'pnpm demo',
+                      desc: 'Executes live autonomous adaptation demo script with all assertions verified.',
+                      status: gatesRan ? 'PASS' : 'PENDING',
+                      tasks: 'Playwright & script green',
+                    },
+                  ].map((gate) => (
+                    <div
+                      key={gate.id}
+                      className="p-4 rounded-xl border border-black/10 bg-cream-subtle/50 space-y-2 shadow-sm"
+                    >
+                      <div className="flex justify-between items-center">
+                        <span className="font-mono font-bold text-xs text-crimson">{gate.id}: {gate.name}</span>
+                        <span className="px-2 py-0.5 rounded text-[10px] font-mono font-bold bg-emerald-600 text-white">
+                          {gate.status}
+                        </span>
+                      </div>
+                      <p className="text-xs text-black/60">{gate.desc}</p>
+                      <div className="pt-2 border-t border-black/5 flex justify-between items-center text-[10px] font-mono text-black/50">
+                        <code>{gate.cmd}</code>
+                        <span className="text-black/80 font-semibold">{gate.tasks}</span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Multi-Agent Subagent Coordination Roster */}
+              <div className="space-y-4 pt-4 border-t border-black/5">
+                <h3 className="font-display font-bold text-xs uppercase tracking-wider text-black">
+                  Subagent Operational Roster (HARNESS.md §5 Ownership Matrix)
+                </h3>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 text-xs font-mono">
+                  {[
+                    {
+                      agent: 'orchestrator',
+                      role: 'Pipeline Dispatcher',
+                      owned: '.harness/*',
+                      state: 'IDLE (MONITORING)',
+                    },
+                    {
+                      agent: 'qa-engineer',
+                      role: 'Independent Verification',
+                      owned: '**/*.test.ts',
+                      state: 'VERIFIED GREEN',
+                    },
+                    {
+                      agent: 'differ-dev',
+                      role: 'Semantic Classification',
+                      owned: 'packages/differ',
+                      state: 'ACTIVE OBSERVER',
+                    },
+                    {
+                      agent: 'adapter-dev',
+                      role: 'Canary Synthesis',
+                      owned: 'packages/adapter',
+                      state: 'READY FOR ADAPTATION',
+                    },
+                    {
+                      agent: 'validator-dev',
+                      role: 'Golden Test Replay',
+                      owned: 'packages/validator',
+                      state: 'EQUIVALENCE PROVEN',
+                    },
+                    {
+                      agent: 'sim-dev',
+                      role: 'Mutation Switchboard',
+                      owned: 'packages/sim-services',
+                      state: '10 MUTATIONS ARMED',
+                    },
+                  ].map((sub) => (
+                    <div
+                      key={sub.agent}
+                      className="p-3.5 rounded-xl border border-black/10 bg-white space-y-1.5 shadow-sm"
+                    >
+                      <div className="flex justify-between items-center">
+                        <span className="font-bold text-crimson">@{sub.agent}</span>
+                        <span className="text-[10px] text-emerald-600 font-semibold">{sub.state}</span>
+                      </div>
+                      <div className="text-black font-sans font-medium">{sub.role}</div>
+                      <div className="text-[11px] text-black/40">Owns: {sub.owned}</div>
+                    </div>
+                  ))}
+                </div>
               </div>
             </div>
           </div>
         )}
 
         {/* =========================================================================
-            TAB 2: DRIFT DETECTION & CONFIDENCE SCORING
+            PILLAR 4: MCP (CUSTOMER MODEL CONTEXT PROTOCOL SERVER)
            ========================================================================= */}
-        {activeTab === 'drift' && (
+        {activeTab === 'mcp' && (
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            {/* Left: Drift List */}
+            {/* Left: Tool Selection */}
             <div className="lg:col-span-1 space-y-3">
               <div className="border border-black/10 bg-white rounded-2xl p-5 shadow-card space-y-4">
                 <div className="flex justify-between items-center pb-2 border-b border-black/5">
-                  <h3 className="font-display font-bold text-xs uppercase tracking-wide text-black">
-                    Detected API Mutations
+                  <h3 className="font-display font-bold text-xs uppercase tracking-wider text-black">
+                    MCP Server Tools (7)
                   </h3>
-                  <span className="text-[11px] font-mono text-black/50">{mutations.length} catalogued</span>
+                  <span className="text-[10px] font-mono text-black/50">SECTION 11 SPEC</span>
                 </div>
 
                 <div className="space-y-2">
-                  {mutations.map((m) => (
-                    <button
-                      key={m.id}
-                      onClick={() => setSelectedMutationId(m.id)}
-                      className={`w-full text-left p-3 rounded-xl border transition flex items-center justify-between ${
-                        selectedMutationId === m.id
-                          ? 'border-black bg-black text-white'
-                          : m.active
-                          ? 'border-crimson/30 bg-crimson/5 hover:bg-crimson/10'
-                          : 'border-black/10 bg-white hover:border-black/20'
-                      }`}
-                    >
-                      <div className="space-y-0.5">
-                        <div className="flex items-center space-x-2">
-                          <span className={`font-mono text-xs font-bold ${selectedMutationId === m.id ? 'text-white' : 'text-crimson'}`}>
-                            {m.id}
-                          </span>
-                          <span className="text-xs font-semibold">{m.name}</span>
-                        </div>
-                        <div className={`text-[10px] font-mono ${selectedMutationId === m.id ? 'text-white/70' : 'text-black/50'}`}>
-                          {m.endpoint}
-                        </div>
-                      </div>
+                  {[
+                    { name: 'intra_recent_changes', desc: 'List active mutations & drift with confidence' },
+                    { name: 'intra_get_contract', desc: 'Fetch behavioral contract for service & endpoint' },
+                    { name: 'intra_list_dependencies', desc: 'Query all observed services & endpoints' },
+                    { name: 'intra_impact', desc: 'Trace affected workflows & AST blast radius' },
+                    { name: 'intra_propose_adapter', desc: 'Generate TypeScript adapter & migration PR' },
+                    { name: 'intra_apply_adapter', desc: 'Apply adapter to live canary runtime' },
+                    { name: 'intra_health', desc: 'Check rate-limit headroom & system status' },
+                  ].map((tool) => {
+                    const isSelected = selectedMcpTool === tool.name;
+                    return (
+                      <button
+                        key={tool.name}
+                        onClick={() => setSelectedMcpTool(tool.name)}
+                        className={`w-full text-left p-3 rounded-xl border transition ${
+                          isSelected
+                            ? 'border-crimson bg-crimson/5 shadow-sm'
+                            : 'border-black/5 bg-cream-subtle hover:border-black/20'
+                        }`}
+                      >
+                        <div className="font-mono font-bold text-xs text-black">{tool.name}</div>
+                        <div className="text-[11px] text-black/50 mt-0.5">{tool.desc}</div>
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
 
-                      <div className="text-right">
-                        <span
-                          className={`text-[9px] font-mono px-2 py-0.5 rounded font-bold uppercase ${
-                            selectedMutationId === m.id
-                              ? 'bg-white text-black'
-                              : m.verdict === 'breaking'
-                              ? 'bg-crimson text-white'
-                              : m.verdict === 'lossy'
-                              ? 'bg-black text-white'
-                              : 'border border-black/20 text-black'
-                          }`}
-                        >
-                          {m.verdict}
-                        </span>
-                      </div>
-                    </button>
-                  ))}
+              {/* Connection info card */}
+              <div className="border border-black/10 bg-white rounded-2xl p-5 shadow-card space-y-3 text-xs font-mono">
+                <div className="flex justify-between items-center pb-2 border-b border-black/5">
+                  <span className="font-display font-bold uppercase text-[11px] text-black">Connection Config</span>
+                  <span className="text-[10px] text-crimson font-bold">STREAMABLE HTTP</span>
+                </div>
+                <div className="space-y-1.5 text-black/60 text-[11px]">
+                  <div>Transport: <code className="text-black font-semibold">http/streamable</code></div>
+                  <div>Endpoint: <code className="text-black font-semibold">http://localhost:3002/mcp</code></div>
+                  <div>Health: <code className="text-black font-semibold">GET /healthz (HTTP 200)</code></div>
                 </div>
               </div>
             </div>
 
-            {/* Right: Detailed Inspector */}
+            {/* Right: Simulated Tool Execution */}
             <div className="lg:col-span-2 space-y-6">
               <div className="border border-black/10 bg-white rounded-2xl p-7 shadow-card space-y-6">
-                <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 pb-4 border-b border-black/5">
-                  <div className="space-y-1">
+                <div className="flex justify-between items-center pb-4 border-b border-black/5">
+                  <div>
                     <div className="flex items-center space-x-2">
-                      <span className="font-mono text-sm font-bold text-crimson">{selectedMutation.id}</span>
-                      <h2 className="font-display font-bold text-lg text-black">{selectedMutation.name}</h2>
-                      <span className="text-xs font-mono text-black/50 uppercase">[{selectedMutation.service}]</span>
+                      <Terminal className="w-4 h-4 text-crimson" />
+                      <h3 className="font-mono font-bold text-sm text-black">{selectedMcpTool}</h3>
                     </div>
-                    <p className="text-xs text-black/60">{selectedMutation.desc}</p>
+                    <p className="text-xs text-black/50 mt-1">Live MCP tool execution output</p>
                   </div>
-
-                  <div className="flex items-center space-x-3">
-                    <div className="text-right">
-                      <div className="text-[10px] font-mono text-black/50 uppercase">Confidence Score</div>
-                      <div className="text-base font-display font-extrabold text-crimson">
-                        {(selectedMutation.confidence * 100).toFixed(0)}%
-                      </div>
-                    </div>
-                    <span
-                      className={`text-xs font-mono px-3 py-1 rounded-full font-bold uppercase tracking-wider ${
-                        selectedMutation.verdict === 'breaking'
-                          ? 'bg-crimson text-white'
-                          : selectedMutation.verdict === 'lossy'
-                          ? 'bg-black text-white'
-                          : 'border border-black/20 text-black'
-                      }`}
-                    >
-                      {selectedMutation.verdict}
-                    </span>
-                  </div>
+                  <span className="verified-badge">RENDER / HEALTHZ OK</span>
                 </div>
 
-                {/* Diff */}
-                <div className="space-y-2">
-                  <h4 className="font-display font-bold text-xs uppercase tracking-wider text-black">
-                    Live Payload Structural Diff
-                  </h4>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div className="p-4 rounded-xl border border-black/10 bg-cream-subtle space-y-2">
-                      <div className="flex justify-between items-center text-[11px] font-mono text-black/50">
-                        <span>Baseline Ground Truth</span>
-                        <span className="text-black/40">- Previous</span>
-                      </div>
-                      <pre className="text-xs font-mono text-black/80 overflow-x-auto whitespace-pre-wrap">
-                        {selectedMutation.beforeSnippet}
-                      </pre>
-                    </div>
-
-                    <div className="p-4 rounded-xl border border-crimson/20 bg-crimson/5 space-y-2">
-                      <div className="flex justify-between items-center text-[11px] font-mono text-crimson">
-                        <span>Mutated Observation Window</span>
-                        <span className="font-bold">+ Detected</span>
-                      </div>
-                      <pre className="text-xs font-mono text-crimson font-medium overflow-x-auto whitespace-pre-wrap">
-                        {selectedMutation.afterSnippet}
-                      </pre>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Evidence Metrics */}
-                <div className="p-4 rounded-xl border border-black/10 bg-cream-subtle/70 space-y-2">
-                  <h4 className="font-display font-bold text-xs uppercase tracking-wider text-black">
-                    Statistical Evidence & Analysis
-                  </h4>
-                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs font-mono">
-                    <div>
-                      <span className="text-black/50">Levenshtein Similarity:</span>{' '}
-                      <span className="font-bold text-black">{(selectedMutation.confidence * 0.98).toFixed(2)}</span>
-                    </div>
-                    <div>
-                      <span className="text-black/50">Sample Overlap:</span>{' '}
-                      <span className="font-bold text-black">100% (5/5 req)</span>
-                    </div>
-                    <div>
-                      <span className="text-black/50">Observed Window:</span>{' '}
-                      <span className="font-bold text-black">Recent 10 samples</span>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Adapter Code */}
                 <div className="space-y-2">
                   <div className="flex justify-between items-center">
                     <h4 className="font-display font-bold text-xs uppercase tracking-wider text-black">
-                      Synthesized Runtime Compatibility Adapter
+                      Tool Response JSON
                     </h4>
-                    <span className="text-[10px] font-mono text-black/50">Strategy: {selectedMutation.kind}</span>
+                    <button
+                      onClick={() =>
+                        copyToClipboard(
+                          JSON.stringify(
+                            selectedMcpTool === 'intra_recent_changes'
+                              ? { changesCount: activeMutations.length, changes: activeMutations }
+                              : { tool: selectedMcpTool, status: 'ok' },
+                            null,
+                            2
+                          ),
+                          'mcp-output'
+                        )
+                      }
+                      className="flex items-center space-x-1 text-xs font-mono text-black/60 hover:text-black"
+                    >
+                      {copiedKey === 'mcp-output' ? <Check className="w-3 h-3 text-emerald-600" /> : <Copy className="w-3 h-3" />}
+                      <span>{copiedKey === 'mcp-output' ? 'Copied' : 'Copy JSON'}</span>
+                    </button>
                   </div>
-                  <pre className="p-4 bg-white border border-black/10 rounded-xl font-mono text-xs text-black overflow-x-auto">
-                    {selectedMutation.adapterCode}
+                  <pre className="p-4 bg-cream-subtle border border-black/10 rounded-xl font-mono text-xs text-black overflow-x-auto">
+                    {selectedMcpTool === 'intra_list_dependencies' &&
+                      JSON.stringify(
+                        {
+                          services: ['users', 'payments', 'search', 'notifications', 'mcp-tool'],
+                          totalEndpoints: 14,
+                          activeMonitors: 5,
+                          status: 'healthy',
+                        },
+                        null,
+                        2
+                      )}
+                    {selectedMcpTool === 'intra_get_contract' &&
+                      JSON.stringify(
+                        {
+                          service: 'users',
+                          endpoint: '/users',
+                          schema: {
+                            types: { id: 'string', name: 'string', status: 'string' },
+                            optionality: [],
+                            enums: { status: ['active', 'suspended'] },
+                          },
+                          paginationStyle: 'offset',
+                          sampleCount: 152,
+                          lastFingerprint: '2026-10-10T22:30:00Z',
+                        },
+                        null,
+                        2
+                      )}
+                    {selectedMcpTool === 'intra_recent_changes' &&
+                      JSON.stringify(
+                        {
+                          changesCount: activeMutations.length,
+                          changes: activeMutations.map((m) => ({
+                            id: `chg_${m.id}`,
+                            kind: m.kind,
+                            confidence: m.confidence,
+                            verdict: m.verdict,
+                            desc: m.desc,
+                          })),
+                        },
+                        null,
+                        2
+                      )}
+                    {selectedMcpTool === 'intra_impact' &&
+                      JSON.stringify(
+                        {
+                          changeId: 'chg_M1',
+                          affectedWorkflows: ['userProfile'],
+                          fieldPaths: ['users.name'],
+                          severity: 'low',
+                          dependencyChain: ['apps/demo-app/src/workflows/userProfile.ts -> depends on [users:/users]'],
+                        },
+                        null,
+                        2
+                      )}
+                    {selectedMcpTool === 'intra_propose_adapter' &&
+                      JSON.stringify(
+                        {
+                          proposalId: 'prop_chg_M1',
+                          strategy: 'rename',
+                          codeDiff: '+++ export function adaptResponse(data) {\n+++   return data.map(i => ({ ...i, name: i.display_name ?? i.name }));\n+++ }',
+                          riskAssessment: 'LOW: Safe structural rename with 95% confidence',
+                          status: 'pending',
+                        },
+                        null,
+                        2
+                      )}
+                    {selectedMcpTool === 'intra_apply_adapter' &&
+                      JSON.stringify(
+                        {
+                          success: true,
+                          adapterId: 'adp_users_rename_v1',
+                          rollbackHandle: 'rollback_users_m1_172856',
+                          status: 'applied_canary',
+                          message: 'Adapter activated successfully. Golden test replay passed.',
+                        },
+                        null,
+                        2
+                      )}
+                    {selectedMcpTool === 'intra_health' &&
+                      JSON.stringify(
+                        {
+                          status: 'ok',
+                          uptime: 14820,
+                          dependencies: {
+                            users: 'healthy',
+                            payments: 'healthy',
+                            search: 'healthy',
+                            notifications: 'healthy',
+                            mcp: 'healthy',
+                          },
+                          rateLimitHeadroom: {
+                            payments: 10,
+                            search: 50,
+                          },
+                        },
+                        null,
+                        2
+                      )}
                   </pre>
                 </div>
               </div>
@@ -838,464 +1621,278 @@ export default function App() {
         )}
 
         {/* =========================================================================
-            TAB 3: BLAST RADIUS & AST GRAPH
+            PILLAR 5: SDK (CLIENT SDK & DYNAMIC RUNTIME PROXY)
            ========================================================================= */}
-        {activeTab === 'impact' && (
-          <div className="border border-black/10 bg-white rounded-2xl p-7 shadow-card space-y-6">
-            <div className="flex justify-between items-center pb-4 border-b border-black/5">
+        {activeTab === 'sdk' && (
+          <div className="space-y-8">
+            <div className="border border-black/10 bg-white rounded-2xl p-7 shadow-card space-y-6">
               <div>
-                <h2 className="font-display font-bold text-black text-lg uppercase tracking-wide">
-                  Application Workflow Blast Radius Graph
+                <div className="flex items-center space-x-2">
+                  <span className="verified-badge">@intra/sdk CLIENT</span>
+                  <span className="text-xs font-mono text-black/50">DYNAMIC RUNTIME PROXY</span>
+                </div>
+                <h2 className="font-display font-bold text-xl text-black mt-1">
+                  Intra Client SDK & Proxy Interceptor
                 </h2>
-                <p className="text-xs text-black/60 mt-1">
-                  Static AST analysis traces external API fields to internal business logic execution paths across your codebase.
+                <p className="text-xs text-black/60 mt-1 max-w-2xl">
+                  Zero-overhead client-side interception. Wraps outgoing fetch/axios requests to non-blockingly stream telemetry to the observability platform and dynamically execute synthesized compatibility adapters in-process.
                 </p>
               </div>
-              <span className="verified-badge">AST SCAN COMPLETE</span>
-            </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              {[
-                {
-                  wf: 'userProfile',
-                  file: 'apps/demo-app/src/workflows/userProfile.ts',
-                  dep: 'GET /users -> name',
-                  change: 'M1 Field Rename (name -> display_name)',
-                  severity: 'LOW',
-                  status: 'ADAPTED BY CANARY',
-                  action: 'Safe-Handling applied transparent response adapter',
-                  tagColor: 'bg-black text-white',
-                },
-                {
-                  wf: 'checkout',
-                  file: 'apps/demo-app/src/workflows/checkout.ts',
-                  dep: 'POST /payments/charge -> amount',
-                  change: 'M3 Unit Shift (dollars -> cents x100)',
-                  severity: 'MEDIUM',
-                  status: 'ADAPTED BY CANARY',
-                  action: 'Math transform x0.01 protects financial ledger',
-                  tagColor: 'bg-black text-white',
-                },
-                {
-                  wf: 'userAudit (Security)',
-                  file: 'apps/demo-app/src/workflows/audit.ts',
-                  dep: 'GET /users -> status',
-                  change: 'M10 Enum Semantic Drift (active includes suspended)',
-                  severity: 'CRITICAL',
-                  status: 'CIRCUIT BREAKER TRIPPED',
-                  action: 'Quarantined to prevent privilege escalation to suspended users',
-                  tagColor: 'bg-crimson text-white',
-                },
-                {
-                  wf: 'searchBrowse',
-                  file: 'apps/demo-app/src/workflows/searchBrowse.ts',
-                  dep: 'GET /search -> offset',
-                  change: 'M5 Pagination Offset to Cursor',
-                  severity: 'MEDIUM',
-                  status: 'ADAPTED BY CANARY',
-                  action: 'Request adapter normalizes legacy offset to base64 cursor',
-                  tagColor: 'bg-black text-white',
-                },
-                {
-                  wf: 'notificationAck',
-                  file: 'apps/demo-app/src/workflows/notifications.ts',
-                  dep: 'POST /notifications/webhook -> event.type',
-                  change: 'M7 Webhook Payload Flattening',
-                  severity: 'LOW',
-                  status: 'ADAPTED BY CANARY',
-                  action: 'Webhook wrapper restores nested event.type shape',
-                  tagColor: 'bg-black text-white',
-                },
-                {
-                  wf: 'mcpAssistantCall',
-                  file: 'apps/demo-app/src/workflows/mcpAssistant.ts',
-                  dep: 'POST /mcp-tool/execute -> query',
-                  change: 'M9 Tool Signature Argument Drift',
-                  severity: 'LOW',
-                  status: 'ADAPTED BY CANARY',
-                  action: 'SDK transparently remaps query to q + injects limit',
-                  tagColor: 'bg-black text-white',
-                },
-              ].map((b) => (
-                <div key={b.wf} className="p-5 border border-black/10 rounded-xl bg-cream-subtle/50 space-y-3">
+              {/* Code Snippets */}
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                <div className="space-y-3">
                   <div className="flex justify-between items-center">
-                    <span className="font-mono font-bold text-xs uppercase tracking-wider text-black">{b.wf}</span>
-                    <span className={`text-[9px] font-mono px-2 py-0.5 rounded-full font-bold uppercase tracking-wider ${b.tagColor}`}>
-                      {b.status}
-                    </span>
+                    <h3 className="font-display font-bold text-xs uppercase tracking-wider text-black">
+                      1. Drop-In Fetch Client Wrapper
+                    </h3>
+                    <span className="text-[10px] font-mono text-black/40">TYPESCRIPT</span>
                   </div>
-                  <div className="text-xs font-mono text-black/50 truncate">{b.file}</div>
-                  <div className="p-2.5 rounded bg-white border border-black/5 text-xs space-y-1">
-                    <div className="font-semibold text-black">{b.change}</div>
-                    <div className="text-[11px] text-black/60">{b.action}</div>
-                  </div>
-                  <div className="flex justify-between text-[11px] font-mono text-black/60 pt-2 border-t border-black/5">
-                    <span>Severity: <strong className={b.severity === 'CRITICAL' ? 'text-crimson' : 'text-black'}>{b.severity}</strong></span>
-                    <span>Field: {b.dep.split('->')[1]}</span>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
+                  <pre className="p-4 rounded-xl border border-black/10 bg-cream-subtle font-mono text-xs text-black overflow-x-auto whitespace-pre-wrap">
+{`import { createIntraClient } from '@intra/sdk';
 
-        {/* =========================================================================
-            TAB 4: SAFE ADAPTERS & MIGRATION PROPOSALS
-           ========================================================================= */}
-        {activeTab === 'adapters' && (
-          <div className="space-y-6">
-            <div className="border border-black/10 bg-white rounded-2xl p-7 shadow-card space-y-6">
-              <div className="flex justify-between items-center pb-4 border-b border-black/5">
-                <div>
-                  <h2 className="font-display font-bold text-black text-lg uppercase tracking-wide">
-                    Safe-Handling Policy Matrix (§10) & Canary Adapters
-                  </h2>
-                  <p className="text-xs text-black/60 mt-1">
-                    Auto-applies canary middleware only when confidence &ge; 90% and equivalent; requires human-in-the-loop review otherwise.
-                  </p>
+// Initialize lightweight client with telemetry link
+const intra = createIntraClient({
+  engineUrl: 'http://localhost:3001',
+  appName: 'shipwell-production',
+});
+
+// Outgoing fetch calls automatically adapt to upstream mutations
+const response = await intra.fetch('https://api.external.com/users');
+const users = await response.json();
+// users[0].name is guaranteed even if upstream renamed to display_name!`}
+                  </pre>
                 </div>
-                <div className="text-xs font-mono text-black/60">
-                  Canaries Active: <strong className="text-black">4</strong> &bull; Pending PRs: <strong className="text-crimson">2</strong>
+
+                <div className="space-y-3">
+                  <div className="flex justify-between items-center">
+                    <h3 className="font-display font-bold text-xs uppercase tracking-wider text-black">
+                      2. Dynamic Adapter Registration
+                    </h3>
+                    <span className="text-[10px] font-mono text-black/40">IN-PROCESS HEALING</span>
+                  </div>
+                  <pre className="p-4 rounded-xl border border-black/10 bg-cream-subtle font-mono text-xs text-black overflow-x-auto whitespace-pre-wrap">
+{`// Dynamic hot-swap: update adapter in memory without restarting server
+intra.registerAdapter('/users', {
+  id: 'adp_users_v2',
+  rollbackHandle: 'rollback_m1_canary',
+  adaptResponse: (data) => {
+    return data.map(item => ({
+      ...item,
+      name: item.display_name ?? item.name
+    }));
+  }
+});`}
+                  </pre>
                 </div>
               </div>
 
-              {/* Active Canaries */}
-              <div className="space-y-4">
-                <h3 className="font-display font-bold text-xs uppercase tracking-wider text-black">
-                  Auto-Applied Canary Adapters (Confidence &ge; 90%)
-                </h3>
+              {/* Interactive Dynamic Adapter Playground */}
+              <div className="p-6 rounded-2xl border border-black/10 bg-cream-subtle/40 space-y-4">
+                <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2">
+                  <div>
+                    <h3 className="font-display font-bold text-sm text-black">
+                      Interactive Client Adapter Playground
+                    </h3>
+                    <p className="text-xs text-black/60">
+                      Test how the client SDK dynamically transforms incoming broken upstream payloads into safe schema-compliant responses.
+                    </p>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <span className="text-xs font-mono text-black/50">Simulate:</span>
+                    <select
+                      value={sdkSelectedMutation}
+                      onChange={(e) => {
+                        const mId = e.target.value;
+                        setSdkSelectedMutation(mId);
+                        const match = mutations.find((m) => m.id === mId);
+                        if (match) setSdkCustomInput(match.afterSnippet);
+                      }}
+                      className="px-3 py-1.5 rounded-lg border border-black/20 bg-white font-mono text-xs text-black focus:outline-none"
+                    >
+                      {mutations.map((m) => (
+                        <option key={m.id} value={m.id}>
+                          {m.id}: {m.name}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                </div>
 
-                {[
-                  {
-                    id: 'adp_users_rename_v1',
-                    service: 'users',
-                    change: 'M1 Field Rename (name -> display_name)',
-                    code: 'export function adaptResponse(data) {\n  return data.map(item => ({ ...item, name: item.display_name ?? item.name }));\n}',
-                    rollback: 'rollback_users_m1_172856',
-                    replays: '5/5 passed',
-                  },
-                  {
-                    id: 'adp_payments_unit_v1',
-                    service: 'payments',
-                    change: 'M3 Unit Shift (dollars -> cents)',
-                    code: 'export function adaptResponse(data) {\n  return { ...data, amount: typeof data.amount === "number" ? data.amount * 0.01 : data.amount };\n}',
-                    rollback: 'rollback_payments_m3_849201',
-                    replays: '5/5 passed',
-                  },
-                ].map((canary) => (
-                  <div key={canary.id} className="p-5 border border-black/10 rounded-xl bg-cream-subtle space-y-3">
-                    <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2">
-                      <div className="flex items-center space-x-2">
-                        <span className="font-mono text-xs font-bold text-black">{canary.id}</span>
-                        <span className="px-2 py-0.5 bg-black text-white text-[9px] font-mono rounded-full font-bold">
-                          CANARY ACTIVE
-                        </span>
-                      </div>
-                      <div className="flex items-center space-x-2">
-                        <span className="text-xs font-mono text-black/50">Replay: {canary.replays}</span>
-                        <button
-                          onClick={() => alert(`Atomic rollback initiated for ${canary.rollback}. Baseline restored.`)}
-                          className="flex items-center space-x-1 px-3 py-1 rounded-full text-xs font-mono border border-black/20 hover:bg-black hover:text-white transition"
-                        >
-                          <RotateCcw className="w-3 h-3" />
-                          <span>Rollback Handle</span>
-                        </button>
-                      </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 font-mono text-xs">
+                  <div className="space-y-2">
+                    <div className="flex justify-between items-center text-black/60 text-[11px]">
+                      <span>INPUT: MUTATED UPSTREAM JSON</span>
+                      <span className="text-crimson font-bold">RAW TELEMETRY</span>
                     </div>
-                    <pre className="p-3 bg-white border border-black/10 rounded-lg font-mono text-xs text-black overflow-x-auto">
-                      {canary.code}
+                    <textarea
+                      rows={6}
+                      value={sdkCustomInput}
+                      onChange={(e) => setSdkCustomInput(e.target.value)}
+                      className="w-full p-3 rounded-xl border border-black/10 bg-white text-black font-mono text-xs focus:outline-none focus:border-crimson"
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <div className="flex justify-between items-center text-black/60 text-[11px]">
+                      <span>OUTPUT: SDK ADAPTED RESPONSE</span>
+                      <span className="text-emerald-600 font-bold">NORMALIZED</span>
+                    </div>
+                    <pre className="p-3 rounded-xl border border-emerald-600/30 bg-emerald-50/50 text-black font-mono text-xs h-[138px] overflow-x-auto whitespace-pre-wrap">
+                      {sdkSelectedMutation === 'M1'
+                        ? '{\n  "id": "usr_99",\n  "name": "Marcus Vance",\n  "display_name": "Marcus Vance",\n  "status": "active"\n}'
+                        : sdkSelectedMutation === 'M3'
+                        ? '{\n  "amount": 25.0,\n  "currency": "USD",\n  "cents_converted": true\n}'
+                        : sdkSelectedMutation === 'M5'
+                        ? '{\n  "items": [...],\n  "cursor": "MjA=",\n  "offset_normalized": true\n}'
+                        : '{\n  "status": "adapted_successfully",\n  "safe": true\n}'}
                     </pre>
                   </div>
-                ))}
-              </div>
-
-              {/* Pending PRs */}
-              <div className="space-y-4 pt-4 border-t border-black/5">
-                <h3 className="font-display font-bold text-xs uppercase tracking-wider text-crimson">
-                  Pending Human Review Migration Proposals (Lossy or Breaking)
-                </h3>
-
-                {[
-                  {
-                    id: 'prop_users_m10',
-                    service: 'users',
-                    kind: 'M10 Enum Semantic Drift',
-                    desc: 'Upstream vendor now includes suspended users inside status="active". Automated fix prohibited.',
-                    risk: 'HIGH: Security breach risk. Downstream admin authorization could grant suspended accounts access.',
-                    diff: '--- status check relies on "active"\n+++ Requires upstream query param: GET /users?exclude_suspended=true',
-                  },
-                  {
-                    id: 'prop_users_m2',
-                    service: 'users',
-                    kind: 'M2 Name Format Shift',
-                    desc: 'Format shifted to "Last, First". Automated splitting works for two-word names, but risks corruption on hyphenated or multi-word surnames.',
-                    risk: 'MEDIUM: Lossy semantic format transformation.',
-                    diff: '+++ Split by ", " and invert order to "First Last"',
-                  },
-                ].map((prop) => {
-                  const isApproved = proposalApproved[prop.id];
-                  return (
-                    <div key={prop.id} className="p-5 border border-crimson/20 rounded-xl bg-crimson/5 space-y-3">
-                      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2">
-                        <div className="flex items-center space-x-2">
-                          <span className="font-mono text-xs font-bold text-crimson">{prop.id}</span>
-                          <span className={`px-2 py-0.5 text-[9px] font-mono rounded-full font-bold ${isApproved ? 'bg-black text-white' : 'bg-crimson text-white'}`}>
-                            {isApproved ? 'APPROVED & DEPLOYED' : 'REQUIRES HUMAN SIGN-OFF'}
-                          </span>
-                        </div>
-                        {!isApproved ? (
-                          <div className="flex items-center space-x-2">
-                            <button
-                              onClick={() => approveProposal(prop.id)}
-                              className="flex items-center space-x-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-black text-white hover:bg-black/80 transition"
-                            >
-                              <CheckCircle2 className="w-3.5 h-3.5 text-white" />
-                              <span>Approve & Apply Proposal</span>
-                            </button>
-                          </div>
-                        ) : (
-                          <span className="text-xs font-mono font-semibold text-black">Migration PR merged into branch main</span>
-                        )}
-                      </div>
-                      <p className="text-xs text-black/70">{prop.desc}</p>
-                      <div className="p-3 bg-white border border-black/10 rounded font-mono text-[11px] text-crimson font-medium">
-                        Risk Assessment: {prop.risk}
-                      </div>
-                      <pre className="p-3 bg-cream-subtle border border-black/10 rounded font-mono text-xs text-black overflow-x-auto">
-                        {prop.diff}
-                      </pre>
-                    </div>
-                  );
-                })}
+                </div>
               </div>
             </div>
           </div>
         )}
 
         {/* =========================================================================
-            TAB 5: MUTATION SWITCHBOARD (M1 - M10)
+            PILLAR 6: DOCS (PROBLEM STATEMENT SPEC & ARCHITECTURE GUIDE)
            ========================================================================= */}
-        {activeTab === 'switchboard' && (
-          <div className="border border-black/10 bg-white rounded-2xl p-7 shadow-card space-y-6">
-            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 pb-4 border-b border-black/5">
+        {activeTab === 'docs' && (
+          <div className="space-y-8">
+            <div className="border border-black/10 bg-white rounded-2xl p-7 shadow-card space-y-6">
               <div>
-                <h2 className="font-display font-bold text-black text-lg uppercase tracking-wide">
-                  Undocumented Mutation Switchboard (M1 - M10)
+                <div className="flex items-center space-x-2">
+                  <span className="verified-badge">SPECIFICATION GUIDE</span>
+                  <span className="text-xs font-mono text-black/50">docs/lock.md ALIGNMENT</span>
+                </div>
+                <h2 className="font-display font-bold text-xl text-black mt-1">
+                  The Internet After the API: Help Software Survive Undocumented Changes
                 </h2>
-                <p className="text-xs text-black/60 mt-1">
-                  Inject live API mutations into simulated external dependencies to watch Intra autonomously heal applications.
+                <p className="text-xs text-black/60 mt-1 max-w-2xl">
+                  Complete technical specification and architectural solution addressing the core challenge in <code className="text-black font-semibold">docs/lock.md</code>.
                 </p>
               </div>
-              <div className="flex items-center space-x-2">
-                <button
-                  onClick={resetAll}
-                  className="flex items-center space-x-1.5 px-3.5 py-1.5 text-xs font-medium border border-black/20 rounded-full hover:bg-black/5 transition"
-                >
-                  <RefreshCw className="w-3.5 h-3.5" />
-                  <span>Reset All to Baseline</span>
-                </button>
-              </div>
-            </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {mutations.map((m) => (
-                <div
-                  key={m.id}
-                  className={`p-5 border rounded-xl flex flex-col justify-between space-y-3 transition duration-200 ${
-                    m.active ? 'border-crimson bg-crimson/5 shadow-sm' : 'border-black/10 bg-white hover:border-black/20'
-                  }`}
-                >
-                  <div className="space-y-1.5">
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center space-x-2">
-                        <span className="font-mono font-bold text-xs text-crimson">{m.id}</span>
-                        <span className="font-semibold text-xs text-black">{m.name}</span>
-                      </div>
-                      <span className="text-[10px] font-mono text-black/40 uppercase">[{m.service}]</span>
-                    </div>
-                    <div className="text-xs text-black/60">{m.desc}</div>
-                    <div className="text-[11px] font-mono text-black/50">{m.endpoint}</div>
-                  </div>
-
-                  <div className="pt-3 border-t border-black/5 flex items-center justify-between">
-                    <span className="text-[10px] font-mono text-black/50">
-                      Confidence: <strong>{(m.confidence * 100).toFixed(0)}%</strong> ({m.verdict})
-                    </span>
-                    <button
-                      onClick={() => toggleMutation(m.id)}
-                      className={`px-3.5 py-1.5 text-xs font-mono font-bold rounded-full transition ${
-                        m.active
-                          ? 'bg-crimson text-white shadow-sm'
-                          : 'border border-black/20 text-black hover:bg-black/5'
-                      }`}
-                    >
-                      {m.active ? 'MUTATION ACTIVE' : 'INJECT MUTATION'}
-                    </button>
+              {/* Document Sections */}
+              <div className="space-y-6 text-xs text-black/75 leading-relaxed">
+                {/* 1. Problem & Challenge */}
+                <div className="p-6 rounded-xl border border-black/10 bg-cream-subtle/50 space-y-3">
+                  <h3 className="font-display font-bold text-sm text-black uppercase tracking-wider">
+                    1. The Core Problem Statement (docs/lock.md)
+                  </h3>
+                  <p>
+                    Modern software relies on APIs, SDKs, MCP servers, webhooks, and third-party services. If a dependency changes behaviour, disappears, becomes rate-limited, or returns subtly different data, applications can silently fail.
+                  </p>
+                  <p>
+                    <strong className="text-black">The Challenge:</strong> Build a system that observes external dependencies, learns their real behaviour, detects meaningful changes, assesses which parts of an application are affected, and automatically adapts—or proposes a safe migration.
+                  </p>
+                  <div className="p-3 rounded-lg bg-white border border-black/10 font-mono text-[11px] text-black/70">
+                    <strong>Core Pipeline:</strong> External service &rarr; Observed behaviour &rarr; Contract / behavioural model &rarr; Change detection &rarr; Impact analysis &rarr; Adapter or migration &rarr; Validation &rarr; Updated system.
                   </div>
                 </div>
-              ))}
-            </div>
-          </div>
-        )}
 
-        {/* =========================================================================
-            TAB 6: CUSTOMER MCP SERVER PLAYGROUND
-           ========================================================================= */}
-        {activeTab === 'mcp' && (
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            <div className="lg:col-span-1 border border-black/10 bg-white rounded-2xl p-5 shadow-card space-y-4">
-              <div className="pb-2 border-b border-black/5">
-                <h3 className="font-display font-bold text-xs uppercase tracking-wide text-black">
-                  Customer MCP Tools (7 Tools)
-                </h3>
-                <p className="text-[11px] text-black/50 mt-0.5">Exposed to AI coding agents via Streamable HTTP</p>
-              </div>
-
-              <div className="space-y-2">
-                {[
-                  { name: 'intra_list_dependencies', desc: 'Lists all observed third-party services' },
-                  { name: 'intra_get_contract', desc: 'Queries learned contract for a service endpoint' },
-                  { name: 'intra_recent_changes', desc: 'Fetches recent semantic and structural drift' },
-                  { name: 'intra_impact', desc: 'Calculates blast-radius on application workflows' },
-                  { name: 'intra_propose_adapter', desc: 'Generates compatibility adapter diff & plan' },
-                  { name: 'intra_apply_adapter', desc: 'Applies human-reviewed adapter proposal' },
-                  { name: 'intra_health', desc: 'Checks upstream dependency health & rate limits' },
-                ].map((tool) => (
-                  <button
-                    key={tool.name}
-                    onClick={() => setSelectedMcpTool(tool.name)}
-                    className={`w-full text-left p-3 rounded-xl border transition ${
-                      selectedMcpTool === tool.name
-                        ? 'border-black bg-black text-white'
-                        : 'border-black/10 bg-white hover:border-black/20'
-                    }`}
-                  >
-                    <div className="font-mono text-xs font-bold">{tool.name}</div>
-                    <div className={`text-[10px] truncate ${selectedMcpTool === tool.name ? 'text-white/70' : 'text-black/50'}`}>
-                      {tool.desc}
-                    </div>
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            <div className="lg:col-span-2 border border-black/10 bg-white rounded-2xl p-7 shadow-card space-y-6">
-              <div className="flex justify-between items-center pb-4 border-b border-black/5">
-                <div>
-                  <div className="flex items-center space-x-2">
-                    <Terminal className="w-4 h-4 text-crimson" />
-                    <h3 className="font-mono font-bold text-sm text-black">{selectedMcpTool}</h3>
-                  </div>
-                  <p className="text-xs text-black/50 mt-1">Live MCP tool execution output</p>
+                {/* 2. Semantic Drift Handling */}
+                <div className="p-6 rounded-xl border border-black/10 bg-cream-subtle/50 space-y-3">
+                  <h3 className="font-display font-bold text-sm text-black uppercase tracking-wider">
+                    2. Beyond Documented Schemas (Behavioral Drift)
+                  </h3>
+                  <p>
+                    Do not rely only on documented schemas. Intra detects behavioural changes too: altered defaults, different error responses, changed pagination, rate limits, or data that remains valid JSON but changes meaning.
+                  </p>
+                  <p>
+                    <strong className="text-black">Example Semantic Change:</strong> An endpoint previously returns <code className="font-mono text-black">GET /users &rarr; name</code> but now returns <code className="font-mono text-black">GET /users &rarr; display_name</code>. Intra identifies which workflows depend on name and determines whether mapping the new field preserves the original meaning.
+                  </p>
                 </div>
-                <span className="verified-badge">RENDER / HEALTHZ OK</span>
-              </div>
 
-              <div className="space-y-2">
-                <h4 className="font-display font-bold text-xs uppercase tracking-wider text-black">
-                  Tool Response JSON
-                </h4>
-                <pre className="p-4 bg-cream-subtle border border-black/10 rounded-xl font-mono text-xs text-black overflow-x-auto">
-                  {selectedMcpTool === 'intra_list_dependencies' &&
-                    JSON.stringify(
-                      {
-                        services: ['users', 'payments', 'search', 'notifications', 'mcp-tool'],
-                        totalEndpoints: 14,
-                        activeMonitors: 5,
-                        status: 'healthy',
-                      },
-                      null,
-                      2
-                    )}
-                  {selectedMcpTool === 'intra_get_contract' &&
-                    JSON.stringify(
-                      {
-                        service: 'users',
-                        endpoint: '/users',
-                        schema: {
-                          types: { id: 'string', name: 'string', status: 'string' },
-                          optionality: [],
-                          enums: { status: ['active', 'suspended'] },
-                        },
-                        paginationStyle: 'offset',
-                        sampleCount: 152,
-                        lastFingerprint: '2026-10-10T22:30:00Z',
-                      },
-                      null,
-                      2
-                    )}
-                  {selectedMcpTool === 'intra_recent_changes' &&
-                    JSON.stringify(
-                      {
-                        changesCount: activeMutations.length,
-                        changes: activeMutations.map((m) => ({
-                          id: `chg_${m.id}`,
-                          kind: m.kind,
-                          confidence: m.confidence,
-                          verdict: m.verdict,
-                          desc: m.desc,
-                        })),
-                      },
-                      null,
-                      2
-                    )}
-                  {selectedMcpTool === 'intra_impact' &&
-                    JSON.stringify(
-                      {
-                        changeId: 'chg_M1',
-                        affectedWorkflows: ['userProfile'],
-                        fieldPaths: ['users.name'],
-                        severity: 'low',
-                        dependencyChain: ['apps/demo-app/src/workflows/userProfile.ts -> depends on [users:/users]'],
-                      },
-                      null,
-                      2
-                    )}
-                  {selectedMcpTool === 'intra_propose_adapter' &&
-                    JSON.stringify(
-                      {
-                        proposalId: 'prop_chg_M1',
-                        strategy: 'rename',
-                        codeDiff: '+++ export function adaptResponse(data) {\n+++   return data.map(i => ({ ...i, name: i.display_name ?? i.name }));\n+++ }',
-                        riskAssessment: 'LOW: Safe structural rename with 95% confidence',
-                        status: 'pending',
-                      },
-                      null,
-                      2
-                    )}
-                  {selectedMcpTool === 'intra_apply_adapter' &&
-                    JSON.stringify(
-                      {
-                        success: true,
-                        adapterId: 'adp_users_rename_v1',
-                        rollbackHandle: 'rollback_users_m1_172856',
-                        status: 'applied_canary',
-                        message: 'Adapter activated successfully. Golden test replay passed.',
-                      },
-                      null,
-                      2
-                    )}
-                  {selectedMcpTool === 'intra_health' &&
-                    JSON.stringify(
-                      {
-                        status: 'ok',
-                        uptime: 14820,
-                        dependencies: {
-                          users: 'healthy',
-                          payments: 'healthy',
-                          search: 'healthy',
-                          notifications: 'healthy',
-                          mcp: 'healthy',
-                        },
-                        rateLimitHeadroom: {
-                          payments: 10,
-                          search: 50,
-                        },
-                      },
-                      null,
-                      2
-                    )}
-                </pre>
+                {/* 3. Safe-Handling Policy Matrix */}
+                <div className="p-6 rounded-xl border border-black/10 bg-cream-subtle/50 space-y-4">
+                  <h3 className="font-display font-bold text-sm text-black uppercase tracking-wider">
+                    3. Safe-Handling Policy Matrix (Section 10)
+                  </h3>
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-left font-mono text-[11px] border border-black/10 rounded-lg">
+                      <thead className="bg-black/5 text-black">
+                        <tr>
+                          <th className="p-2.5">Confidence Score</th>
+                          <th className="p-2.5">Semantic Verdict</th>
+                          <th className="p-2.5">Safe-Handling Action</th>
+                          <th className="p-2.5">Production Behavior</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-black/10">
+                        <tr>
+                          <td className="p-2.5 font-bold text-black">&ge; 0.90</td>
+                          <td className="p-2.5 text-black">Equivalent</td>
+                          <td className="p-2.5 font-bold text-emerald-600">Auto-Apply</td>
+                          <td className="p-2.5">Canary adapter injected with rollback handle</td>
+                        </tr>
+                        <tr>
+                          <td className="p-2.5 font-bold text-black">0.70 &le; c &lt; 0.90</td>
+                          <td className="p-2.5 text-black">Equivalent</td>
+                          <td className="p-2.5 font-bold text-black">Migration PR</td>
+                          <td className="p-2.5">Automated PR opened with adapter diff and test suite</td>
+                        </tr>
+                        <tr>
+                          <td className="p-2.5 font-bold text-black">Any score</td>
+                          <td className="p-2.5 text-crimson">Lossy</td>
+                          <td className="p-2.5 font-bold text-black">Migration PR</td>
+                          <td className="p-2.5">Requires human engineering review before deployment</td>
+                        </tr>
+                        <tr>
+                          <td className="p-2.5 font-bold text-crimson">&lt; 0.70</td>
+                          <td className="p-2.5 text-black">Any</td>
+                          <td className="p-2.5 font-bold text-crimson">Quarantine Alert</td>
+                          <td className="p-2.5">No automated changes permitted; alert fired</td>
+                        </tr>
+                        <tr>
+                          <td className="p-2.5 font-bold text-crimson">Any score</td>
+                          <td className="p-2.5 font-bold text-crimson">Breaking</td>
+                          <td className="p-2.5 font-bold text-crimson">Circuit Breaker</td>
+                          <td className="p-2.5">Trips circuit breaker to isolate downstream crash</td>
+                        </tr>
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+
+                {/* 4. The 10 Mutation Catalogue */}
+                <div className="p-6 rounded-xl border border-black/10 bg-cream-subtle/50 space-y-3">
+                  <h3 className="font-display font-bold text-sm text-black uppercase tracking-wider">
+                    4. The 10 Mutation Catalogue (M1 through M10)
+                  </h3>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 font-mono text-[11px]">
+                    <div className="p-2 rounded bg-white border border-black/5">
+                      <span className="font-bold text-crimson">M1:</span> Field Rename (name &rarr; display_name)
+                    </div>
+                    <div className="p-2 rounded bg-white border border-black/5">
+                      <span className="font-bold text-crimson">M2:</span> Name Format Shift (Last, First tokenization)
+                    </div>
+                    <div className="p-2 rounded bg-white border border-black/5">
+                      <span className="font-bold text-crimson">M3:</span> Unit Shift (dollars float &rarr; cents integer)
+                    </div>
+                    <div className="p-2 rounded bg-white border border-black/5">
+                      <span className="font-bold text-crimson">M4:</span> Default Currency Flip (USD &rarr; EUR fallback)
+                    </div>
+                    <div className="p-2 rounded bg-white border border-black/5">
+                      <span className="font-bold text-crimson">M5:</span> Pagination (offset deprecated &rarr; opaque cursor)
+                    </div>
+                    <div className="p-2 rounded bg-white border border-black/5">
+                      <span className="font-bold text-crimson">M6:</span> Silent Truncation (caps limit 100 &rarr; 20)
+                    </div>
+                    <div className="p-2 rounded bg-white border border-black/5">
+                      <span className="font-bold text-crimson">M7:</span> Webhook Flattening (event.type &rarr; type)
+                    </div>
+                    <div className="p-2 rounded bg-white border border-black/5">
+                      <span className="font-bold text-crimson">M8:</span> Rate Limit Throttle (HTTP 429 Retry-After)
+                    </div>
+                    <div className="p-2 rounded bg-white border border-black/5">
+                      <span className="font-bold text-crimson">M9:</span> MCP Tool Signature Drift (query &rarr; q, limit)
+                    </div>
+                    <div className="p-2 rounded bg-white border border-black/5">
+                      <span className="font-bold text-crimson">M10:</span> Enum Semantics (status: active includes suspended)
+                    </div>
+                  </div>
+                </div>
               </div>
             </div>
           </div>
@@ -1307,6 +1904,7 @@ export default function App() {
         <div className="max-w-7xl mx-auto space-y-12">
           {/* 4-Column Layout */}
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8 text-xs">
+            {/* Column 1: Brand & Core Mission */}
             <div className="space-y-3">
               <div className="flex items-center space-x-2">
                 <div className="w-6 h-6 rounded-full bg-black flex items-center justify-center font-display text-white font-extrabold text-xs">
@@ -1323,20 +1921,22 @@ export default function App() {
               </div>
             </div>
 
+            {/* Column 2: The 6 Product Pillars */}
             <div className="space-y-2">
               <h4 className="font-display font-bold uppercase tracking-wider text-black text-[11px]">
-                Pipeline Architecture
+                Six Product Pillars
               </h4>
               <ul className="space-y-1.5 text-black/60 font-mono text-[11px]">
-                <li>1. Non-blocking Traffic Observer</li>
-                <li>2. Statistical Contract Fingerprint</li>
-                <li>3. Semantic & Structural Differ</li>
-                <li>4. AST Blast Radius Mapper</li>
-                <li>5. Safe-Handling Policy Engine</li>
-                <li>6. Golden Workflow Replay Engine</li>
+                <li>&bull; Home (Mission Portal)</li>
+                <li>&bull; Dashboard (API Observability)</li>
+                <li>&bull; Agent (Autonomous Self-Healing)</li>
+                <li>&bull; MCP (Customer Model Context Protocol)</li>
+                <li>&bull; SDK (@intra/sdk Dynamic Proxy)</li>
+                <li>&bull; Docs (docs/lock.md Problem Solver)</li>
               </ul>
             </div>
 
+            {/* Column 3: Customer MCP Server */}
             <div className="space-y-2">
               <h4 className="font-display font-bold uppercase tracking-wider text-black text-[11px]">
                 Customer MCP Server
@@ -1348,9 +1948,11 @@ export default function App() {
                 <li><code>intra_impact</code></li>
                 <li><code>intra_propose_adapter</code></li>
                 <li><code>intra_apply_adapter</code></li>
+                <li><code>intra_health</code></li>
               </ul>
             </div>
 
+            {/* Column 4: Safe Handling Policy */}
             <div className="space-y-2">
               <h4 className="font-display font-bold uppercase tracking-wider text-black text-[11px]">
                 Safe-Handling Policy
@@ -1376,6 +1978,7 @@ export default function App() {
             </div>
           </div>
 
+          {/* Divider */}
           <div className="border-t border-black/10 pt-6 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs font-mono text-black/50">
             <div>
               ENGINE STATUS: <span className="text-crimson font-bold">ALL SYSTEMS OPERATIONAL</span>
@@ -1388,7 +1991,7 @@ export default function App() {
             </div>
           </div>
 
-          {/* Giant Antigravity Headline */}
+          {/* Giant Antigravity "Intra." Headline with Red Gradient Background Clipping */}
           <div className="relative overflow-hidden pt-6 pb-2 text-center select-none pointer-events-none">
             <span className="font-display font-black text-6xl sm:text-8xl md:text-[11rem] lg:text-[14rem] xl:text-[16rem] leading-none tracking-tighter antigravity-hero-text block">
               Intra.
@@ -1396,7 +1999,7 @@ export default function App() {
           </div>
 
           <div className="text-center font-mono text-[11px] text-black/40">
-            &copy; {new Date().getFullYear()} Intra Monorepo. Autonomous Upstream Resilience Platform.
+            &copy; {new Date().getFullYear()} Intra. Autonomous Upstream API Resilience Platform.
           </div>
         </div>
       </footer>
