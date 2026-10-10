@@ -1,0 +1,6 @@
+packages:
+  - 'apps/*'
+  - 'packages/*'
+  - 'mcpserver'
+allowBuilds:
+  esbuild: true

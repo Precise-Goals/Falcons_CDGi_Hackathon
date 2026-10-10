@@ -1,0 +1,27 @@
+{
+  "permissions": {
+    "allow": [
+      "git *",
+      "gh *",
+      "pnpm *",
+      "rg *",
+      "node *",
+      "vitest *",
+      "playwright *",
+      "coderabbit *"
+    ],
+    "deny": [
+      "git push --force*",
+      "git push -f*",
+      "rm -rf /*",
+      "Get-Content .env",
+      "cat .env"
+    ]
+  },
+  "hooks": {
+    "PostToolUse": {
+      "match": "\\.ts$",
+      "command": "pnpm -w typecheck --quiet"
+    }
+  }
+}

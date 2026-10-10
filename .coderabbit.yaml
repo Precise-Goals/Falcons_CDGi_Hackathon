@@ -1,0 +1,14 @@
+version: "2"
+reviews:
+  profile: "assertive"
+  auto_review:
+    enabled: true
+  path_instructions:
+    - path: "packages/differ/**"
+      instructions: "Flag any auto-apply path lacking a confidence gate or rollback mechanism. Verify strict confidence scoring."
+    - path: "packages/adapter/**"
+      instructions: "Flag any auto-apply path lacking a confidence gate or rollback handle. Ensure safe-handling policy compliance."
+    - path: "packages/validator/**"
+      instructions: "Flag any auto-apply path lacking a confidence gate or rollback verification. Validate replay and golden test rigour."
+    - path: "packages/observer/**"
+      instructions: "Flag PII leakage, unredacted credentials, and potential SSRF risks in HTTP proxy and webhook capture."

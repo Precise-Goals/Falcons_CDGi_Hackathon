@@ -1,0 +1,21 @@
+{
+  "name": "intra-monorepo",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Infrastructure that lets software survive undocumented changes in external services",
+  "packageManager": "pnpm@12.10.1",
+  "scripts": {
+    "build": "turbo run build",
+    "test": "turbo run test",
+    "test:int": "turbo run test:int",
+    "lint": "turbo run lint",
+    "typecheck": "turbo run typecheck",
+    "demo": "node scripts/demo.mjs"
+  },
+  "devDependencies": {
+    "@types/node": "^26.6.4",
+    "turbo": "^2.4.4",
+    "typescript": "^5.8.2",
+    "vitest": "^3.0.7"
+  }
+}

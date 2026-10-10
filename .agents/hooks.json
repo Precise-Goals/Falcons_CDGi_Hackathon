@@ -1,0 +1,17 @@
+{
+  "intra-cicd-gate": {
+    "enabled": true,
+    "PostToolUse": [
+      {
+        "matcher": "replace_file_content",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "pnpm -w typecheck",
+            "timeout": 15
+          }
+        ]
+      }
+    ]
+  }
+}
