@@ -6,7 +6,7 @@ export interface WalletState {
   address: string;
   balance: string;
   chainId: number;
-  providerType: 'browser' | 'operator';
+  providerType: 'bridgekey-extension' | 'bridgekey-operator';
   signature?: string;
   mappedAt?: string;
 }
@@ -35,30 +35,31 @@ export async function fetchMstBlockNumber(): Promise<number> {
   }
 }
 
-export async function connectBrowserWallet(): Promise<WalletState> {
-  const eth = (window as any).ethereum;
-  if (!eth) {
-    throw new Error('No Web3 wallet extension found (e.g. MetaMask / BridgeKey).');
+// Connect BridgeKey Web3 Wallet (MST Blockchain)
+export async function connectBridgeKeyWallet(): Promise<WalletState> {
+  const providerObj = (window as any).bridgekey || (window as any).mst || (window as any).ethereum;
+  if (!providerObj) {
+    throw new Error('BridgeKey Wallet not detected. Please install or open BridgeKey Wallet for MST Blockchain.');
   }
 
-  const browserProvider = new ethers.BrowserProvider(eth);
+  const browserProvider = new ethers.BrowserProvider(providerObj);
   const accounts: string[] = await browserProvider.send('eth_requestAccounts', []);
   if (!accounts || accounts.length === 0) {
-    throw new Error('No accounts selected.');
+    throw new Error('No BridgeKey accounts selected.');
   }
 
   const address = ethers.getAddress(accounts[0]);
 
-  // Attempt to switch or add MST Blockchain network
+  // Attempt to switch or add MST Blockchain network (Chain ID 91562037)
   try {
-    await eth.request({
+    await providerObj.request({
       method: 'wallet_switchEthereumChain',
       params: [{ chainId: MST_CHAIN_ID_HEX }],
     });
   } catch (switchErr: any) {
     if (switchErr?.code === 4902 || switchErr?.message?.includes('4902')) {
       try {
-        await eth.request({
+        await providerObj.request({
           method: 'wallet_addEthereumChain',
           params: [
             {
@@ -71,7 +72,7 @@ export async function connectBrowserWallet(): Promise<WalletState> {
           ],
         });
       } catch (addErr) {
-        console.warn('Could not auto-add MST network to wallet:', addErr);
+        console.warn('Could not auto-add MST network to BridgeKey wallet:', addErr);
       }
     }
   }
@@ -82,11 +83,12 @@ export async function connectBrowserWallet(): Promise<WalletState> {
     address,
     balance,
     chainId: MST_CHAIN_ID_DEC,
-    providerType: 'browser',
+    providerType: 'bridgekey-extension',
   };
 }
 
-export async function connectOperatorWallet(): Promise<WalletState> {
+// Connect BridgeKey Operator Session using verified MST Keypair
+export async function connectBridgeKeyOperatorSession(): Promise<WalletState> {
   const wallet = new ethers.Wallet(ENV.OPERATOR_PRIVATE_KEY);
   const address = wallet.address;
   const balance = await fetchMstBalance(address);
@@ -95,20 +97,26 @@ export async function connectOperatorWallet(): Promise<WalletState> {
     address,
     balance,
     chainId: MST_CHAIN_ID_DEC,
-    providerType: 'operator',
+    providerType: 'bridgekey-operator',
   };
 }
+
+// Compatibility aliases
+export const connectBrowserWallet = connectBridgeKeyWallet;
+export const connectOperatorWallet = connectBridgeKeyOperatorSession;
 
 export async function signIdentityChallenge(
   walletState: WalletState,
   uid: string
 ): Promise<{ signature: string; challenge: string; checksum: string }> {
   const timestamp = new Date().toISOString();
-  const challenge = `Intra Identity Verification\nMapping BridgeKey Wallet: ${walletState.address}\nFirebase UID: ${uid}\nChain ID: ${MST_CHAIN_ID_DEC}\nTimestamp: ${timestamp}`;
+  const challenge = `Intra BridgeKey Identity Verification\nBridgeKey Wallet: ${walletState.address}\nFirebase UID: ${uid}\nChain ID: ${MST_CHAIN_ID_DEC}\nTimestamp: ${timestamp}`;
 
   let signature = '';
-  if (walletState.providerType === 'browser' && (window as any).ethereum) {
-    const browserProvider = new ethers.BrowserProvider((window as any).ethereum);
+  const providerObj = (window as any).bridgekey || (window as any).mst || (window as any).ethereum;
+
+  if (walletState.providerType === 'bridgekey-extension' && providerObj) {
+    const browserProvider = new ethers.BrowserProvider(providerObj);
     const signer = await browserProvider.getSigner();
     signature = await signer.signMessage(challenge);
   } else {
@@ -122,7 +130,7 @@ export async function signIdentityChallenge(
   const hashArray = Array.from(new Uint8Array(hashBuffer));
   const checksum = hashArray.map((b) => b.toString(16).padStart(2, '0')).join('');
 
-  console.log(`[INTRA LEDGER CHECKSUM] sha256:${checksum} (event: wallet_linked, address: ${walletState.address}, uid: ${uid}, chain: ${MST_CHAIN_ID_DEC})`);
+  console.log(`[INTRA LEDGER CHECKSUM] sha256:${checksum} (event: bridgekey_wallet_linked, address: ${walletState.address}, uid: ${uid}, chain: ${MST_CHAIN_ID_DEC})`);
 
   return { signature, challenge, checksum };
 }
