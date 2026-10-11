@@ -6,6 +6,7 @@ export interface TokenBucketOptions {
   capacity: number;
   refillRatePerSec: number;
   initialTokens?: number;
+  initialTimestamp?: number;
 }
 
 export class TokenBucketFilter {
@@ -25,7 +26,7 @@ export class TokenBucketFilter {
     this.capacity = options.capacity;
     this.refillRatePerSec = options.refillRatePerSec;
     this.tokens = options.initialTokens ?? options.capacity;
-    this.lastRefillTimestamp = Date.now();
+    this.lastRefillTimestamp = options.initialTimestamp ?? Date.now();
   }
 
   /**
