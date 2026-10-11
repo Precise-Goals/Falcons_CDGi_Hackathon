@@ -56,7 +56,7 @@ export function DocsContainer({
   return (
     <div className="space-y-10 max-w-7xl mx-auto pb-20">
       {/* ── TOP CATEGORY NAVIGATOR (Docs Blueprint | Terms & Policies | Research & Patent) ── */}
-      <div className="flex flex-wrap items-center justify-between gap-4 p-3 bg-white/90 backdrop-blur-md rounded-2xl border border-black/10 shadow-xs">
+      <div className="flex flex-wrap items-center justify-between gap-4 p-3 bg-white/90 backdrop-blur-md rounded-2xl border border-black/10 shadow-sm">
         <div className="flex items-center space-x-1 sm:space-x-2">
           <button
             onClick={() => handleCategorySwitch('docs')}
@@ -115,7 +115,7 @@ export function DocsContainer({
                 onClick={() => setResearchViewMode('pdf')}
                 className={`flex items-center space-x-2 px-3.5 py-1.5 rounded-xl text-xs font-mono font-bold transition-all ${
                   researchViewMode === 'pdf'
-                    ? 'bg-crimson text-white shadow-xs'
+                    ? 'bg-crimson text-white shadow-sm'
                     : 'text-black/70 hover:text-black hover:bg-black/5'
                 }`}
               >
@@ -126,7 +126,7 @@ export function DocsContainer({
                 onClick={() => setResearchViewMode('article')}
                 className={`flex items-center space-x-2 px-3.5 py-1.5 rounded-xl text-xs font-mono font-bold transition-all ${
                   researchViewMode === 'article'
-                    ? 'bg-black text-white shadow-xs'
+                    ? 'bg-black text-white shadow-sm'
                     : 'text-black/70 hover:text-black hover:bg-black/5'
                 }`}
               >
@@ -1070,7 +1070,7 @@ export function DocsContainer({
                   ].map((step, idx) => (
                     <div
                       key={idx}
-                      className="p-4 rounded-2xl bg-white border border-black/10 shadow-xs flex flex-col justify-between space-y-2 hover:border-crimson hover:shadow-sm transition-all"
+                      className="p-4 rounded-2xl bg-white border border-black/10 shadow-sm flex flex-col justify-between space-y-2 hover:border-crimson hover:shadow-md transition-all"
                     >
                       <div className="flex items-center justify-between">
                         <span className="text-[10px] font-bold text-crimson">{step.stage}</span>
