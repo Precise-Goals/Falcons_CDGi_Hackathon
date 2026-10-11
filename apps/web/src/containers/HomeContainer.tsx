@@ -240,7 +240,7 @@ export function HomeContainer({
           <div className="md:col-span-2 skeuo-card aceternity-grid-bg p-8 rounded-[2rem] space-y-4 flex flex-col justify-between relative overflow-hidden">
             <div className="space-y-3">
               <div className="flex justify-between items-center">
-                <span className="verified-badge">STAGE 01 — 06</span>
+                <span className="text-[11px] font-mono tracking-widest text-crimson font-bold uppercase">STAGE 01 — 06</span>
                 <span className="text-xs font-mono text-black/40">LIVE DATA PIPELINE</span>
               </div>
               <h3 className="font-display font-bold text-xl text-black">
@@ -280,7 +280,7 @@ export function HomeContainer({
           {/* Bento Card 2: Safe-Handling Policy */}
           <div className="skeuo-card aceternity-dot-bg p-8 rounded-[2rem] space-y-4 flex flex-col justify-between relative overflow-hidden">
             <div className="space-y-3">
-              <span className="verified-badge">SECTION 10 MATRIX</span>
+              <span className="text-[11px] font-mono tracking-widest text-crimson font-bold uppercase">SECTION 10 MATRIX</span>
               <h3 className="font-display font-bold text-lg text-black">
                 Safe-Handling Policy Matrix
               </h3>
@@ -375,7 +375,7 @@ export function HomeContainer({
            ========================================================================= */}
         <div className="skeuo-card p-8 sm:p-12 rounded-[2.5rem] space-y-8">
           <div className="max-w-3xl space-y-2">
-            <span className="verified-badge">THE SILENT FAILURE CRISIS</span>
+            <span className="text-[11px] font-mono tracking-widest text-crimson font-bold uppercase">THE SILENT FAILURE CRISIS</span>
             <h2 className="font-display font-black text-2xl sm:text-3xl text-black tracking-tight">
               Why Traditional Schema Validators Fail in Production.
             </h2>
@@ -476,7 +476,7 @@ export function HomeContainer({
            ========================================================================= */}
         <div className="skeuo-card p-8 sm:p-12 rounded-[2.5rem] space-y-8">
           <div className="max-w-2xl space-y-2">
-            <span className="verified-badge">CLOSED-LOOP AUTONOMY</span>
+            <span className="text-[11px] font-mono tracking-widest text-crimson font-bold uppercase">CLOSED-LOOP AUTONOMY</span>
             <h2 className="font-display font-black text-2xl sm:text-3xl text-black tracking-tight">
               The 6-Stage Autonomous Resilience Pipeline.
             </h2>
@@ -544,7 +544,7 @@ export function HomeContainer({
         <div className="skeuo-card p-8 sm:p-12 rounded-[2.5rem] space-y-8">
           <div className="flex flex-col sm:flex-row justify-between items-start sm:items-end gap-4">
             <div className="space-y-2">
-              <span className="verified-badge">VERIFIED BENCHMARKS</span>
+              <span className="text-[11px] font-mono tracking-widest text-crimson font-bold uppercase">VERIFIED BENCHMARKS</span>
               <h2 className="font-display font-black text-2xl sm:text-3xl text-black tracking-tight">
                 Architectural Quality Gates & Performance.
               </h2>
