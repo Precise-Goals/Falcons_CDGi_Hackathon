@@ -5,6 +5,7 @@ import {
   normalizedLevenshteinDistance,
   stringSimilarity,
   clearLevenshteinCache,
+  classifyPaginationDrift,
 } from './differ.js';
 import { Contract } from '@intra/shared';
 
@@ -250,5 +251,48 @@ describe('@intra/differ Change Detection & Semantic Classification', () => {
       expect(enumChange?.semanticVerdict).toBe('lossy');
     });
   });
+
+  describe('M5 Pagination Drift & Opaque Cursor Classification', () => {
+    it('accurately identifies offset -> cursor as opaque cursor transition', () => {
+      const base = makeBaseContract({ paginationStyle: 'offset' });
+      const current = makeBaseContract({ paginationStyle: 'cursor' });
+
+      const drift = classifyPaginationDrift(base, current);
+      expect(drift.hasDrift).toBe(true);
+      expect(drift.fromStyle).toBe('offset');
+      expect(drift.toStyle).toBe('cursor');
+      expect(drift.isOpaqueCursor).toBe(true);
+      expect(drift.isLossyRandomAccess).toBe(true);
+      expect(drift.recommendedAdapter).toBe('cursor-to-offset');
+    });
+
+    it('identifies page -> cursor as lossy random access transition', () => {
+      const base = makeBaseContract({ paginationStyle: 'page' });
+      const current = makeBaseContract({ paginationStyle: 'cursor' });
+
+      const drift = classifyPaginationDrift(base, current);
+      expect(drift.hasDrift).toBe(true);
+      expect(drift.isOpaqueCursor).toBe(true);
+      expect(drift.recommendedAdapter).toBe('cursor-to-offset');
+    });
+
+    it('reports no drift when pagination styles are identical', () => {
+      const base = makeBaseContract({ paginationStyle: 'cursor' });
+      const current = makeBaseContract({ paginationStyle: 'cursor' });
+
+      const drift = classifyPaginationDrift(base, current);
+      expect(drift.hasDrift).toBe(false);
+      expect(drift.recommendedAdapter).toBe('none');
+    });
+
+    it('handles non-paginated endpoints without false alarms', () => {
+      const base = makeBaseContract({ paginationStyle: 'none' });
+      const current = makeBaseContract({ paginationStyle: 'none' });
+
+      const drift = classifyPaginationDrift(base, current);
+      expect(drift.hasDrift).toBe(false);
+    });
+  });
 });
+
 
