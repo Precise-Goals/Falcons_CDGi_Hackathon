@@ -13,7 +13,10 @@
     "typecheck": "turbo run typecheck",
     "demo": "bun scripts/demo.mjs",
     "serve": "bun scripts/serve.mjs",
-    "dev": "bun --filter @intra/web dev"
+    "dev": "bun --filter @intra/web dev",
+    "flutter:dev": "adb reverse tcp:3001 tcp:3001 && adb reverse tcp:3000 tcp:3000 && adb reverse tcp:3002 tcp:3002 && flutter run -d android",
+    "flutter:test": "flutter test",
+    "flutter:devices": "flutter devices"
   },
   "dependencies": {
     "fastify": "^5.2.1",
