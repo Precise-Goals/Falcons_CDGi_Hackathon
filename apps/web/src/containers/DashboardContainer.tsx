@@ -385,9 +385,26 @@ export function DashboardContainer({
             </div>
           </div>
         )}
+      </div>
 
-        {/* Navigation Cards Grid (matching designimplement.png layout with minimal react-icons) */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3.5 pt-4 border-t border-black/5">
+      {/* Cockpit Navigation Cards Deck (matching designimplement.png layout with prominent circular icons) */}
+      <div className="space-y-4">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 px-1">
+          <div className="flex items-center space-x-2">
+            <span className="w-2.5 h-2.5 rounded-full bg-crimson animate-pulse" />
+            <h3 className="font-display font-black text-sm uppercase tracking-wider text-black">
+              Autonomous Cockpit Modules &amp; Sub-Systems
+            </h3>
+            <span className="text-[11px] font-mono text-black/50">
+              (8 Production Engines)
+            </span>
+          </div>
+          <span className="text-[11px] font-mono text-black/50">
+            Select any engine below to inspect live topology, diffs, AST, or synthesis
+          </span>
+        </div>
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
           {[
             {
               id: 'graph' as DashboardSubView,
@@ -447,74 +464,98 @@ export function DashboardContainer({
               icon: FiCheckCircle,
               tag: 'RESILIENCE',
             },
-          ].map((card) => {
+          ].map((card, index) => {
             const Icon = card.icon;
             const isSelected = dashboardView === card.id;
             return (
               <button
                 key={card.id}
                 onClick={() => setDashboardView(card.id)}
-                className={`group text-left p-4.5 rounded-[1.75rem] border transition-all duration-200 relative flex flex-col justify-between overflow-hidden ${
+                className={`group relative text-left p-6 rounded-[2rem] border-2 transition-all duration-300 flex flex-col justify-between min-h-[220px] overflow-hidden ${
                   isSelected
-                    ? 'bg-white border-crimson shadow-lg shadow-crimson/15 ring-2 ring-crimson/20 -translate-y-0.5'
-                    : 'bg-cream-subtle/80 hover:bg-white border-black/10 hover:border-black/25 shadow-xs hover:shadow-md hover:-translate-y-0.5'
+                    ? 'bg-white border-crimson shadow-xl shadow-crimson/15 ring-4 ring-crimson/10 -translate-y-1'
+                    : 'bg-[#FAF7F2] hover:bg-white border-black/15 hover:border-black/40 shadow-sm hover:shadow-lg hover:-translate-y-1'
                 }`}
               >
-                {/* Active Indicator Top Stripe */}
+                {/* Active Indicator Top Accent */}
                 {isSelected && (
-                  <div className="absolute top-0 left-0 right-0 h-1 bg-crimson" />
+                  <div className="absolute top-0 left-0 right-0 h-1.5 bg-crimson" />
                 )}
 
-                {/* Top Row: Tag / Badge on Left, Circular Minimal React-Icon on Right (per designimplement.png) */}
-                <div className="flex items-center justify-between w-full mb-3">
-                  <div className="flex items-center gap-1.5 flex-wrap">
-                    <span className={`text-[9px] font-mono uppercase font-bold tracking-wider px-2 py-0.5 rounded-full ${
-                      isSelected
-                        ? 'bg-crimson/10 text-crimson border border-crimson/20'
-                        : 'bg-black/5 text-black/60 border border-black/5'
-                    }`}>
-                      {card.tag}
+                {/* Top Row: Tag / Badges on Left, Large Circular React-Icon on Right (per designimplement.png) */}
+                <div className="flex items-start justify-between w-full gap-2">
+                  <div className="flex flex-col items-start gap-1.5 pt-1">
+                    <div className="flex items-center gap-1.5 flex-wrap">
+                      <span
+                        className={`text-[10px] font-mono uppercase font-bold tracking-wider px-2.5 py-0.5 rounded-full transition-colors ${
+                          isSelected
+                            ? 'bg-crimson text-white shadow-sm'
+                            : 'bg-black/5 text-black/70 border border-black/10 group-hover:border-black/30'
+                        }`}
+                      >
+                        {card.tag}
+                      </span>
+                      {card.badgeText && (
+                        <span className="px-2 py-0.5 rounded-full bg-crimson text-white text-[9px] font-black uppercase tracking-wider animate-pulse shadow-sm">
+                          {card.badgeText}
+                        </span>
+                      )}
+                      {card.badgeCount !== undefined && card.badgeCount > 0 && (
+                        <span className="w-5 h-5 rounded-full bg-crimson text-white text-[10px] font-mono font-bold flex items-center justify-center shadow-sm">
+                          {card.badgeCount}
+                        </span>
+                      )}
+                    </div>
+                    <span className="text-[10px] font-mono text-black/40 group-hover:text-black/60 transition-colors">
+                      MOD-0{index + 1}
                     </span>
-                    {card.badgeText && (
-                      <span className="px-1.5 py-0.5 rounded-full bg-crimson text-white text-[9px] font-black uppercase tracking-wider animate-pulse">
-                        {card.badgeText}
-                      </span>
-                    )}
-                    {card.badgeCount !== undefined && card.badgeCount > 0 && (
-                      <span className="w-4 h-4 rounded-full bg-crimson text-white text-[10px] font-bold flex items-center justify-center">
-                        {card.badgeCount}
-                      </span>
-                    )}
                   </div>
 
-                  {/* Circular Icon Container (Top Right per designimplement.png) */}
-                  <div className={`w-11 h-11 rounded-full flex items-center justify-center border flex-shrink-0 transition-transform duration-200 group-hover:scale-105 ${
-                    isSelected
-                      ? 'bg-crimson text-white border-crimson shadow-md shadow-crimson/25'
-                      : 'bg-white text-black/75 border-black/10 group-hover:border-crimson group-hover:text-crimson shadow-xs'
-                  }`}>
-                    <Icon className="w-5 h-5 stroke-[1.8]" />
+                  {/* Prominent Circular Icon Container (Matching the large circle in designimplement.png) */}
+                  <div
+                    className={`w-14 h-14 sm:w-16 sm:h-16 rounded-full flex items-center justify-center border-2 flex-shrink-0 transition-all duration-300 group-hover:scale-105 ${
+                      isSelected
+                        ? 'bg-crimson text-white border-crimson shadow-md shadow-crimson/30'
+                        : 'bg-white text-black/80 border-black/15 group-hover:border-crimson group-hover:text-crimson group-hover:bg-crimson/5 shadow-sm'
+                    }`}
+                  >
+                    <Icon className="w-7 h-7 stroke-[1.8]" />
                   </div>
                 </div>
 
-                {/* Bottom Section: Title, Description, and Bottom Pill Action (per designimplement.png) */}
-                <div className="space-y-1.5 mt-auto">
-                  <h4 className={`font-display font-bold text-sm tracking-tight transition-colors ${
-                    isSelected ? 'text-black font-extrabold' : 'text-black/85 group-hover:text-crimson'
-                  }`}>
-                    {card.label}
-                  </h4>
-                  <p className="text-[11px] text-black/60 leading-snug line-clamp-2">
-                    {card.description}
-                  </p>
+                {/* Bottom Section: Title, Description, and Active Status Pill (Matching lower block in designimplement.png) */}
+                <div className="space-y-2 mt-4 pt-2">
+                  <div>
+                    <h4
+                      className={`font-display font-extrabold text-base tracking-tight leading-snug transition-colors ${
+                        isSelected ? 'text-crimson' : 'text-black group-hover:text-crimson'
+                      }`}
+                    >
+                      {card.label}
+                    </h4>
+                    <p className="text-xs text-black/60 leading-relaxed mt-1 line-clamp-2">
+                      {card.description}
+                    </p>
+                  </div>
 
-                  <div className="pt-2 flex items-center justify-between">
-                    <span className={`inline-flex items-center gap-1 text-[10px] font-mono font-bold px-2.5 py-0.5 rounded-full border transition ${
-                      isSelected
-                        ? 'bg-black text-white border-black'
-                        : 'bg-white/90 text-black/70 border-black/10 group-hover:border-black/30'
-                    }`}>
-                      <span>{isSelected ? '● ACTIVE VIEW' : 'SELECT VIEW'}</span>
+                  <div className="pt-2 flex items-center justify-between border-t border-black/5">
+                    <span
+                      className={`inline-flex items-center gap-1.5 text-[11px] font-mono font-bold px-3 py-1 rounded-full border transition-all duration-200 ${
+                        isSelected
+                          ? 'bg-black text-white border-black shadow-sm'
+                          : 'bg-white text-black/75 border-black/15 group-hover:border-black/40 group-hover:text-black'
+                      }`}
+                    >
+                      <span className={isSelected ? 'text-crimson' : 'text-black/40'}>●</span>
+                      <span>{isSelected ? 'ACTIVE VIEW' : 'INSPECT ENGINE →'}</span>
+                    </span>
+
+                    <span
+                      className={`text-[10px] font-mono font-bold tracking-wider transition-colors ${
+                        isSelected ? 'text-crimson' : 'text-black/40 group-hover:text-black/70'
+                      }`}
+                    >
+                      {isSelected ? 'LOADED' : 'READY'}
                     </span>
                   </div>
                 </div>

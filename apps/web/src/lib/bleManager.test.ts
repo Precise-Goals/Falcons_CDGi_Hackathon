@@ -502,7 +502,10 @@ describe('Web Bluetooth Low Energy (BLE) Client & Auto-Connect Subsystem', () =>
 
       expect(connected).toBe(true);
       expect((navigator as any).bluetooth.requestDevice).toHaveBeenCalledWith({
-        filters: [{ services: [INTRA_BLE_CONFIG.SERVICE_UUID] }],
+        filters: [
+          { services: [INTRA_BLE_CONFIG.SERVICE_UUID] },
+          { namePrefix: 'Intra' },
+        ],
         optionalServices: [INTRA_BLE_CONFIG.SERVICE_UUID],
       });
     });

@@ -31,6 +31,7 @@ export default {
         mono: ['"JetBrains Mono"', 'monospace'],
       },
       boxShadow: {
+        xs: '0 1px 2px 0 rgba(10, 10, 10, 0.04)',
         washi: '0 1px 3px rgba(10, 10, 10, 0.05), 0 1px 2px rgba(10, 10, 10, 0.03)',
         card: '0 4px 6px -1px rgba(10, 10, 10, 0.05), 0 2px 4px -1px rgba(10, 10, 10, 0.03)',
         capsule: '0 10px 30px -5px rgba(10, 10, 10, 0.08), 0 0 0 1px rgba(10, 10, 10, 0.06)',
