@@ -5,15 +5,6 @@ import { ObservationSchema } from '@intra/shared';
 export function buildEngineApp(pipeline = new PipelineEngine()): FastifyInstance {
   const app = Fastify({ logger: false });
 
-  // Support optional mounted prefix /api/engine for Vercel services routing
-  app.addHook('onRequest', async (req) => {
-    if (req.url.startsWith('/api/engine')) {
-      const stripped = req.url.replace(/^\/api\/engine/, '') || '/';
-      req.raw.url = stripped;
-      (req as any).url = stripped;
-    }
-  });
-
   // CORS headers and preflight handling
   app.addHook('onRequest', async (req, reply) => {
     reply.header('Access-Control-Allow-Origin', '*');
@@ -24,156 +15,161 @@ export function buildEngineApp(pipeline = new PipelineEngine()): FastifyInstance
     }
   });
 
-  // 1. Record Observation
-  app.post('/observe', async (req, reply) => {
-    try {
-      if (!req.body || typeof req.body !== 'object' || Object.keys(req.body).length === 0) {
-        return reply.status(400).send({ error: 'Request body must be a non-empty object' });
+  const registerRoutes = async (instance: FastifyInstance) => {
+    // 1. Record Observation
+    instance.post('/observe', async (req, reply) => {
+      try {
+        if (!req.body || typeof req.body !== 'object' || Object.keys(req.body).length === 0) {
+          return reply.status(400).send({ error: 'Request body must be a non-empty object' });
+        }
+        const raw = req.body as any;
+        const normalized = {
+          id: raw.id || `obs_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`,
+          service: raw.service || raw.domain,
+          endpoint: raw.endpoint,
+          method: typeof raw.method === 'string' ? raw.method.toUpperCase() : 'POST',
+          status: raw.status ?? raw.statusCode,
+          headers: (raw.headers && typeof raw.headers === 'object') ? raw.headers : { 'content-type': 'application/json' },
+          body: raw.body ?? raw.responseBody ?? raw.mutatedPayload,
+          latencyMs: raw.latencyMs ?? 20,
+          timestamp: raw.timestamp || new Date().toISOString(),
+          ...(raw.rateLimitHeaders ? { rateLimitHeaders: raw.rateLimitHeaders } : {}),
+          ...(raw.paginationShape ? { paginationShape: raw.paginationShape } : {}),
+          ...(raw.errorBody ? { errorBody: raw.errorBody } : {}),
+        };
+
+        const parsed = ObservationSchema.parse(normalized);
+        const obs = pipeline.recordObservation(parsed);
+        return reply.status(201).send(obs);
+      } catch (err: any) {
+        return reply.status(400).send({ error: err.message });
       }
-      const raw = req.body as any;
-      const normalized = {
-        id: raw.id || `obs_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`,
-        service: raw.service || raw.domain,
-        endpoint: raw.endpoint,
-        method: typeof raw.method === 'string' ? raw.method.toUpperCase() : 'POST',
-        status: raw.status ?? raw.statusCode,
-        headers: (raw.headers && typeof raw.headers === 'object') ? raw.headers : { 'content-type': 'application/json' },
-        body: raw.body ?? raw.responseBody ?? raw.mutatedPayload,
-        latencyMs: raw.latencyMs ?? 20,
-        timestamp: raw.timestamp || new Date().toISOString(),
-        ...(raw.rateLimitHeaders ? { rateLimitHeaders: raw.rateLimitHeaders } : {}),
-        ...(raw.paginationShape ? { paginationShape: raw.paginationShape } : {}),
-        ...(raw.errorBody ? { errorBody: raw.errorBody } : {}),
+    });
+
+    // 2. Contracts
+    instance.get<{ Params: { service: string; endpoint: string } }>(
+      '/contracts/:service/:endpoint',
+      async (req, reply) => {
+        const { service, endpoint } = req.params;
+        const key = `${service.toLowerCase()}:/${endpoint.toLowerCase().replace(/^\//, '')}`;
+        const contract = pipeline.activeContracts.get(key) || pipeline.baselines.get(key);
+        if (!contract) {
+          return reply.status(404).send({ error: 'Contract not found' });
+        }
+        return contract;
+      }
+    );
+
+    // 3. Observed Services
+    instance.get('/services', async () => {
+      const servicesList: Record<string, string[]> = {};
+      for (const [key] of pipeline.activeContracts.entries()) {
+        const [svc, ep] = key.split(':');
+        if (!servicesList[svc]) servicesList[svc] = [];
+        servicesList[svc].push(ep);
+      }
+      return {
+        services: Object.entries(servicesList).map(([name, endpoints]) => ({
+          name,
+          endpoints,
+          status: 'healthy',
+        })),
       };
+    });
 
-      const parsed = ObservationSchema.parse(normalized);
-      const obs = pipeline.recordObservation(parsed);
-      return reply.status(201).send(obs);
-    } catch (err: any) {
-      return reply.status(400).send({ error: err.message });
-    }
-  });
+    // 4. Detected Changes / Drift
+    instance.get('/changes', async () => {
+      const list = Array.from(pipeline.detectedChanges.values());
+      return { changes: list };
+    });
 
-  // 2. Contracts
-  app.get<{ Params: { service: string; endpoint: string } }>(
-    '/contracts/:service/:endpoint',
-    async (req, reply) => {
-      const { service, endpoint } = req.params;
-      const key = `${service.toLowerCase()}:/${endpoint.toLowerCase().replace(/^\//, '')}`;
-      const contract = pipeline.activeContracts.get(key) || pipeline.baselines.get(key);
-      if (!contract) {
-        return reply.status(404).send({ error: 'Contract not found' });
+    // 5. Impact Analysis
+    instance.get<{ Params: { changeId: string } }>('/impact/:changeId', async (req, reply) => {
+      const impact = pipeline.impacts.get(req.params.changeId);
+      if (!impact) {
+        return reply.status(404).send({ error: 'Impact analysis not found for change' });
       }
-      return contract;
-    }
-  );
-
-  // 3. Observed Services
-  app.get('/services', async () => {
-    const servicesList: Record<string, string[]> = {};
-    for (const [key] of pipeline.activeContracts.entries()) {
-      const [svc, ep] = key.split(':');
-      if (!servicesList[svc]) servicesList[svc] = [];
-      servicesList[svc].push(ep);
-    }
-    return {
-      services: Object.entries(servicesList).map(([name, endpoints]) => ({
-        name,
-        endpoints,
-        status: 'healthy',
-      })),
-    };
-  });
-
-  // 4. Detected Changes / Drift
-  app.get('/changes', async () => {
-    const list = Array.from(pipeline.detectedChanges.values());
-    return { changes: list };
-  });
-
-  // 5. Impact Analysis
-  app.get<{ Params: { changeId: string } }>('/impact/:changeId', async (req, reply) => {
-    const impact = pipeline.impacts.get(req.params.changeId);
-    if (!impact) {
-      return reply.status(404).send({ error: 'Impact analysis not found for change' });
-    }
-    return impact;
-  });
-
-  // 6. Adapters & Proposals
-  app.get('/adapters', async () => {
-    return { adapters: Array.from(pipeline.adapters.values()) };
-  });
-
-  app.get('/proposals', async () => {
-    return { proposals: Array.from(pipeline.proposals.values()) };
-  });
-
-  app.post<{ Body: { proposalId: string; confirm: boolean } }>('/apply/:proposalId', async (req, reply) => {
-    const { proposalId } = req.params as any;
-    const { confirm } = req.body || {};
-    const proposal = pipeline.proposals.get(proposalId);
-    if (!proposal) {
-      return reply.status(404).send({ error: 'Proposal not found' });
-    }
-    if (!confirm) {
-      return reply.status(400).send({ error: 'Explicit confirm: true required to apply proposal' });
-    }
-    proposal.status = 'approved';
-    return { success: true, proposal };
-  });
-
-  // 7. Pipeline trigger
-  app.post('/pipeline/run', async () => {
-    const result = pipeline.runPipeline();
-    return { success: true, result };
-  });
-
-  // 8. Health & rate-limit headroom
-  app.get('/health', async () => {
-    const dependencies: Record<string, string> = {
-      users: 'healthy',
-      payments: 'healthy',
-      search: 'healthy',
-      notifications: 'healthy',
-      mcp: 'healthy',
-    };
-    for (const [key] of pipeline.activeContracts.entries()) {
-      const [svc] = key.split(':');
-      const hasBreaking = Array.from(pipeline.detectedChanges.values()).some(
-        (c) => c.service === svc && c.semanticVerdict === 'breaking'
-      );
-      dependencies[svc] = hasBreaking ? 'degraded' : 'healthy';
-    }
-    return {
-      status: 'ok',
-      uptime: process.uptime(),
-      dependencies,
-      rateLimitHeadroom: {
-        payments: 10,
-        search: 50,
-      },
-      activeContractsCount: pipeline.activeContracts.size,
-      detectedChangesCount: pipeline.detectedChanges.size,
-      adaptersCount: pipeline.adapters.size,
-    };
-  });
-
-  // 9. SSE live events ticker
-  app.get('/events', async (_req, reply) => {
-    reply.raw.writeHead(200, {
-      'Content-Type': 'text/event-stream',
-      'Cache-Control': 'no-cache',
-      Connection: 'keep-alive',
+      return impact;
     });
-    const data = JSON.stringify({
-      type: 'INIT',
-      changesCount: pipeline.detectedChanges.size,
-      timestamp: new Date().toISOString(),
+
+    // 6. Adapters & Proposals
+    instance.get('/adapters', async () => {
+      return { adapters: Array.from(pipeline.adapters.values()) };
     });
-    reply.raw.write(`data: ${data}\n\n`);
-    reply.raw.end();
-  });
+
+    instance.get('/proposals', async () => {
+      return { proposals: Array.from(pipeline.proposals.values()) };
+    });
+
+    instance.post<{ Body: { proposalId: string; confirm: boolean } }>('/apply/:proposalId', async (req, reply) => {
+      const { proposalId } = req.params as any;
+      const { confirm } = req.body || {};
+      const proposal = pipeline.proposals.get(proposalId);
+      if (!proposal) {
+        return reply.status(404).send({ error: 'Proposal not found' });
+      }
+      if (!confirm) {
+        return reply.status(400).send({ error: 'Explicit confirm: true required to apply proposal' });
+      }
+      proposal.status = 'approved';
+      return { success: true, proposal };
+    });
+
+    // 7. Pipeline trigger
+    instance.post('/pipeline/run', async () => {
+      const result = pipeline.runPipeline();
+      return { success: true, result };
+    });
+
+    // 8. Health & rate-limit headroom
+    instance.get('/health', async () => {
+      const dependencies: Record<string, string> = {
+        users: 'healthy',
+        payments: 'healthy',
+        search: 'healthy',
+        notifications: 'healthy',
+        mcp: 'healthy',
+      };
+      for (const [key] of pipeline.activeContracts.entries()) {
+        const [svc] = key.split(':');
+        const hasBreaking = Array.from(pipeline.detectedChanges.values()).some(
+          (c) => c.service === svc && c.semanticVerdict === 'breaking'
+        );
+        dependencies[svc] = hasBreaking ? 'degraded' : 'healthy';
+      }
+      return {
+        status: 'ok',
+        uptime: process.uptime(),
+        dependencies,
+        rateLimitHeadroom: {
+          payments: 10,
+          search: 50,
+        },
+        activeContractsCount: pipeline.activeContracts.size,
+        detectedChangesCount: pipeline.detectedChanges.size,
+        adaptersCount: pipeline.adapters.size,
+      };
+    });
+
+    // 9. SSE live events ticker
+    instance.get('/events', async (_req, reply) => {
+      reply.raw.writeHead(200, {
+        'Content-Type': 'text/event-stream',
+        'Cache-Control': 'no-cache',
+        Connection: 'keep-alive',
+      });
+      const data = JSON.stringify({
+        type: 'INIT',
+        changesCount: pipeline.detectedChanges.size,
+        timestamp: new Date().toISOString(),
+      });
+      reply.raw.write(`data: ${data}\n\n`);
+      reply.raw.end();
+    });
+  };
+
+  app.register(registerRoutes);
+  app.register(registerRoutes, { prefix: '/api/engine' });
 
   return app;
 }

@@ -10,15 +10,6 @@ export function buildMcpServer(
 ): FastifyInstance {
   const app = Fastify({ logger: false });
 
-  // Support optional mounted prefix /api/mcp for Vercel services routing
-  app.addHook('onRequest', async (req) => {
-    if (req.url.startsWith('/api/mcp')) {
-      const stripped = req.url.replace(/^\/api\/mcp/, '') || '/';
-      req.raw.url = stripped;
-      (req as any).url = stripped;
-    }
-  });
-
   // CORS headers and preflight handling
   app.addHook('onRequest', async (req, reply) => {
     reply.header('Access-Control-Allow-Origin', '*');
@@ -29,158 +20,163 @@ export function buildMcpServer(
     }
   });
 
-  // 1. Health check for Render / Vercel deployment
-  app.get('/healthz', async () => {
-    return { status: 'healthy', transport: 'http/streamable', timestamp: new Date().toISOString() };
-  });
+  const routes = async (instance: FastifyInstance) => {
+    // 1. Health check for Render / Vercel deployment
+    instance.get('/healthz', async () => {
+      return { status: 'healthy', transport: 'http/streamable', timestamp: new Date().toISOString() };
+    });
 
-  // 2. List MCP tools
-  app.get('/tools', async () => {
-    return {
-      tools: [
-        {
-          name: 'intra_list_dependencies',
-          description: 'Lists all external services and endpoints actively observed by Intra',
-        },
-        {
-          name: 'intra_get_contract',
-          description: 'Fetches the learned schema and behavioural fingerprint for a service endpoint',
-          parameters: { service: 'string', endpoint: 'string' },
-        },
-        {
-          name: 'intra_recent_changes',
-          description: 'Fetches recent structural and semantic drift detected by Intra',
-          parameters: { service: 'optional string', min_confidence: 'optional number' },
-        },
-        {
-          name: 'intra_impact',
-          description: 'Calculates the blast radius of a change on dependent application workflows',
-          parameters: { change_id: 'string' },
-        },
-        {
-          name: 'intra_propose_adapter',
-          description: 'Generates a compatibility adapter diff and validation test plan without applying it',
-          parameters: { change_id: 'string' },
-        },
-        {
-          name: 'intra_apply_adapter',
-          description: 'Applies an adapter proposal. Requires explicit confirm: true.',
-          parameters: { proposal_id: 'string', confirm: 'boolean' },
-        },
-        {
-          name: 'intra_health',
-          description: 'Checks dependency health and rate-limit headroom',
-        },
-      ],
-    };
-  });
+    // 2. List MCP tools
+    instance.get('/tools', async () => {
+      return {
+        tools: [
+          {
+            name: 'intra_list_dependencies',
+            description: 'Lists all external services and endpoints actively observed by Intra',
+          },
+          {
+            name: 'intra_get_contract',
+            description: 'Fetches the learned schema and behavioural fingerprint for a service endpoint',
+            parameters: { service: 'string', endpoint: 'string' },
+          },
+          {
+            name: 'intra_recent_changes',
+            description: 'Fetches recent structural and semantic drift detected by Intra',
+            parameters: { service: 'optional string', min_confidence: 'optional number' },
+          },
+          {
+            name: 'intra_impact',
+            description: 'Calculates the blast radius of a change on dependent application workflows',
+            parameters: { change_id: 'string' },
+          },
+          {
+            name: 'intra_propose_adapter',
+            description: 'Generates a compatibility adapter diff and validation test plan without applying it',
+            parameters: { change_id: 'string' },
+          },
+          {
+            name: 'intra_apply_adapter',
+            description: 'Applies an adapter proposal. Requires explicit confirm: true.',
+            parameters: { proposal_id: 'string', confirm: 'boolean' },
+          },
+          {
+            name: 'intra_health',
+            description: 'Checks dependency health and rate-limit headroom',
+          },
+        ],
+      };
+    });
 
-  // 3. Execute MCP tools (HTTP / Streamable transport proxy to engine)
-  app.post<{ Body: { tool: string; params?: Record<string, any> } }>(
-    '/tools/call',
-    async (req, reply) => {
-      const { tool, params = {} } = req.body || {};
+    // 3. Execute MCP tools (HTTP / Streamable transport proxy to engine)
+    instance.post<{ Body: { tool: string; params?: Record<string, any> } }>(
+      '/tools/call',
+      async (req, reply) => {
+        const { tool, params = {} } = req.body || {};
 
-      try {
-        switch (tool) {
-          case 'intra_list_dependencies': {
-            const res = await fetch(`${config.engineUrl}/services`).catch(() => null);
-            if (!res || !res.ok) {
-              return { services: ['users', 'payments', 'search', 'notifications', 'mcp-tool'] };
+        try {
+          switch (tool) {
+            case 'intra_list_dependencies': {
+              const res = await fetch(`${config.engineUrl}/services`).catch(() => null);
+              if (!res || !res.ok) {
+                return { services: ['users', 'payments', 'search', 'notifications', 'mcp-tool'] };
+              }
+              return await res.json();
             }
-            return await res.json();
+
+            case 'intra_get_contract': {
+              const { service, endpoint } = params;
+              const res = await fetch(`${config.engineUrl}/contracts/${service}/${endpoint}`).catch(
+                () => null
+              );
+              if (!res || !res.ok) {
+                return { error: 'Contract not found' };
+              }
+              return await res.json();
+            }
+
+            case 'intra_recent_changes': {
+              const res = await fetch(`${config.engineUrl}/changes`).catch(() => null);
+              if (!res || !res.ok) {
+                return { changes: [] };
+              }
+              return await res.json();
+            }
+
+            case 'intra_impact': {
+              const { change_id } = params;
+              const res = await fetch(`${config.engineUrl}/impact/${change_id}`).catch(() => null);
+              if (!res || !res.ok) {
+                return { error: 'Impact not found' };
+              }
+              return await res.json();
+            }
+
+            case 'intra_propose_adapter': {
+              const change_id = params.change_id || 'M1';
+              const res = await fetch(`${config.engineUrl}/proposals/generate`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ changeId: change_id }),
+              }).catch(() => null);
+              if (!res || !res.ok) {
+                return {
+                  proposalId: `prop_${change_id.toLowerCase()}_01`,
+                  changeId: change_id,
+                  strategy: change_id === 'M3' ? 'unit_shift' : 'rename',
+                  verdict: 'equivalent',
+                  confidence: 0.96,
+                  adapterDiff: `+ export function adaptResponse(data) {\n+   if (Array.isArray(data)) return data.map(i => ({ ...i, name: i.display_name }));\n+   return { ...data, name: data.display_name };\n+ }`,
+                  testPlan: {
+                    totalWorkflows: 3,
+                    passingReplays: 3,
+                    semanticEquivalence: true,
+                  },
+                  status: 'pending_approval',
+                  rollbackHandle: `rollback_${change_id}_canary`,
+                  timestamp: new Date().toISOString(),
+                };
+              }
+              return await res.json();
+            }
+
+            case 'intra_apply_adapter': {
+              const { proposal_id, confirm } = params;
+              if (!confirm) {
+                return reply
+                  .status(400)
+                  .send({ error: 'Explicit confirm: true is required to apply adapter' });
+              }
+              const res = await fetch(`${config.engineUrl}/apply/${proposal_id}`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ confirm: true }),
+              }).catch(() => null);
+              if (!res || !res.ok) {
+                return { success: false, message: 'Engine apply failed' };
+              }
+              return await res.json();
+            }
+
+            case 'intra_health': {
+              const res = await fetch(`${config.engineUrl}/health`).catch(() => null);
+              if (!res || !res.ok) {
+                return { status: 'engine_unreachable' };
+              }
+              return await res.json();
+            }
+
+            default:
+              return reply.status(404).send({ error: `Unknown tool: ${tool}` });
           }
-
-          case 'intra_get_contract': {
-            const { service, endpoint } = params;
-            const res = await fetch(`${config.engineUrl}/contracts/${service}/${endpoint}`).catch(
-              () => null
-            );
-            if (!res || !res.ok) {
-              return { error: 'Contract not found' };
-            }
-            return await res.json();
-          }
-
-          case 'intra_recent_changes': {
-            const res = await fetch(`${config.engineUrl}/changes`).catch(() => null);
-            if (!res || !res.ok) {
-              return { changes: [] };
-            }
-            return await res.json();
-          }
-
-          case 'intra_impact': {
-            const { change_id } = params;
-            const res = await fetch(`${config.engineUrl}/impact/${change_id}`).catch(() => null);
-            if (!res || !res.ok) {
-              return { error: 'Impact not found' };
-            }
-            return await res.json();
-          }
-
-          case 'intra_propose_adapter': {
-            const change_id = params.change_id || 'M1';
-            const res = await fetch(`${config.engineUrl}/proposals/generate`, {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({ changeId: change_id }),
-            }).catch(() => null);
-            if (!res || !res.ok) {
-              return {
-                proposalId: `prop_${change_id.toLowerCase()}_01`,
-                changeId: change_id,
-                strategy: change_id === 'M3' ? 'unit_shift' : 'rename',
-                verdict: 'equivalent',
-                confidence: 0.96,
-                adapterDiff: `+ export function adaptResponse(data) {\n+   if (Array.isArray(data)) return data.map(i => ({ ...i, name: i.display_name }));\n+   return { ...data, name: data.display_name };\n+ }`,
-                testPlan: {
-                  totalWorkflows: 3,
-                  passingReplays: 3,
-                  semanticEquivalence: true,
-                },
-                status: 'pending_approval',
-                rollbackHandle: `rollback_${change_id}_canary`,
-                timestamp: new Date().toISOString(),
-              };
-            }
-            return await res.json();
-          }
-
-          case 'intra_apply_adapter': {
-            const { proposal_id, confirm } = params;
-            if (!confirm) {
-              return reply
-                .status(400)
-                .send({ error: 'Explicit confirm: true is required to apply adapter' });
-            }
-            const res = await fetch(`${config.engineUrl}/apply/${proposal_id}`, {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({ confirm: true }),
-            }).catch(() => null);
-            if (!res || !res.ok) {
-              return { success: false, message: 'Engine apply failed' };
-            }
-            return await res.json();
-          }
-
-          case 'intra_health': {
-            const res = await fetch(`${config.engineUrl}/health`).catch(() => null);
-            if (!res || !res.ok) {
-              return { status: 'engine_unreachable' };
-            }
-            return await res.json();
-          }
-
-          default:
-            return reply.status(404).send({ error: `Unknown tool: ${tool}` });
+        } catch (err: any) {
+          return reply.status(500).send({ error: err.message });
         }
-      } catch (err: any) {
-        return reply.status(500).send({ error: err.message });
       }
-    }
-  );
+    );
+  };
+
+  app.register(routes);
+  app.register(routes, { prefix: '/api/mcp' });
 
   return app;
 }
