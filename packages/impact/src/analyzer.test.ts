@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { ImpactAnalyzer } from './analyzer.js';
+import { ImpactAnalyzer, isFinancialOrPaymentRoute, annotateCriticality } from './analyzer.js';
 import { extractPropertyAccesses } from './ast.js';
 import { CallGraphTracer } from './callgraph.js';
 import { Change } from '@intra/shared';
@@ -121,6 +121,39 @@ describe('@intra/impact Blast Radius & Dependency Mapping', () => {
 
       const path = tracer.findHopChain('orderService', 'unrelatedService');
       expect(path).toBeNull();
+    });
+  });
+
+  describe('Financial Route Criticality Annotation', () => {
+    it('detects sensitive payment and billing pathways', () => {
+      expect(isFinancialOrPaymentRoute('payments', '/payments/charge')).toBe(true);
+      expect(isFinancialOrPaymentRoute('billing', '/invoices/tax')).toBe(true);
+      expect(isFinancialOrPaymentRoute('search', '/items/query')).toBe(false);
+    });
+
+    it('asserts critical severity rating on payment charge routes with medium/high verdict', () => {
+      const analyzer = new ImpactAnalyzer();
+      const change: Change = {
+        id: 'chg_pay_01',
+        service: 'payments',
+        endpoint: '/payments/charge',
+        kind: 'unit_shift',
+        before: { field: 'amount', unit: 'cents' },
+        after: { field: 'amount', unit: 'dollars' },
+        semanticVerdict: 'lossy',
+        confidence: 0.99,
+        timestamp: new Date().toISOString(),
+      };
+
+      const result = analyzer.analyze(change);
+      expect(result.severity).toBe('critical');
+      expect(result.affectedWorkflows).toContain('checkout');
+    });
+
+    it('elevates medium severity to critical for financial endpoints', () => {
+      expect(annotateCriticality('payments', '/payments/charge', 'medium')).toBe('critical');
+      expect(annotateCriticality('payments', '/payments/charge', 'high')).toBe('critical');
+      expect(annotateCriticality('search', '/search/query', 'medium')).toBe('medium');
     });
   });
 });
