@@ -309,14 +309,14 @@ export function DashboardContainer({
 
         {/* Real Metric Cards with 1.5rem Radiuses */}
         <div className="grid grid-cols-2 sm:grid-cols-5 gap-3 pt-4 border-t border-black/5 text-xs font-mono">
-          <div className="p-4 rounded-2xl bg-cream-subtle border border-black/5">
+          <div className="p-4 rounded-2xl bg-cream-subtle/80 border border-black/10 shadow-xs hover:border-black/25 transition-colors">
             <div className="text-black/50 text-[10px] uppercase">Engine Status</div>
             <div className="font-bold text-base text-black">
               {engineHealth ? engineHealth.status.toUpperCase() : 'OK'}
             </div>
             <div className="text-[10px] text-emerald-600 font-semibold">100% PII Masked</div>
           </div>
-          <div className="p-4 rounded-2xl bg-cream-subtle border border-black/5">
+          <div className="p-4 rounded-2xl bg-cream-subtle/80 border border-black/10 shadow-xs hover:border-black/25 transition-colors">
             <div className="text-black/50 text-[10px] uppercase">Observed Dependencies</div>
             <div className="font-bold text-base text-black">
               {engineHealth?.dependencies && typeof engineHealth.dependencies === 'object'
@@ -325,19 +325,19 @@ export function DashboardContainer({
             </div>
             <div className="text-[10px] text-emerald-600 font-semibold">Live Fastify Microservices</div>
           </div>
-          <div className="p-4 rounded-2xl bg-cream-subtle border border-black/5">
+          <div className="p-4 rounded-2xl bg-cream-subtle/80 border border-black/10 shadow-xs hover:border-black/25 transition-colors">
             <div className="text-black/50 text-[10px] uppercase">Active Drift</div>
             <div className="font-bold text-base text-crimson">{activeMutations.length} Detected</div>
             <div className="text-[10px] text-black/60 font-semibold">Structural + Semantic</div>
           </div>
-          <div className="p-4 rounded-2xl bg-cream-subtle border border-black/5">
+          <div className="p-4 rounded-2xl bg-cream-subtle/80 border border-black/10 shadow-xs hover:border-black/25 transition-colors">
             <div className="text-black/50 text-[10px] uppercase">Canary Adapters</div>
             <div className="font-bold text-base text-black">
               {activeMutations.filter((m) => m.adapted).length} Live
             </div>
             <div className="text-[10px] text-emerald-600 font-semibold">Replay Verified</div>
           </div>
-          <div className="p-4 rounded-2xl bg-cream-subtle border border-black/5 col-span-2 sm:col-span-1">
+          <div className="p-4 rounded-2xl bg-cream-subtle/80 border border-black/10 shadow-xs hover:border-black/25 transition-colors col-span-2 sm:col-span-1">
             <div className="text-black/50 text-[10px] uppercase">Breaker Status</div>
             <div className="font-bold text-base text-crimson">
               {mutations.find((m) => m.id === 'M10')?.active ? 'TRIPPED (M10)' : 'ARMED'}
