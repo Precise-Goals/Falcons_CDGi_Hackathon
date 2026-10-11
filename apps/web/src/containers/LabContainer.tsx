@@ -340,12 +340,14 @@ export function LabContainer({
                     Vendor Drift Mutation Kinds Tested
                   </span>
                   <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 text-[11px] font-mono">
-                    {Object.entries(batchReport.mutationBreakdown).map(([k, count]) => (
-                      <div key={k} className="p-2 rounded-xl bg-cream-subtle border border-black/5 flex justify-between items-center">
-                        <span className="text-black/60 capitalize">{k.replace(/_/g, ' ')}:</span>
-                        <span className="font-bold text-black">{count}</span>
-                      </div>
-                    ))}
+                    {batchReport.mutationBreakdown && typeof batchReport.mutationBreakdown === 'object'
+                      ? Object.entries(batchReport.mutationBreakdown).map(([k, count]) => (
+                          <div key={k} className="p-2 rounded-xl bg-cream-subtle border border-black/5 flex justify-between items-center">
+                            <span className="text-black/60 capitalize">{k.replace(/_/g, ' ')}:</span>
+                            <span className="font-bold text-black">{count}</span>
+                          </div>
+                        ))
+                      : null}
                   </div>
                 </div>
               </div>

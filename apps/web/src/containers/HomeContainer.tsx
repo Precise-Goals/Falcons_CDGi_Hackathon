@@ -134,7 +134,7 @@ export function HomeContainer({
               <div className="pt-4 border-t border-black/10 flex flex-wrap items-center gap-6 text-xs font-mono text-black/70">
                 <div className="flex items-center space-x-2">
                   <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse" />
-                  <span>Engine: {engineHealth ? `Live (${Math.floor(engineHealth.uptime)}s)` : 'Online'}</span>
+                  <span>Engine: {engineHealth?.uptime != null ? `Live (${Math.floor(engineHealth.uptime)}s)` : 'Online'}</span>
                 </div>
                 <div className="flex items-center space-x-2">
                   <span className="w-2.5 h-2.5 rounded-full bg-crimson" />
@@ -257,19 +257,23 @@ export function HomeContainer({
               <div className="p-3 rounded-2xl bg-cream-subtle">
                 <div className="text-black/40 text-[10px]">UPTIME</div>
                 <div className="font-bold text-black text-sm">
-                  {engineHealth ? `${Math.floor(engineHealth.uptime / 60)}m` : 'Live'}
+                  {engineHealth?.uptime != null ? `${Math.floor(engineHealth.uptime / 60)}m` : 'Live'}
                 </div>
               </div>
               <div className="p-3 rounded-2xl bg-cream-subtle">
                 <div className="text-black/40 text-[10px]">DEPENDENCIES</div>
                 <div className="font-bold text-black text-sm">
-                  {engineHealth ? Object.keys(engineHealth.dependencies).length : 5} Monitored
+                  {engineHealth?.dependencies && typeof engineHealth.dependencies === 'object'
+                    ? Object.keys(engineHealth.dependencies).length
+                    : 5} Monitored
                 </div>
               </div>
               <div className="p-3 rounded-2xl bg-cream-subtle">
                 <div className="text-black/40 text-[10px]">RATE HEADROOM</div>
                 <div className="font-bold text-crimson text-sm">
-                  {engineHealth ? `${engineHealth.rateLimitHeadroom.payments || 10} rps` : '10 rps'}
+                  {engineHealth?.rateLimitHeadroom?.payments != null
+                    ? `${engineHealth.rateLimitHeadroom.payments} rps`
+                    : '10 rps'}
                 </div>
               </div>
             </div>

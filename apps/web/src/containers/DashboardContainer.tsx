@@ -290,7 +290,9 @@ export function DashboardContainer({
           <div className="p-4 rounded-2xl bg-cream-subtle border border-black/5">
             <div className="text-black/50 text-[10px] uppercase">Observed Dependencies</div>
             <div className="font-bold text-base text-black">
-              {engineHealth ? Object.keys(engineHealth.dependencies).length : 5} Services
+              {engineHealth?.dependencies && typeof engineHealth.dependencies === 'object'
+                ? Object.keys(engineHealth.dependencies).length
+                : 5} Services
             </div>
             <div className="text-[10px] text-emerald-600 font-semibold">Live Fastify Microservices</div>
           </div>
