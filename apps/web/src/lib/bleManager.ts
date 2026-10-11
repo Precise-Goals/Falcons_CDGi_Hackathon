@@ -197,12 +197,23 @@ export class IntraBleManager {
         }
       }
 
-      // 2. Fallback to interactive pairing modal if no previously authorized device was found
+      // 2. Interactive pairing modal with service filter and fallback
       if (!selectedDevice) {
-        selectedDevice = await bt.requestDevice({
-          filters: [{ services: [INTRA_BLE_CONFIG.SERVICE_UUID] }],
-          optionalServices: [INTRA_BLE_CONFIG.SERVICE_UUID],
-        });
+        try {
+          selectedDevice = await bt.requestDevice({
+            filters: [{ services: [INTRA_BLE_CONFIG.SERVICE_UUID] }],
+            optionalServices: [INTRA_BLE_CONFIG.SERVICE_UUID],
+          });
+        } catch (filterErr: any) {
+          if (filterErr.name === 'NotFoundError' || filterErr.message?.includes('User cancelled')) {
+            throw filterErr;
+          }
+          // Fallback to accepting all Bluetooth devices
+          selectedDevice = await bt.requestDevice({
+            acceptAllDevices: true,
+            optionalServices: [INTRA_BLE_CONFIG.SERVICE_UUID],
+          });
+        }
       }
 
       // 3. Connect to GATT server
@@ -265,24 +276,39 @@ export class IntraBleManager {
         return false;
       }
 
-      const service = await this.server.getPrimaryService(INTRA_BLE_CONFIG.SERVICE_UUID);
-
-      // Resolve Drift Alert characteristic (dashboard -> mobile)
-      this.alertChar = await service.getCharacteristic(INTRA_BLE_CONFIG.CHARACTERISTICS.DRIFT_ALERT);
-
-      // Resolve Adapter Action characteristic (mobile -> dashboard approvals)
-      this.actionChar = await service.getCharacteristic(INTRA_BLE_CONFIG.CHARACTERISTICS.ADAPTER_ACTION);
-
-      // Resolve Heartbeat characteristic (optional liveness ping)
+      let service: BluetoothRemoteGATTService | null = null;
       try {
-        this.heartbeatChar = await service.getCharacteristic(INTRA_BLE_CONFIG.CHARACTERISTICS.HEARTBEAT);
-      } catch {
-        this.heartbeatChar = null;
+        service = await this.server.getPrimaryService(INTRA_BLE_CONFIG.SERVICE_UUID);
+      } catch (svcErr) {
+        console.warn('[Intra BLE] Direct primary service lookup failed, inspecting services:', svcErr);
+        if (typeof this.server.getPrimaryServices === 'function') {
+          const services = await this.server.getPrimaryServices();
+          service = services.find(s => s.uuid.toLowerCase() === INTRA_BLE_CONFIG.SERVICE_UUID.toLowerCase()) || services[0] || null;
+        }
       }
 
-      // Start notifications on mobile operator response channel
-      await this.actionChar.startNotifications();
-      this.actionChar.addEventListener('characteristicvaluechanged', this.handleActionFromMobile);
+      if (!service) {
+        throw new Error('GATT Service not discovered on target peripheral');
+      }
+
+      // Resolve Drift Alert characteristic (dashboard -> mobile)
+      this.alertChar = await service.getCharacteristic(INTRA_BLE_CONFIG.CHARACTERISTICS.DRIFT_ALERT).catch(() => null);
+
+      // Resolve Adapter Action characteristic (mobile -> dashboard approvals)
+      this.actionChar = await service.getCharacteristic(INTRA_BLE_CONFIG.CHARACTERISTICS.ADAPTER_ACTION).catch(() => null);
+
+      // Resolve Heartbeat characteristic (optional liveness ping)
+      this.heartbeatChar = await service.getCharacteristic(INTRA_BLE_CONFIG.CHARACTERISTICS.HEARTBEAT).catch(() => null);
+
+      // Start notifications on mobile operator response channel if supported
+      if (this.actionChar) {
+        try {
+          await this.actionChar.startNotifications();
+          this.actionChar.addEventListener('characteristicvaluechanged', this.handleActionFromMobile);
+        } catch (notifErr) {
+          console.warn('[Intra BLE] Action notifications not supported on characteristic:', notifErr);
+        }
+      }
 
       // Start liveness heartbeat loop
       this.startHeartbeat();

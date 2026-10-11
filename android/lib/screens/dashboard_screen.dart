@@ -285,103 +285,135 @@ class _DashboardScreenState extends State<DashboardScreen> {
                   ),
                 ],
               ),
-              child: Row(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Container(
-                    width: 36,
-                    height: 36,
-                    decoration: BoxDecoration(
-                      color: _bleService.isConnected
-                          ? AppColors.crimson.withValues(alpha: 0.1)
-                          : AppColors.creamSubtle,
-                      borderRadius: BorderRadius.circular(10),
-                    ),
-                    child: Icon(
-                      _bleService.isConnected
-                          ? Icons.bluetooth_connected
-                          : (_bleService.isAdvertising ? Icons.bluetooth_searching : Icons.bluetooth),
-                      size: 20,
-                      color: _bleService.isConnected
-                          ? AppColors.crimson
-                          : (_bleService.isAdvertising ? AppColors.warning : AppColors.charcoal),
-                    ),
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Row(
+                  Row(
+                    children: [
+                      Container(
+                        width: 36,
+                        height: 36,
+                        decoration: BoxDecoration(
+                          color: _bleService.isConnected
+                              ? AppColors.crimson.withValues(alpha: 0.1)
+                              : AppColors.creamSubtle,
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                        child: Icon(
+                          _bleService.isConnected
+                              ? Icons.bluetooth_connected
+                              : (_bleService.isAdvertising ? Icons.bluetooth_searching : Icons.bluetooth),
+                          size: 20,
+                          color: _bleService.isConnected
+                              ? AppColors.crimson
+                              : (_bleService.isAdvertising ? AppColors.warning : AppColors.charcoal),
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            const Text(
-                              'BLE AIRLINK (<20ms)',
-                              style: TextStyle(
-                                fontSize: 12,
-                                fontWeight: FontWeight.bold,
-                                letterSpacing: 0.4,
-                                color: AppColors.charcoal,
-                              ),
-                            ),
-                            const SizedBox(width: 6),
-                            Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                              decoration: BoxDecoration(
-                                color: _bleService.isConnected
-                                    ? AppColors.success.withValues(alpha: 0.12)
-                                    : (_bleService.isAdvertising
-                                        ? AppColors.warning.withValues(alpha: 0.12)
-                                        : AppColors.charcoal.withValues(alpha: 0.08)),
-                                borderRadius: BorderRadius.circular(6),
-                              ),
-                              child: Text(
-                                _bleService.stateText.toUpperCase(),
-                                style: TextStyle(
-                                  fontSize: 9,
-                                  fontWeight: FontWeight.bold,
-                                  color: _bleService.isConnected
-                                      ? AppColors.success
-                                      : (_bleService.isAdvertising ? AppColors.warning : Colors.black54),
+                            Row(
+                              children: [
+                                const Flexible(
+                                  child: Text(
+                                    'BLE AIRLINK (<20ms)',
+                                    style: TextStyle(
+                                      fontSize: 12,
+                                      fontWeight: FontWeight.bold,
+                                      letterSpacing: 0.4,
+                                      color: AppColors.charcoal,
+                                    ),
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
                                 ),
-                              ),
+                                const SizedBox(width: 6),
+                                Container(
+                                  padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                  decoration: BoxDecoration(
+                                    color: _bleService.isConnected
+                                        ? AppColors.success.withValues(alpha: 0.12)
+                                        : (_bleService.isAdvertising
+                                            ? AppColors.warning.withValues(alpha: 0.12)
+                                            : AppColors.charcoal.withValues(alpha: 0.08)),
+                                    borderRadius: BorderRadius.circular(6),
+                                  ),
+                                  child: Text(
+                                    _bleService.stateText.toUpperCase(),
+                                    style: TextStyle(
+                                      fontSize: 9,
+                                      fontWeight: FontWeight.bold,
+                                      color: _bleService.isConnected
+                                          ? AppColors.success
+                                          : (_bleService.isAdvertising ? AppColors.warning : Colors.black54),
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: 2),
+                            Text(
+                              _bleService.isConnected
+                                  ? 'GATT Peripheral Active • Latency: ${_bleService.latencyMs}ms'
+                                  : (_bleService.isAdvertising
+                                      ? 'Advertising Intra GATT Service (${BleService.shortServiceUuid})...'
+                                      : 'GATT Peripheral Ready • Zero-Cable Direct Link'),
+                              style: const TextStyle(fontSize: 10, color: Colors.black54),
+                              overflow: TextOverflow.ellipsis,
                             ),
                           ],
                         ),
-                        const SizedBox(height: 2),
-                        Text(
-                          _bleService.isConnected
-                              ? 'GATT Peripheral Active • Latency: ${_bleService.latencyMs}ms'
-                              : (_bleService.isAdvertising
-                                  ? 'Advertising Intra GATT Service (${BleService.shortServiceUuid})...'
-                                  : 'GATT Peripheral Ready • Zero-Cable Direct Link'),
-                          style: const TextStyle(fontSize: 10, color: Colors.black54),
-                        ),
-                      ],
-                    ),
+                      ),
+                    ],
                   ),
-                  const SizedBox(width: 8),
-                  OutlinedButton.icon(
-                    key: const Key('ble_pairing_check_btn'),
-                    onPressed: _isPairingChecking ? null : _triggerBlePairingCheck,
-                    icon: _isPairingChecking
-                        ? const SizedBox(
-                            width: 12,
-                            height: 12,
-                            child: CircularProgressIndicator(strokeWidth: 2, color: AppColors.crimson),
-                          )
-                        : Icon(
-                            _bleService.isAdvertising ? Icons.sync : Icons.bluetooth_searching,
-                            size: 14,
-                            color: AppColors.crimson,
+                  const SizedBox(height: 10),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Flexible(
+                        child: Text(
+                          _bleService.isConnected
+                              ? 'Direct Airlink (<20ms) • Active'
+                              : 'UUID: ${BleService.shortServiceUuid} • GATT Server',
+                          style: const TextStyle(
+                            fontSize: 10,
+                            fontFamily: 'monospace',
+                            color: Colors.black45,
+                            fontWeight: FontWeight.w500,
                           ),
-                    label: Text(
-                      _bleService.isAdvertising ? 'Pairing...' : 'Pair / Check',
-                      style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: AppColors.crimson),
-                    ),
-                    style: OutlinedButton.styleFrom(
-                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
-                      side: const BorderSide(color: AppColors.crimson, width: 1.2),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                    ),
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      SizedBox(
+                        height: 32,
+                        child: OutlinedButton.icon(
+                          key: const Key('ble_pairing_check_btn'),
+                          onPressed: _isPairingChecking ? null : _triggerBlePairingCheck,
+                          icon: _isPairingChecking
+                              ? const SizedBox(
+                                  width: 12,
+                                  height: 12,
+                                  child: CircularProgressIndicator(strokeWidth: 2, color: AppColors.crimson),
+                                )
+                              : Icon(
+                                  _bleService.isAdvertising ? Icons.sync : Icons.bluetooth_searching,
+                                  size: 14,
+                                  color: AppColors.crimson,
+                                ),
+                          label: Text(
+                            _bleService.isAdvertising ? 'Pairing...' : 'Pair / Check',
+                            style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: AppColors.crimson),
+                          ),
+                          style: OutlinedButton.styleFrom(
+                            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                            side: const BorderSide(color: AppColors.crimson, width: 1.2),
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                          ),
+                        ),
+                      ),
+                    ],
                   ),
                 ],
               ),
