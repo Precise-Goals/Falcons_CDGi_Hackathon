@@ -229,8 +229,8 @@ export function PricingContainer({
           return (
             <div
               key={tier.id}
-              className={`skeuo-card p-8 rounded-[2rem] flex flex-col justify-between space-y-6 ${
-                tier.highlight ? 'border-crimson shadow-xl relative' : 'border-black/10'
+              className={`skeuo-card p-8 rounded-[2rem] border-2 flex flex-col justify-between space-y-6 transition-all duration-300 hover:-translate-y-1 ${
+                tier.highlight ? 'border-crimson shadow-xl shadow-crimson/10 relative' : 'border-black/15 hover:border-black/35 shadow-sm hover:shadow-md'
               }`}
             >
               {tier.highlight && (
