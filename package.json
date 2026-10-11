@@ -19,20 +19,21 @@
     "flutter:devices": "flutter devices"
   },
   "dependencies": {
-    "fastify": "^5.2.1",
-    "@intra/shared": "workspace:*",
-    "@intra/observer": "workspace:*",
-    "@intra/model": "workspace:*",
+    "@intra/adapter": "workspace:*",
     "@intra/differ": "workspace:*",
     "@intra/impact": "workspace:*",
-    "@intra/adapter": "workspace:*",
-    "@intra/validator": "workspace:*",
+    "@intra/model": "workspace:*",
+    "@intra/observer": "workspace:*",
+    "@intra/sdk": "workspace:*",
+    "@intra/shared": "workspace:*",
     "@intra/sim-services": "workspace:*",
-    "@intra/sdk": "workspace:*"
+    "@intra/validator": "workspace:*",
+    "fastify": "^5.2.1"
   },
   "devDependencies": {
     "@openzeppelin/contracts": "^5.6.1",
     "@types/node": "^26.6.4",
+    "@vitest/coverage-v8": "^3.0.7",
     "dotenv": "^18.0.7",
     "ethers": "^6.17.0",
     "solc": "^0.8.37",
