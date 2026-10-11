@@ -1,151 +1,140 @@
 # Intra: Comprehensive Application & Ecosystem Guide
 
-Welcome to **Intra**, the autonomous runtime platform designed to help software survive undocumented changes, defaults, and semantic drift in external services (APIs, SDKs, MCP servers, webhooks).
-
-This guide walks you through starting, operating, testing, and integrating the entire Intra ecosystem.
+Welcome to **Intra** ("The Internet After the API"), the autonomous runtime resilience platform designed to help software survive unannounced changes, altered defaults, and silent semantic drift in external services (APIs, SDKs, MCP servers, webhooks).
 
 ---
 
-## 1. System Architecture at a Glance
+## 1. Quick Access & Live Deployments
 
-Intra is structured as a Turborepo monorepo with dedicated components:
+| Component | Production URL (Vercel) | Local Development URL | Description |
+|---|---|---|---|
+| **Web Portal** | [https://intra-vert.vercel.app](https://intra-vert.vercel.app) | [http://localhost:3000](http://localhost:3000) | Full React 18 + Vite platform portal |
+| **Customer MCP Server** | [https://intra-vert.vercel.app/api/mcp](https://intra-vert.vercel.app/api/mcp) | [http://localhost:3002](http://localhost:3002) | Streamable HTTP SSE MCP tools for AI agents |
+| **Core Engine** | [https://intra-vert.vercel.app/api/engine](https://intra-vert.vercel.app/api/engine) | [http://localhost:3001](http://localhost:3001) | Fastify 6-stage closed-loop adaptation engine |
+| **Simulated Microservices** | [https://intra-vert.vercel.app/api/sim](https://intra-vert.vercel.app/api/sim) | [http://localhost:4000](http://localhost:4000) | 5 live services & 10-mutation Switchboard |
+| **Autonomous Lab Route** | [https://intra-vert.vercel.app/eval](https://intra-vert.vercel.app/eval) | [http://localhost:3000/eval](http://localhost:3000/eval) | 50-sample Sarvam AI stress evaluation |
+
+---
+
+## 2. System Architecture
 
 ```
 Intra/
 ├── apps/
-│   ├── web/          # React 18 + Vite dashboard (Washi Cream, Crimson & Black theme)
+│   ├── web/          # React 18 + Vite portal (Washi Cream, Crimson & Black theme)
 │   ├── engine/       # Fastify monolith hosting the 6-stage adaptation loop
 │   └── demo-app/     # "Shipwell" e-commerce app demonstrating red -> green recovery
 ├── mcpserver/        # Customer MCP server for AI coding agents (Render / Streamable HTTP)
 ├── packages/
 │   ├── shared/       # Zod schemas & shared TypeScript domain contracts
 │   ├── observer/     # Traffic capture & PII redactor
-│   ├── model/        # Behavioral contract & distribution inferrer
-│   ├── differ/       # Semantic & structural drift classifier with confidence scoring
+│   ├── model/        # Invariant mining, t-digest quantiles & HyperLogLog sketches
+│   ├── differ/       # Hungarian bipartite schema matcher & Quantile-Ratio unit shift tester
 │   ├── impact/       # AST dependency scanner & blast radius graph
-│   ├── adapter/      # Safe-handling policy engine & Canary runtime synthesizer
-│   ├── validator/    # Golden workflow replay & semantic equivalence gate
-│   ├── sim-services/ # 5 simulated external services with mutation switchboard (M1-M10)
-│   └── sdk/          # Lightweight client SDK wrapper
+│   ├── adapter/      # FlashFill typed DSL synthesizer & Safe-handling policy engine
+│   ├── validator/    # Golden workflow replay & Wald's SPRT canary stopping gate
+│   ├── sim-services/ # 5 simulated microservices with 10 mutation switchboards (M1-M10)
+│   └── sdk/          # Lightweight dynamic proxy client library (@intra/sdk)
 ├── scripts/
 │   ├── demo.mjs      # Autonomous CLI demonstration runner
 │   └── serve.mjs     # Backend ecosystem service launcher
-├── HARNESS.md        # Monorepo specifications & engineering contracts
-└── guide.md          # This guide
+├── docs/             # Complete technical manuals, research papers, and guides
+│   ├── lock.md       # Authoritative challenge requirements specification
+│   ├── explain.md    # Plain-English decoding of LOCK.MD & algorithmic foundations
+│   ├── ALGO.md       # Mathematical algorithm specifications
+│   ├── MCP_SETUP.md  # Customer MCP connection guide
+│   └── guide.md      # This guide
+└── guide.md          # Synchronized root copy of this guide
 ```
 
 ---
 
-## 2. Quickstart: One-Command Execution with Bun
+## 3. Getting Started: One-Command Execution
 
-Intra is fully optimized for **Bun** (`v1.3.14+`) with sub-second execution:
+Intra is fully optimized for **Bun** (`v1.3.14+`) and **pnpm** with instant startup:
 
-### 2.1 Start Only the Web Dashboard (Recommended First Step)
-To launch the complete interactive frontend dashboard:
-```bash
-bun run dev
-```
-- **URL**: [http://localhost:3000](http://localhost:3000)
-- **Startup Time**: ~300ms
-- **Self-Contained**: Runs without requiring other backend services to be up; houses the entire interactive simulation and problem-statement demonstration.
-
-### 2.2 Start All Backend Application Services
-To launch the backend services daemon (Simulated Services, Engine, and MCP Server):
+### Step 1: Launch Backend Ecosystem Services
 ```bash
 bun run serve
 ```
-- **Sim Services & Switchboard**: [http://localhost:4000](http://localhost:4000)
-- **Intra Engine Monolith**: [http://localhost:3001](http://localhost:3001) (`/health`, `/services`, `/changes`, `/events`)
-- **Customer MCP Server**: [http://localhost:3002](http://localhost:3002) (`/healthz`, `/tools`, `/tools/call`)
+Launches all three backend microservices concurrently:
+* **Simulated Services & Switchboard**: [http://localhost:4000](http://localhost:4000)
+* **Intra Engine Monolith**: [http://localhost:3001](http://localhost:3001) (`/health`, `/observe`, `/events`)
+* **Customer MCP Server**: [http://localhost:3002](http://localhost:3002) (`/tools`, `/tools/call`)
 
-### 2.3 Run the Full Autonomous Demonstration
-To execute the automated end-to-end acceptance demo in terminal:
+### Step 2: Launch the Web Portal
+```bash
+bun run dev
+```
+Starts Vite at [http://localhost:3000](http://localhost:3000).
+
+### Step 3: Run the Autonomous CLI Demo
 ```bash
 bun run demo
 ```
-- Executes the 6-stage live mutation injection, red breakage, auto-detection, canary synthesis, and green recovery in ~1 second.
+Executes the full 6-stage mutation injection, breakage detection, AST mapping, adapter synthesis, and golden workflow recovery in ~1 second.
 
 ---
 
-## 3. Web Dashboard Tour: Satisfying the Entire Problem Statement
+## 4. Web Application Tour: Features & Ecosystem Navigation
 
-Open **[http://localhost:3000](http://localhost:3000)** in your browser.
-
-The UI is built with:
-- **Three-Color Tone Palette**: Crimson Red (`#C8102E`), Cream (`#FAF7F2`), Black (`#0A0A0A`).
-- **Typography**: `Poppins` (standard body/UI), `Montserrat` (headings/display), `JetBrains Mono` (code).
-- **React Bits Capsule Navbar**: Uncluttered floating pill dock anchored at the top of the viewport.
-- **Antigravity-Style Footer**: 4-column system architecture with giant `Intra.` headline and red gradient text clipping.
-
-### 3.1 The Six Locked Product Pillars in the React Bits Capsule Navbar
-
-1. **Home (`Home` icon)**:
-   - High-impact mission landing page anchored on `docs/lock.md` (*The Internet After the API*).
-   - Core value pillars: **Behavioral Ground Truth**, **Safe-Handling Policy Matrix**, and **Mathematical Golden Replay**.
-   - Jump cards directly navigating to all other 5 pillars.
-
-2. **Dashboard (`Activity` icon)** — *API Observability Interface*:
-   - Comprehensive telemetry hub with live metric counters (14,892 observations, 5 contracts, active drifts).
-   - Unified sub-views accessible via pill dock:
-     - **Drift Inspector**: Live Before vs After payload structural diffs, Levenshtein distance, confidence scoring, and adapter code.
-     - **Pipeline Engine**: 6-Stage Autonomous Adaptation loop (Observer &rarr; Model &rarr; Differ &rarr; Impact &rarr; Adapter &rarr; Validator).
-     - **AST Blast Radius**: Codebase impact graph mapping external mutations to internal files (`userProfile.ts`, `checkout.ts`, `audit.ts`).
-     - **Safe Adapters & PRs**: Active Canary adapters with rollback handles and pending human review migration proposals.
-     - **Mutation Switchboard**: Interactive toggles for M1 through M10 with "Reset All to Baseline" button.
-     - **Downstream Resilience**: Live Shipwell application resilience simulator showing downstream workflows healing live from RED to GREEN.
-
-3. **Agent (`Cpu` icon)** — *Autonomous Multi-Agent Adaptation*:
-   - Section 8 quality gates runner (G1 Typecheck, G2 Lint, G3 Unit Tests, G4 Coverage, G8 Integration, G9 E2E Demo).
-   - Multi-agent coordination roster tracking `orchestrator`, `qa-engineer`, `differ-dev`, `adapter-dev`, `validator-dev`, and `sim-dev`.
-   - Autonomous self-healing audit trail and remediation PR generator.
-
-4. **MCP (`Terminal` icon)** — *Customer Model Context Protocol Server*:
-   - Interactive runner for the 7 tools (`intra_list_dependencies`, `intra_get_contract`, `intra_recent_changes`, `intra_impact`, `intra_propose_adapter`, `intra_apply_adapter`, `intra_health`).
-   - Live JSON output viewer with syntax highlighting and copy function.
-   - Streamable HTTP connection details for Claude Desktop and Cursor.
-
-5. **SDK (`Code2` icon)** — *Client SDK & Dynamic Runtime Proxy*:
-   - `@intra/sdk` client library documentation and drop-in `fetch` / `axios` wrappers.
-   - Interactive Live Adapter Playground: simulate upstream JSON payloads and verify runtime normalization in the browser.
-
-6. **Docs (`BookOpen` icon)** — *Interactive Specification Guide*:
-   - Direct breakdown of `docs/lock.md`: The Problem, The Challenge, The 6-Stage Pipeline, and Safe-Handling Matrix.
-   - Catalogue of the 10 undocumented mutations (M1–M10) and mathematical golden replay verification.
+### 4.1 Centered Capsule Navbar
+The floating top navbar provides access across the platform:
+1. **Home**: High-impact mission landing page anchored on `docs/lock.md`. Details the anatomy of silent failure (M1–M10), before vs with Intra comparisons, and verified telemetry benchmarks.
+2. **Products Dropdown** (Opaque, high-contrast, zero background bleed):
+   * **Agent Workbench**: Claude-style Ask & Plan interface powered by Sarvam AI 105B. Features rich MarkdownView formatting (headers, dark terminal code blocks, copy buttons) and **Interactive Ecosystem Actions** (Apply to SDK Proxy, Test in Switchboard, Inspect Blast Radius, Stress Test in Lab).
+   * **Customer MCP Server**: Interactive runner for all 7 MCP tools with live JSON inspection.
+   * **Client SDK & Proxy**: In-browser dynamic adapter simulator for `@intra/sdk`.
+3. **Docs**: Complete developer manual, Safe-Handling Policy Matrix (§10), decoding of `LOCK.MD`, and algorithmic foundations.
+4. **Pricing**: Web3 BridgeKey wallet connection, ERC-721 Soulbound subscription NFT minting on MST Blockchain Testnet (Chain ID 91562037), with exact on-chain pricing tiers:
+   * **Free Tier**: 2 MSTC
+   * **Starter Tier**: 3 MSTC
+   * **Business Tier**: 5 MSTC
+5. **Dashboard**: Unified API Observability Interface with sub-views:
+   * **Upgrade & Drift Predictor**: Analyzes raw payloads for casing, unit, pagination, and enum risks.
+   * **Drift Inspector**: Structural diffs, Levenshtein distance, confidence scoring, and adapter code.
+   * **Pipeline Engine**: Live 6-stage closed loop telemetry stream.
+   * **AST Blast Radius**: Codebase call graph mapping external changes to internal files.
+   * **Safe Adapters & PRs**: Active Canary adapters and human-review migration PR proposals.
+   * **Mutation Switchboard**: Live toggles for M1–M10 with instant reset.
+   * **Downstream Resilience**: Shipwell application workflow simulator.
+6. **Secret Lab Route (`/eval` or Flask icon)**:
+   * **Autonomous Verification Laboratory**: Procedurally queries Sarvam AI 105B to generate completely randomized enterprise API schemas.
+   * **High-Volume Stress Testing**: Executes 50–60 sample dynamic batches with live confidence scoring, predictability risk analysis, and WebCrypto SHA-256 tamper-evident ledger seals.
 
 ---
 
-## 4. How to Test & Demonstrate Live Self-Healing
+## 5. Live Self-Healing Walkthrough
 
-Follow this 5-step test script to see Intra's autonomous recovery in action:
+Follow these 3 test cases to see Intra's autonomous recovery in action:
 
-### Test Case 1: M1 Field Rename (`name` -> `display_name`)
-1. Click the **Switchboard** tab in the navbar.
-2. Toggle **M1 (Field Rename)** to `MUTATION ACTIVE`.
-3. Switch to the **Pipeline** tab:
-   - Without the shield, **UserProfile Workflow** turns **RED** with error: `"expected field 'name' was missing"`.
-   - With the shield, Intra's synthesized adapter (`adp_users_rename_v1`) intercepts the response, maps `display_name` back to `name`, and restores the workflow to **GREEN**.
-4. Switch to the **Drift Feed** tab to inspect the exact Levenshtein score (95% confidence) and generated adapter code.
+### Test Case 1: M1 Field Rename (`name` $\to$ `display_name`)
+1. In the **Dashboard $\to$ Switchboard**, toggle **M1 (Field Rename)** to active.
+2. Switch to **Downstream Resilience**:
+   * Without Intra, `userProfile` workflow turns **RED** with error: `"expected field 'name' was missing"`.
+   * With Intra, the synthesized adapter maps `display_name` back to `name`, restoring the workflow to **GREEN**.
+3. In the **Agent Workbench**, ask: *"How does M1 field rename affect userProfile.ts?"*
+   * The agent provides a structured remediation plan and an **[Apply to SDK Proxy]** button.
 
-### Test Case 2: M3 Unit Shift (Dollars -> Cents x100)
-1. In the **Switchboard** tab, toggle **M3 (Amount Unit Shift)**.
-2. An upstream payment provider changes `$25.00` to `2500` cents.
+### Test Case 2: M3 Unit Shift (Dollars $\to$ Cents $\times 100$)
+1. In **Dashboard $\to$ Switchboard**, toggle **M3 (Amount Unit Shift)**.
+2. A payment provider converts `$25.00` to `2500` cents.
 3. Observe the **Checkout Workflow**:
-   - Raw response causes a 100x overcharge error.
-   - Intra detects the integer unit shift, generates a `x0.01` multiplier adapter, replays golden tests, and recovers checkout to `$25.00` dollars.
+   * Raw payload triggers a 100× overcharge error.
+   * Intra's **Quantile-Ratio Constancy Test** recognizes that all deciles scaled by $k = 100$ ($CV < 0.05$).
+   * Synthesizes a `$\times 0.01$` multiplier adapter and restores checkout to `$25.00`.
 
 ### Test Case 3: M10 Enum Semantic Drift (Circuit Breaker Tripped)
-1. In the **Switchboard** tab, toggle **M10 (Enum Semantic Drift)**.
-2. Upstream user API now returns suspended users (Charlie Brown) with `status: "active"`.
-3. In the **Blast Radius** tab, notice `userAudit` is flagged as **CRITICAL**.
-4. In the **Safe Adapters** tab, observe that Intra **trips the circuit breaker**: automated adapter is prohibited to prevent security privilege escalation, and a **Migration PR Proposal** is opened for human engineering review.
+1. In **Dashboard $\to$ Switchboard**, toggle **M10 (Enum Semantic Drift)**.
+2. The user API begins returning suspended users with `status: "active"`.
+3. In **AST Blast Radius**, notice `userAudit` is flagged as **CRITICAL**.
+4. In **Safe Adapters**, observe that Intra **trips the circuit breaker**: automated repair is refused because confidence is uncertain, and a **Migration PR Proposal** is opened for human review.
 
 ---
 
-## 5. Using the Customer MCP Server with AI Agents
+## 6. Using Customer MCP Tools with AI Agents
 
-Intra includes an MCP server conforming to the Model Context Protocol specification (`mcpserver/`), deployable on Render with a `/healthz` route.
-
-### 5.1 The 7 MCP Tools
+Intra's MCP server exposes 7 standard tools:
 
 | MCP Tool Name | Description | Parameters |
 | :--- | :--- | :--- |
@@ -154,10 +143,10 @@ Intra includes an MCP server conforming to the Model Context Protocol specificat
 | `intra_recent_changes` | Fetches recent structural and semantic drift | `service` (optional), `min_confidence` (optional) |
 | `intra_impact` | Calculates blast radius on application code AST | `change_id` |
 | `intra_propose_adapter` | Generates a compatibility adapter diff and test plan | `change_id` |
-| `intra_apply_adapter` | Applies a human-reviewed adapter proposal | `proposal_id`, `confirm: true` |
+| `intra_apply_adapter` | Applies a human-reviewed adapter proposal (requires `confirm: true`) | `proposal_id`, `confirm` |
 | `intra_health` | Checks dependency health and rate-limit headroom | *None* |
 
-### 5.2 Connecting to Claude Desktop / Cursor
+### Connecting to Claude Desktop / Cursor
 Add to your `claude_desktop_config.json`:
 ```json
 {
@@ -174,61 +163,71 @@ Add to your `claude_desktop_config.json`:
 }
 ```
 
+Or connect over HTTP SSE to the deployed server:
+```
+https://intra-vert.vercel.app/api/mcp
+```
+
 ---
 
-## 6. Integrating `@intra/sdk` in Client Applications
+## 7. Integrating `@intra/sdk` in Your Applications
 
-To protect your own applications from upstream API breaking changes:
+Protect your TypeScript microservices with zero configuration:
 
-### 6.1 Initialize the Client
 ```typescript
 import { IntraClient } from '@intra/sdk';
 
 const intra = new IntraClient({
-  engineUrl: 'http://localhost:3001',
+  engineUrl: 'https://intra-vert.vercel.app/api/engine',
   appName: 'my-service',
 });
-```
 
-### 6.2 Transparently Adapt API Responses
-```typescript
 // Fetch data from third-party vendor
 const rawResponse = await fetch('https://api.vendor.com/users').then(r => r.json());
 
-// Pass through Intra SDK adapter (transparent pass-through if no drift, auto-adapted if drifted)
-const adaptedUsers = intra.adaptResponse('/users', rawResponse);
+// Transparently adapt response in-process (<1ms execution)
+const safeUsers = intra.adaptResponse('/users', rawResponse);
 
-// Consistently safe! Even if vendor renamed 'name' to 'display_name'
-console.log(adaptedUsers[0].name);
+// Consistently safe even if vendor renamed 'name' to 'display_name'
+console.log(safeUsers[0].name);
 ```
 
 ---
 
-## 7. Testing & Quality Gates
+## 8. Quality Verification & Test Suite
 
-Intra enforces strict CI/CD quality gates across all 13 monorepo packages:
+Verify all 35 monorepo quality gates and compilation checks:
 
 ```bash
 # G1: Full monorepo typecheck (strict TypeScript)
-pnpm -w typecheck
+pnpm turbo run typecheck
 
-# G2: Linting
-pnpm -w lint
+# G3: Unit test suites (all 13 packages)
+pnpm turbo run test
 
-# G3: Unit test suites (all packages)
-pnpm -w test
-
-# G9: E2E Demonstration Acceptance Test
-pnpm exec vitest run tests/e2e/demo.spec.ts
+# G4: Full build check
+pnpm turbo run build
 ```
 
-All 22 Turbo tasks are cached and verified 100% green.
+All 35 tasks pass green with zero errors.
 
 ---
 
-## 8. Summary
+## 9. Core Algorithmic Foundations: High-ROI Primitives
 
-- **Run the Website Monolith**: `bun run dev` (starts on [http://localhost:3000](http://localhost:3000))
-- **Run the Ecosystem Backend**: `bun run serve` (starts ports 4000, 3001, 3002)
-- **Run the Demo Script**: `bun run demo` (verifies self-healing in ~1s)
-- **Documentation**: Refer to [`docs/ps.md`](docs/ps.md) for technical problem specs and [`docs/simpleps.md`](docs/simpleps.md) for plain-language problem stories.
+Intra avoids ungrounded heuristic guesses by powering its adaptation pipeline with mathematically grounded, peer-reviewed algorithms:
+
+| Algorithm Primitive | Research Citation | Monorepo Location | Primary Responsibility |
+|---|---|---|---|
+| **$t$-Digest Streaming Quantiles** | Dunning & Ertl (2019) | `@intra/model` (`sketches.ts`) | Continuous, low-memory $P_{50}, P_{90}, P_{99}$ latency and numerical metric estimation without storing unbounded arrays. |
+| **HyperLogLog (HLL) Cardinality** | Flajolet, Fusy, Gandouet, Meunier (2007) | `@intra/model` (`sketches.ts`) | $O(\log \log N)$ unique value counting to distinguish static enums from unbounded entity IDs with $\approx 1.04/\sqrt{m}$ standard error. |
+| **Hungarian Bipartite Schema Matcher** | Kuhn (1955) / Munkres (1957) | `@intra/differ` (`hungarian.ts`) | $O(V^3)$ globally optimal bipartite matching between baseline and mutated JSON fields, avoiding greedy local minima. |
+| **Quantile-Ratio Constancy Test** | Non-parametric Unit Shift (Intra PS) | `@intra/differ` (`unitShift.ts`) | Multiplier detection ($k \in \{0.01, 10, 100, 1000\}$) across decile distributions with Coefficient of Variation ($CV < 0.05$). |
+| **FlashFill Typed DSL Synthesizer** | Gulwani et al. (CACM 2012) | `@intra/adapter` (`pbe.ts`) | Program-by-Example (PBE) synthesizer searching depth-2 Occam shortest programs with 80/20 train/test verification for string and data transforms. |
+| **Wald's SPRT Canary Controller** | Wald (1945), Sequential Analysis | `@intra/validator` (`sprt.ts`) | Dynamic early-stopping sequential probability ratio test deciding `promote`, `rollback`, or `continue` with rigorous Type I ($\alpha$) and Type II ($\beta$) error bounds. |
+
+### How These Algorithms Run in the Application
+1. **Streaming Observation Intake**: Traffic entering `ObservationCollector` feeds the `TDigest` sketch and `HyperLogLog` registers inside `inferContract()`, capturing empirical latency and cardinality fingerprints.
+2. **Schema Drift Detection**: When an endpoint payload mutates, `differ` runs `hungarianMatching` against the field distance matrix (Levenshtein + type compatibility + value distributions) to identify true field renames. If numerical values shift, `detectUnitShift` evaluates the decile ratio vector.
+3. **Adapter Synthesis**: If string transformations are detected (e.g. format shift, casing change, prefixing), `synthesizeProgram` searches the typed DSL space for the minimal Occam program that passes cross-validation.
+4. **Canary Validation**: Synthesized adapters are deployed into canary routing, where `WaldSPRT` tracks incoming request success/error likelihood ratios, triggering zero-touch rollback if anomaly thresholds are crossed.

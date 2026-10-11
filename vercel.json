@@ -1,45 +1,9 @@
 {
-  "$schema": "https://openapi.vercel.sh/vercel.json",
-  "services": {
-    "engine": {
-      "root": "apps/engine",
-      "framework": "fastify"
-    },
-    "mcpserver": {
-      "root": "mcpserver",
-      "framework": "fastify",
-      "bindings": [
-        {
-          "type": "service",
-          "service": "engine",
-          "format": "url",
-          "env": "ENGINE_URL"
-        }
-      ]
-    },
-    "web": {
-      "root": "apps/web",
-      "framework": "vite"
-    }
-  },
+  "version": 2,
   "rewrites": [
     {
-      "source": "/api/engine/(.*)",
-      "destination": {
-        "service": "engine"
-      }
-    },
-    {
-      "source": "/api/mcp/(.*)",
-      "destination": {
-        "service": "mcpserver"
-      }
-    },
-    {
-      "source": "/(.*)",
-      "destination": {
-        "service": "web"
-      }
+      "source": "/((?!api/).*)",
+      "destination": "/index.html"
     }
   ]
 }
