@@ -54,7 +54,7 @@ class _IntraCompanionAppState extends State<IntraCompanionApp> {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'Intra Mobile Companion',
+      title: 'Intra',
       debugShowCheckedModeBanner: false,
       theme: AppTheme.lightTheme,
       home: _isAuthenticated

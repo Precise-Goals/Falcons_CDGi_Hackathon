@@ -115,7 +115,7 @@ class _LoginScreenState extends State<LoginScreen> {
                 const SizedBox(height: 20),
                 const Center(
                   child: Text(
-                    'INTRA MOBILE',
+                    'INTRA',
                     style: TextStyle(
                       fontFamily: 'Montserrat',
                       fontSize: 22,

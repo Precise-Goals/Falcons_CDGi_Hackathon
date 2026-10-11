@@ -13,7 +13,7 @@ void main() {
       engineClient: engineClient,
     ));
 
-    expect(find.text('INTRA MOBILE'), findsOneWidget);
+    expect(find.text('INTRA'), findsOneWidget);
     expect(find.text('Sign In via Firebase'), findsOneWidget);
   });
 }

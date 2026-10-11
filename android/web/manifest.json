@@ -1,6 +1,6 @@
 {
-    "name": "intra_companion",
-    "short_name": "intra_companion",
+    "name": "Intra",
+    "short_name": "Intra",
     "start_url": ".",
     "display": "standalone",
     "background_color": "#0175C2",
