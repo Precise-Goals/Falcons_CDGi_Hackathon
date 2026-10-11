@@ -201,7 +201,10 @@ export class IntraBleManager {
       if (!selectedDevice) {
         try {
           selectedDevice = await bt.requestDevice({
-            filters: [{ services: [INTRA_BLE_CONFIG.SERVICE_UUID] }],
+            filters: [
+              { services: [INTRA_BLE_CONFIG.SERVICE_UUID] },
+              { namePrefix: 'Intra' },
+            ],
             optionalServices: [INTRA_BLE_CONFIG.SERVICE_UUID],
           });
         } catch (filterErr: any) {
