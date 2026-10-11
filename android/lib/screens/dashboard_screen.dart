@@ -162,16 +162,16 @@ class _DashboardScreenState extends State<DashboardScreen> {
               ],
             ),
             Container(
-              padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2.5),
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
               decoration: BoxDecoration(
                 color: _bleService.isConnected
-                    ? AppColors.crimson.withValues(alpha: 0.12)
-                    : AppColors.creamSubtle,
-                borderRadius: BorderRadius.circular(6),
+                    ? const Color(0xFF221215)
+                    : const Color(0xFF1E2024),
+                borderRadius: BorderRadius.circular(999),
                 border: Border.all(
                   color: _bleService.isConnected
                       ? AppColors.crimson.withValues(alpha: 0.6)
-                      : AppColors.borderSubtle,
+                      : AppColors.darkBorder,
                   width: 1,
                 ),
               ),
@@ -184,19 +184,19 @@ class _DashboardScreenState extends State<DashboardScreen> {
                         : (_bleService.isAdvertising ? Icons.bluetooth_searching : Icons.bluetooth),
                     size: 12,
                     color: _bleService.isConnected
-                        ? AppColors.crimson
-                        : (_bleService.isAdvertising ? AppColors.warning : AppColors.charcoal),
+                        ? const Color(0xFFFF6B6B)
+                        : (_bleService.isAdvertising ? AppColors.warning : AppColors.twitterTextSecondary),
                   ),
                   const SizedBox(width: 4),
                   Text(
                     'BLE AIRLINK (<20ms)',
-                    style: TextStyle(
+                    style: GoogleFonts.poppins(
                       fontSize: 9.5,
-                      fontWeight: FontWeight.bold,
+                      fontWeight: FontWeight.w700,
                       letterSpacing: 0.3,
                       color: _bleService.isConnected
-                          ? AppColors.crimson
-                          : (_bleService.isAdvertising ? AppColors.warning : AppColors.charcoal),
+                          ? const Color(0xFFFF6B6B)
+                          : (_bleService.isAdvertising ? AppColors.warning : AppColors.twitterTextSecondary),
                     ),
                   ),
                 ],
@@ -208,7 +208,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
           IconButton(
             icon: Icon(
               SoundService.soundEnabled ? Icons.volume_up : Icons.volume_off,
-              color: SoundService.soundEnabled ? AppColors.crimson : Colors.black45,
+              color: SoundService.soundEnabled ? AppColors.white : AppColors.twitterTextSecondary,
             ),
             tooltip: 'Toggle Alarm Sound Beeps',
             onPressed: () {
@@ -217,8 +217,10 @@ class _DashboardScreenState extends State<DashboardScreen> {
               });
               ScaffoldMessenger.of(context).showSnackBar(
                 SnackBar(
+                  backgroundColor: AppColors.darkPatch,
                   content: Text(
                     SoundService.soundEnabled ? 'Alarm Beeps Enabled' : 'Alarm Beeps Muted',
+                    style: const TextStyle(color: Colors.white),
                   ),
                   duration: const Duration(seconds: 1),
                 ),
@@ -247,9 +249,9 @@ class _DashboardScreenState extends State<DashboardScreen> {
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
               decoration: BoxDecoration(
-                color: AppColors.creamSubtle,
+                color: AppColors.darkPatch,
                 borderRadius: BorderRadius.circular(14),
-                border: Border.all(color: AppColors.borderSubtle),
+                border: Border.all(color: AppColors.darkBorder),
               ),
               child: Row(
                 children: [
@@ -258,7 +260,11 @@ class _DashboardScreenState extends State<DashboardScreen> {
                   Expanded(
                     child: Text(
                       'Host: ${client.engineUrl} (ADB Reverse over USB)',
-                      style: const TextStyle(fontSize: 11, fontFamily: 'monospace', fontWeight: FontWeight.w600),
+                      style: GoogleFonts.firaCode(
+                        fontSize: 11,
+                        color: AppColors.twitterTextLight,
+                        fontWeight: FontWeight.w600,
+                      ),
                     ),
                   ),
                 ],
@@ -268,23 +274,16 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
             // BLE Airlink Status Banner & Pairing Action Card
             Container(
-              padding: const EdgeInsets.all(14),
+              padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
-                color: Colors.white,
+                color: AppColors.darkPatch,
                 borderRadius: BorderRadius.circular(16),
                 border: Border.all(
                   color: _bleService.isConnected
                       ? AppColors.crimson.withValues(alpha: 0.5)
-                      : AppColors.borderSubtle,
+                      : AppColors.darkBorder,
                   width: _bleService.isConnected ? 1.5 : 1,
                 ),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withValues(alpha: 0.03),
-                    blurRadius: 6,
-                    offset: const Offset(0, 2),
-                  ),
-                ],
               ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -292,13 +291,18 @@ class _DashboardScreenState extends State<DashboardScreen> {
                   Row(
                     children: [
                       Container(
-                        width: 36,
-                        height: 36,
+                        width: 38,
+                        height: 38,
                         decoration: BoxDecoration(
                           color: _bleService.isConnected
-                              ? AppColors.crimson.withValues(alpha: 0.1)
-                              : AppColors.creamSubtle,
+                              ? const Color(0xFF261215)
+                              : const Color(0xFF1E2024),
                           borderRadius: BorderRadius.circular(10),
+                          border: Border.all(
+                            color: _bleService.isConnected
+                                ? AppColors.crimson.withValues(alpha: 0.5)
+                                : AppColors.darkBorder,
+                          ),
                         ),
                         child: Icon(
                           _bleService.isConnected
@@ -306,8 +310,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
                               : (_bleService.isAdvertising ? Icons.bluetooth_searching : Icons.bluetooth),
                           size: 20,
                           color: _bleService.isConnected
-                              ? AppColors.crimson
-                              : (_bleService.isAdvertising ? AppColors.warning : AppColors.charcoal),
+                              ? const Color(0xFFFF6B6B)
+                              : (_bleService.isAdvertising ? AppColors.warning : AppColors.twitterTextLight),
                         ),
                       ),
                       const SizedBox(width: 12),
@@ -317,37 +321,44 @@ class _DashboardScreenState extends State<DashboardScreen> {
                           children: [
                             Row(
                               children: [
-                                const Flexible(
+                                Flexible(
                                   child: Text(
                                     'BLE AIRLINK (<20ms)',
-                                    style: TextStyle(
+                                    style: GoogleFonts.poppins(
                                       fontSize: 12,
-                                      fontWeight: FontWeight.bold,
+                                      fontWeight: FontWeight.w700,
                                       letterSpacing: 0.4,
-                                      color: AppColors.charcoal,
+                                      color: AppColors.twitterTextLight,
                                     ),
                                     overflow: TextOverflow.ellipsis,
                                   ),
                                 ),
                                 const SizedBox(width: 6),
                                 Container(
-                                  padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                  padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2.5),
                                   decoration: BoxDecoration(
                                     color: _bleService.isConnected
-                                        ? AppColors.success.withValues(alpha: 0.12)
+                                        ? const Color(0xFF0D2319)
                                         : (_bleService.isAdvertising
-                                            ? AppColors.warning.withValues(alpha: 0.12)
-                                            : AppColors.charcoal.withValues(alpha: 0.08)),
-                                    borderRadius: BorderRadius.circular(6),
+                                            ? const Color(0xFF281C0D)
+                                            : const Color(0xFF1E2024)),
+                                    borderRadius: BorderRadius.circular(999),
+                                    border: Border.all(
+                                      color: _bleService.isConnected
+                                          ? AppColors.success.withValues(alpha: 0.4)
+                                          : (_bleService.isAdvertising
+                                              ? AppColors.warning.withValues(alpha: 0.4)
+                                              : AppColors.darkBorder),
+                                    ),
                                   ),
                                   child: Text(
                                     _bleService.stateText.toUpperCase(),
-                                    style: TextStyle(
+                                    style: GoogleFonts.poppins(
                                       fontSize: 9,
-                                      fontWeight: FontWeight.bold,
+                                      fontWeight: FontWeight.w700,
                                       color: _bleService.isConnected
                                           ? AppColors.success
-                                          : (_bleService.isAdvertising ? AppColors.warning : Colors.black54),
+                                          : (_bleService.isAdvertising ? AppColors.warning : AppColors.twitterTextSecondary),
                                     ),
                                   ),
                                 ),
@@ -360,7 +371,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                                   : (_bleService.isAdvertising
                                       ? 'Advertising Intra GATT Service (${BleService.shortServiceUuid})...'
                                       : 'GATT Peripheral Ready • Zero-Cable Direct Link'),
-                              style: const TextStyle(fontSize: 10, color: Colors.black54),
+                              style: GoogleFonts.poppins(fontSize: 11, color: AppColors.twitterTextSecondary),
                               overflow: TextOverflow.ellipsis,
                             ),
                           ],
@@ -368,7 +379,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                       ),
                     ],
                   ),
-                  const SizedBox(height: 10),
+                  const SizedBox(height: 12),
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
@@ -377,10 +388,9 @@ class _DashboardScreenState extends State<DashboardScreen> {
                           _bleService.isConnected
                               ? 'Direct Airlink (<20ms) • Active'
                               : 'UUID: ${BleService.shortServiceUuid} • GATT Server',
-                          style: const TextStyle(
+                          style: GoogleFonts.firaCode(
                             fontSize: 10,
-                            fontFamily: 'monospace',
-                            color: Colors.black45,
+                            color: AppColors.twitterTextSecondary,
                             fontWeight: FontWeight.w500,
                           ),
                           overflow: TextOverflow.ellipsis,
@@ -388,7 +398,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                       ),
                       const SizedBox(width: 8),
                       SizedBox(
-                        height: 32,
+                        height: 34,
                         child: OutlinedButton.icon(
                           key: const Key('ble_pairing_check_btn'),
                           onPressed: _isPairingChecking ? null : _triggerBlePairingCheck,
@@ -396,21 +406,23 @@ class _DashboardScreenState extends State<DashboardScreen> {
                               ? const SizedBox(
                                   width: 12,
                                   height: 12,
-                                  child: CircularProgressIndicator(strokeWidth: 2, color: AppColors.crimson),
+                                  child: CircularProgressIndicator(strokeWidth: 2, color: AppColors.white),
                                 )
                               : Icon(
                                   _bleService.isAdvertising ? Icons.sync : Icons.bluetooth_searching,
                                   size: 14,
-                                  color: AppColors.crimson,
+                                  color: AppColors.white,
                                 ),
                           label: Text(
                             _bleService.isAdvertising ? 'Pairing...' : 'Pair / Check',
-                            style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: AppColors.crimson),
+                            style: GoogleFonts.poppins(fontSize: 11, fontWeight: FontWeight.w700, color: AppColors.white),
                           ),
                           style: OutlinedButton.styleFrom(
-                            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                            side: const BorderSide(color: AppColors.crimson, width: 1.2),
-                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                            backgroundColor: const Color(0xFF202327),
+                            foregroundColor: AppColors.white,
+                            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
+                            side: const BorderSide(color: AppColors.darkBorder, width: 1.2),
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(999)),
                           ),
                         ),
                       ),
@@ -431,29 +443,30 @@ class _DashboardScreenState extends State<DashboardScreen> {
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        const Text(
+                        Text(
                           'CANARY TELEMETRY',
-                          style: TextStyle(
+                          style: GoogleFonts.poppins(
                             fontSize: 11,
                             fontWeight: FontWeight.bold,
                             letterSpacing: 0.5,
-                            color: Colors.black54,
+                            color: AppColors.twitterTextSecondary,
                           ),
                         ),
                         Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2.5),
                           decoration: BoxDecoration(
-                            color: AppColors.crimson.withValues(alpha: 0.1),
+                            color: const Color(0xFF221215),
                             borderRadius: BorderRadius.circular(6),
+                            border: Border.all(color: const Color(0xFFDC2626).withValues(alpha: 0.4)),
                           ),
-                          child: const Text(
+                          child: Text(
                             'STAGE 01 - 06',
-                            style: TextStyle(fontSize: 9, fontWeight: FontWeight.bold, color: AppColors.crimson),
+                            style: GoogleFonts.poppins(fontSize: 9, fontWeight: FontWeight.bold, color: const Color(0xFFFF6B6B)),
                           ),
                         ),
                       ],
                     ),
-                    const SizedBox(height: 12),
+                    const SizedBox(height: 14),
                     Row(
                       children: [
                         Expanded(
@@ -462,14 +475,14 @@ class _DashboardScreenState extends State<DashboardScreen> {
                             value: client.lastHealthData != null
                                 ? '${((client.lastHealthData!['uptime'] as num?)?.toInt() ?? 0) ~/ 60}m'
                                 : 'Live',
-                            color: AppColors.charcoal,
+                            color: AppColors.twitterTextLight,
                           ),
                         ),
                         Expanded(
                           child: _buildMetricTile(
                             label: 'RATE HEADROOM',
                             value: '10 rps',
-                            color: AppColors.crimson,
+                            color: const Color(0xFFFF6B6B),
                           ),
                         ),
                         Expanded(
@@ -491,13 +504,13 @@ class _DashboardScreenState extends State<DashboardScreen> {
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                const Text(
+                Text(
                   'REMOTE SWITCHBOARD (M1–M10)',
-                  style: TextStyle(
+                  style: GoogleFonts.poppins(
                     fontSize: 12,
                     fontWeight: FontWeight.bold,
                     letterSpacing: 0.5,
-                    color: AppColors.charcoal,
+                    color: AppColors.twitterTextLight,
                   ),
                 ),
                 TextButton(
@@ -509,9 +522,9 @@ class _DashboardScreenState extends State<DashboardScreen> {
                       const SnackBar(content: Text('All mutations reset to baseline.')),
                     );
                   },
-                  child: const Text(
+                  child: Text(
                     'Reset All',
-                    style: TextStyle(fontSize: 12, color: AppColors.crimson, fontWeight: FontWeight.bold),
+                    style: GoogleFonts.poppins(fontSize: 12, color: AppColors.twitterTextSecondary, fontWeight: FontWeight.w600),
                   ),
                 ),
               ],
@@ -524,13 +537,13 @@ class _DashboardScreenState extends State<DashboardScreen> {
             const SizedBox(height: 20),
 
             // Recent Drift Alerts Section
-            const Text(
+            Text(
               'RECENT DRIFT ALERTS (LIVE LOG)',
-              style: TextStyle(
+              style: GoogleFonts.poppins(
                 fontSize: 12,
                 fontWeight: FontWeight.bold,
                 letterSpacing: 0.5,
-                color: AppColors.charcoal,
+                color: AppColors.twitterTextLight,
               ),
             ),
             const SizedBox(height: 8),
@@ -542,17 +555,17 @@ class _DashboardScreenState extends State<DashboardScreen> {
                   child: Center(
                     child: Column(
                       children: [
-                        Icon(Icons.check_circle_outline, color: AppColors.success.withValues(alpha: 0.6), size: 36),
+                        Icon(Icons.check_circle_outline, color: AppColors.success.withValues(alpha: 0.8), size: 36),
                         const SizedBox(height: 8),
-                        const Text(
+                        Text(
                           'Zero Active Drift Detected',
-                          style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold),
+                          style: GoogleFonts.poppins(fontSize: 13, fontWeight: FontWeight.bold, color: AppColors.twitterTextLight),
                         ),
                         const SizedBox(height: 4),
-                        const Text(
+                        Text(
                           'Toggle a switchboard mutation above to simulate upstream API drift.',
                           textAlign: TextAlign.center,
-                          style: TextStyle(fontSize: 11, color: Colors.black54),
+                          style: GoogleFonts.poppins(fontSize: 11, color: AppColors.twitterTextSecondary),
                         ),
                       ],
                     ),
@@ -573,11 +586,14 @@ class _DashboardScreenState extends State<DashboardScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(label, style: const TextStyle(fontSize: 9, color: Colors.black45, fontWeight: FontWeight.bold)),
+        Text(
+          label,
+          style: GoogleFonts.poppins(fontSize: 9, color: AppColors.twitterTextSecondary, fontWeight: FontWeight.bold),
+        ),
         const SizedBox(height: 4),
         Text(
           value,
-          style: TextStyle(fontSize: 16, fontWeight: FontWeight.w900, color: color, fontFamily: 'monospace'),
+          style: GoogleFonts.jetBrainsMono(fontSize: 16, fontWeight: FontWeight.w900, color: color),
         ),
       ],
     );
@@ -593,16 +609,19 @@ class _DashboardScreenState extends State<DashboardScreen> {
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
               decoration: BoxDecoration(
-                color: m.active ? AppColors.crimson : AppColors.creamSubtle,
+                color: m.active ? const Color(0xFF221215) : const Color(0xFF1E2024),
                 borderRadius: BorderRadius.circular(8),
+                border: Border.all(
+                  color: m.active ? const Color(0xFFDC2626) : AppColors.darkBorder,
+                  width: 1,
+                ),
               ),
               child: Text(
                 m.id,
-                style: TextStyle(
+                style: GoogleFonts.jetBrainsMono(
                   fontSize: 11,
                   fontWeight: FontWeight.bold,
-                  fontFamily: 'monospace',
-                  color: m.active ? Colors.white : AppColors.charcoal,
+                  color: m.active ? const Color(0xFFFF6B6B) : AppColors.twitterTextSecondary,
                 ),
               ),
             ),
@@ -613,19 +632,20 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 children: [
                   Text(
                     m.name,
-                    style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold),
+                    style: GoogleFonts.poppins(fontSize: 13, fontWeight: FontWeight.bold, color: AppColors.twitterTextLight),
                   ),
                   const SizedBox(height: 2),
                   Text(
                     '${m.service} ${m.endpoint}',
-                    style: const TextStyle(fontSize: 10, color: Colors.black54, fontFamily: 'monospace'),
+                    style: GoogleFonts.jetBrainsMono(fontSize: 10, color: AppColors.twitterTextSecondary),
                   ),
                 ],
               ),
             ),
             Switch.adaptive(
               value: m.active,
-              activeThumbColor: AppColors.crimson,
+              activeThumbColor: AppColors.white,
+              activeTrackColor: const Color(0xFFDC2626),
               onChanged: (_) async {
                 await widget.engineClient.toggleMutation(m.id);
                 setState(() {});
@@ -639,19 +659,23 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
   Widget _buildDriftEventTile(DriftEvent event, {int index = 0}) {
     Color badgeColor = AppColors.success;
+    Color badgeBg = const Color(0xFF0D2319);
+    Color badgeBorder = const Color(0xFF059669);
     if (event.isBreaking) {
-      badgeColor = AppColors.breaking;
+      badgeColor = const Color(0xFFFF5252);
+      badgeBg = const Color(0xFF261215);
+      badgeBorder = const Color(0xFFDC2626);
     } else if (event.isLossy) {
-      badgeColor = AppColors.warning;
+      badgeColor = const Color(0xFFFBBF24);
+      badgeBg = const Color(0xFF281C0D);
+      badgeBorder = const Color(0xFFD97706);
     }
 
-    // Alternating light and dark patches across cards per design directive
-    final bool isLightPatch = index % 2 == 1;
-    final cardBg = isLightPatch ? AppColors.lightPatch : AppColors.darkPatch;
-    final cardBorder = isLightPatch ? AppColors.lightBorder : AppColors.darkBorder;
-    final primaryTextColor = isLightPatch ? AppColors.charcoal : AppColors.twitterTextLight;
-    final secondaryTextColor = isLightPatch ? Colors.black54 : AppColors.twitterTextSecondary;
-    final codeBg = isLightPatch ? Colors.white : AppColors.charcoal;
+    const cardBg = AppColors.darkPatch;
+    const cardBorder = AppColors.darkBorder;
+    const primaryTextColor = AppColors.twitterTextLight;
+    const secondaryTextColor = AppColors.twitterTextSecondary;
+    const codeBg = AppColors.darkCodeBg;
 
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
@@ -659,13 +683,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
         color: cardBg,
         borderRadius: BorderRadius.circular(16),
         border: Border.all(color: cardBorder, width: 1),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: isLightPatch ? 0.04 : 0.2),
-            blurRadius: 8,
-            offset: const Offset(0, 2),
-          ),
-        ],
       ),
       child: Padding(
         padding: const EdgeInsets.all(14),
@@ -681,9 +698,9 @@ class _DashboardScreenState extends State<DashboardScreen> {
                   width: 38,
                   height: 38,
                   decoration: BoxDecoration(
-                    color: AppColors.crimson.withValues(alpha: isLightPatch ? 0.12 : 0.2),
+                    color: const Color(0xFF221215),
                     shape: BoxShape.circle,
-                    border: Border.all(color: AppColors.crimson.withValues(alpha: 0.4), width: 1.2),
+                    border: Border.all(color: const Color(0xFFDC2626).withValues(alpha: 0.4), width: 1.2),
                   ),
                   child: Center(
                     child: Text(
@@ -691,7 +708,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                       style: GoogleFonts.poppins(
                         fontWeight: FontWeight.bold,
                         fontSize: 15,
-                        color: AppColors.crimson,
+                        color: const Color(0xFFFF6B6B),
                       ),
                     ),
                   ),
@@ -737,7 +754,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                         '${event.id} • ${event.endpoint}',
                         style: GoogleFonts.jetBrainsMono(
                           fontSize: 10.5,
-                          color: AppColors.crimson,
+                          color: const Color(0xFFFF6B6B),
                           fontWeight: FontWeight.w600,
                         ),
                       ),
@@ -748,9 +765,9 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3.5),
                   decoration: BoxDecoration(
-                    color: badgeColor.withValues(alpha: 0.15),
+                    color: badgeBg,
                     borderRadius: BorderRadius.circular(999),
-                    border: Border.all(color: badgeColor.withValues(alpha: 0.4)),
+                    border: Border.all(color: badgeBorder.withValues(alpha: 0.5)),
                   ),
                   child: Row(
                     mainAxisSize: MainAxisSize.min,
@@ -762,14 +779,14 @@ class _DashboardScreenState extends State<DashboardScreen> {
                           margin: const EdgeInsets.only(right: 4),
                           decoration: const BoxDecoration(
                             shape: BoxShape.circle,
-                            color: AppColors.breaking,
+                            color: Color(0xFFFF5252),
                           ),
                         ),
                       Text(
                         event.verdict.toUpperCase(),
                         style: GoogleFonts.poppins(
                           fontSize: 9.5,
-                          fontWeight: FontWeight.bold,
+                          fontWeight: FontWeight.w700,
                           color: badgeColor,
                           letterSpacing: 0.3,
                         ),
@@ -831,7 +848,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                     'adaptResponse(payload) => mapField(payload, "${event.id}")',
                     style: GoogleFonts.firaCode(
                       fontSize: 10.5,
-                      color: isLightPatch ? AppColors.crimson : const Color(0xFF34D399),
+                      color: const Color(0xFF34D399),
                       fontWeight: FontWeight.w600,
                     ),
                   ),
@@ -840,10 +857,10 @@ class _DashboardScreenState extends State<DashboardScreen> {
             ),
             const SizedBox(height: 12),
 
-            // Twitter Action Bar: Approve, Rollback, SHA-256 seal
+            // Twitter Action Bar: Approve, Rollback, Tone status
             Row(
               children: [
-                // Approve Pill Action
+                // Approve Pill Action (High contrast: white pill with crisp black text)
                 ElevatedButton.icon(
                   onPressed: () async {
                     final proposalId = 'prop_${event.id.toLowerCase()}_01';
@@ -851,18 +868,32 @@ class _DashboardScreenState extends State<DashboardScreen> {
                     await widget.engineClient.approveAdapter(proposalId);
                     if (context.mounted) {
                       ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(content: Text('Adapter $proposalId approved over BLE Airlink & USB Bridge!')),
+                        SnackBar(
+                          backgroundColor: AppColors.darkPatch,
+                          content: Text(
+                            'Adapter $proposalId approved over BLE Airlink & USB Bridge!',
+                            style: const TextStyle(color: Colors.white),
+                          ),
+                        ),
                       );
                     }
                   },
-                  icon: const Icon(Icons.check_circle_outline, size: 14),
-                  label: Text('Approve', style: GoogleFonts.poppins(fontSize: 11, fontWeight: FontWeight.bold)),
+                  icon: const Icon(Icons.check_circle, size: 14, color: AppColors.buttonPrimaryText),
+                  label: Text(
+                    'Approve',
+                    style: GoogleFonts.poppins(
+                      fontSize: 11,
+                      fontWeight: FontWeight.w700,
+                      color: AppColors.buttonPrimaryText,
+                    ),
+                  ),
                   style: ElevatedButton.styleFrom(
-                    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 7),
-                    backgroundColor: AppColors.crimson,
-                    foregroundColor: Colors.white,
+                    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                    backgroundColor: AppColors.buttonPrimaryBg,
+                    foregroundColor: AppColors.buttonPrimaryText,
                     minimumSize: Size.zero,
                     tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(999)),
                   ),
                 ),
                 if (event.isBreaking || event.isLossy) ...[
@@ -873,36 +904,56 @@ class _DashboardScreenState extends State<DashboardScreen> {
                       await _bleService.sendAdapterRollback(proposalId);
                       if (context.mounted) {
                         ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(content: Text('Adapter $proposalId rollback dispatched over BLE Airlink!')),
+                          SnackBar(
+                            backgroundColor: AppColors.darkPatch,
+                            content: Text(
+                              'Adapter $proposalId rollback dispatched over BLE Airlink!',
+                              style: const TextStyle(color: Colors.white),
+                            ),
+                          ),
                         );
                       }
                     },
-                    icon: const Icon(Icons.shield_outlined, size: 13, color: AppColors.breaking),
-                    label: Text('Rollback', style: GoogleFonts.poppins(fontSize: 11, color: AppColors.breaking, fontWeight: FontWeight.bold)),
+                    icon: const Icon(Icons.shield_outlined, size: 13, color: AppColors.buttonDangerText),
+                    label: Text(
+                      'Rollback',
+                      style: GoogleFonts.poppins(
+                        fontSize: 11,
+                        color: AppColors.buttonDangerText,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
                     style: OutlinedButton.styleFrom(
-                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
-                      side: const BorderSide(color: AppColors.breaking, width: 1.2),
+                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                      backgroundColor: AppColors.buttonDangerBg,
+                      side: const BorderSide(color: AppColors.buttonDangerBorder, width: 1.2),
                       minimumSize: Size.zero,
                       tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(999)),
                     ),
                   ),
                 ],
                 const Spacer(),
-                // Beep Status Pill
+                // Tone Status Pill
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                   decoration: BoxDecoration(
-                    color: AppColors.crimson.withValues(alpha: 0.1),
+                    color: const Color(0xFF1E2024),
                     borderRadius: BorderRadius.circular(999),
+                    border: Border.all(color: AppColors.darkBorder),
                   ),
                   child: Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      const Icon(Icons.volume_up, size: 12, color: AppColors.crimson),
+                      const Icon(Icons.volume_up, size: 12, color: AppColors.twitterTextLight),
                       const SizedBox(width: 4),
                       Text(
                         '880Hz Tone',
-                        style: GoogleFonts.poppins(fontSize: 9.5, color: AppColors.crimson, fontWeight: FontWeight.bold),
+                        style: GoogleFonts.poppins(
+                          fontSize: 9.5,
+                          color: AppColors.twitterTextLight,
+                          fontWeight: FontWeight.w600,
+                        ),
                       ),
                     ],
                   ),

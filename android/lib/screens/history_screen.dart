@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import 'package:google_fonts/google_fonts.dart';
 import '../services/firebase_service.dart';
 import '../models/drift_event.dart';
 import '../theme/app_theme.dart';
@@ -39,25 +40,26 @@ class _HistoryScreenState extends State<HistoryScreen> {
     final dateFormat = DateFormat('MMM d, HH:mm:ss');
 
     return Scaffold(
+      backgroundColor: AppColors.twitterBlack,
       appBar: AppBar(
-        title: const Text(
+        title: Text(
           'AGENTIC TRIAL HISTORY',
-          style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, letterSpacing: 0.5),
+          style: GoogleFonts.poppins(fontSize: 14, fontWeight: FontWeight.w700, letterSpacing: 0.5),
         ),
         actions: [
           IconButton(
-            icon: const Icon(Icons.refresh),
+            icon: const Icon(Icons.refresh, color: AppColors.white),
             onPressed: _loadHistory,
           ),
         ],
       ),
       body: _isLoading
-          ? const Center(child: CircularProgressIndicator(color: AppColors.crimson))
+          ? const Center(child: CircularProgressIndicator(color: AppColors.white))
           : _trials.isEmpty
-              ? const Center(
+              ? Center(
                   child: Text(
                     'No trial history recorded yet.',
-                    style: TextStyle(color: Colors.black54),
+                    style: GoogleFonts.poppins(color: AppColors.twitterTextSecondary, fontSize: 13),
                   ),
                 )
               : ListView.builder(
@@ -67,6 +69,11 @@ class _HistoryScreenState extends State<HistoryScreen> {
                     final trial = _trials[index];
                     return Card(
                       margin: const EdgeInsets.only(bottom: 10),
+                      color: AppColors.darkPatch,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(16),
+                        side: const BorderSide(color: AppColors.darkBorder),
+                      ),
                       child: Padding(
                         padding: const EdgeInsets.all(16),
                         child: Column(
@@ -77,24 +84,23 @@ class _HistoryScreenState extends State<HistoryScreen> {
                               children: [
                                 Text(
                                   dateFormat.format(trial.timestamp),
-                                  style: const TextStyle(
+                                  style: GoogleFonts.firaCode(
                                     fontSize: 10,
-                                    color: Colors.black45,
-                                    fontFamily: 'monospace',
+                                    color: AppColors.twitterTextSecondary,
                                   ),
                                 ),
                                 Container(
-                                  padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                  padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2.5),
                                   decoration: BoxDecoration(
-                                    color: AppColors.crimson.withValues(alpha: 0.1),
-                                    borderRadius: BorderRadius.circular(4),
+                                    color: const Color(0xFF221215),
+                                    borderRadius: BorderRadius.circular(6),
+                                    border: Border.all(color: const Color(0xFFDC2626).withValues(alpha: 0.4)),
                                   ),
                                   child: Text(
                                     trial.sha.length > 15 ? trial.sha.substring(0, 15) : trial.sha,
-                                    style: const TextStyle(
+                                    style: GoogleFonts.firaCode(
                                       fontSize: 9,
-                                      fontFamily: 'monospace',
-                                      color: AppColors.crimson,
+                                      color: const Color(0xFFFF6B6B),
                                       fontWeight: FontWeight.bold,
                                     ),
                                   ),
@@ -104,12 +110,16 @@ class _HistoryScreenState extends State<HistoryScreen> {
                             const SizedBox(height: 8),
                             Text(
                               trial.title,
-                              style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold),
+                              style: GoogleFonts.poppins(
+                                fontSize: 14,
+                                fontWeight: FontWeight.bold,
+                                color: AppColors.twitterTextLight,
+                              ),
                             ),
                             const SizedBox(height: 4),
                             Text(
                               trial.action,
-                              style: const TextStyle(fontSize: 12, color: Colors.black54),
+                              style: GoogleFonts.poppins(fontSize: 12, color: AppColors.twitterTextSecondary),
                             ),
                             const SizedBox(height: 8),
                             Row(
@@ -118,7 +128,11 @@ class _HistoryScreenState extends State<HistoryScreen> {
                                 const SizedBox(width: 4),
                                 Text(
                                   'Verdict: ${trial.verdict} (${(trial.confidence * 100).toInt()}% conf)',
-                                  style: const TextStyle(fontSize: 11, color: Colors.black87),
+                                  style: GoogleFonts.poppins(
+                                    fontSize: 11,
+                                    color: AppColors.twitterTextLight,
+                                    fontWeight: FontWeight.w600,
+                                  ),
                                 ),
                               ],
                             ),
@@ -131,3 +145,4 @@ class _HistoryScreenState extends State<HistoryScreen> {
     );
   }
 }
+

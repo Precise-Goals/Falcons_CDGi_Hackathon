@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 import '../services/firebase_service.dart';
 import '../theme/app_theme.dart';
 
@@ -74,11 +75,11 @@ class _LoginScreenState extends State<LoginScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.cream,
+      backgroundColor: AppColors.twitterBlack,
       body: SafeArea(
         child: Center(
           child: SingleChildScrollView(
-            padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 24),
+            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 24),
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -89,16 +90,9 @@ class _LoginScreenState extends State<LoginScreen> {
                     width: 72,
                     height: 72,
                     decoration: BoxDecoration(
-                      color: Colors.white,
+                      color: AppColors.darkPatch,
                       borderRadius: BorderRadius.circular(22),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.black.withValues(alpha: 0.08),
-                          blurRadius: 20,
-                          offset: const Offset(0, 8),
-                        ),
-                      ],
-                      border: Border.all(color: AppColors.borderSubtle),
+                      border: Border.all(color: AppColors.darkBorder),
                     ),
                     padding: const EdgeInsets.all(12),
                     child: Image.asset(
@@ -113,66 +107,67 @@ class _LoginScreenState extends State<LoginScreen> {
                   ),
                 ),
                 const SizedBox(height: 20),
-                const Center(
+                Center(
                   child: Text(
                     'INTRA',
-                    style: TextStyle(
-                      fontFamily: 'Montserrat',
+                    style: GoogleFonts.poppins(
                       fontSize: 22,
                       fontWeight: FontWeight.w900,
                       letterSpacing: -0.5,
-                      color: AppColors.charcoal,
+                      color: AppColors.white,
                     ),
                   ),
                 ),
                 const SizedBox(height: 4),
-                const Center(
+                Center(
                   child: Text(
                     'Live Drift Alarm & Switchboard Remote Console',
                     textAlign: TextAlign.center,
-                    style: TextStyle(
+                    style: GoogleFonts.poppins(
                       fontSize: 12,
-                      color: Colors.black54,
+                      color: AppColors.twitterTextSecondary,
                     ),
                   ),
                 ),
-                const SizedBox(height: 32),
+                const SizedBox(height: 28),
 
                 // Card Container
                 Card(
                   elevation: 0,
+                  color: AppColors.darkPatch,
                   shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(24),
-                    side: const BorderSide(color: AppColors.borderSubtle),
+                    borderRadius: BorderRadius.circular(20),
+                    side: const BorderSide(color: AppColors.darkBorder),
                   ),
                   child: Padding(
-                    padding: const EdgeInsets.all(24.0),
+                    padding: const EdgeInsets.all(22.0),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.stretch,
                       children: [
                         Row(
                           children: [
                             Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                               decoration: BoxDecoration(
-                                color: AppColors.crimson.withValues(alpha: 0.1),
-                                borderRadius: BorderRadius.circular(8),
+                                color: const Color(0xFF221215),
+                                borderRadius: BorderRadius.circular(6),
+                                border: Border.all(color: const Color(0xFFDC2626).withValues(alpha: 0.4)),
                               ),
-                              child: const Text(
+                              child: Text(
                                 'REAL FIREBASE AUTH',
-                                style: TextStyle(
+                                style: GoogleFonts.poppins(
                                   fontSize: 10,
-                                  fontWeight: FontWeight.bold,
-                                  color: AppColors.crimson,
+                                  fontWeight: FontWeight.w700,
+                                  color: const Color(0xFFFF6B6B),
                                 ),
                               ),
                             ),
                             const Spacer(),
-                            const Icon(Icons.usb, size: 16, color: Colors.black45),
+                            const Icon(Icons.usb, size: 16, color: AppColors.twitterTextSecondary),
                             const SizedBox(width: 4),
-                            const Text(
+                            Text(
                               'ADB Reverse (tcp:3001)',
-                              style: TextStyle(fontSize: 10, fontFamily: 'monospace', color: Colors.black54),
+                              style: GoogleFonts.firaCode(fontSize: 10, color: AppColors.twitterTextSecondary),
                             ),
                           ],
                         ),
@@ -182,9 +177,9 @@ class _LoginScreenState extends State<LoginScreen> {
                         Container(
                           padding: const EdgeInsets.all(4),
                           decoration: BoxDecoration(
-                            color: AppColors.creamSubtle,
+                            color: const Color(0xFF0F1115),
                             borderRadius: BorderRadius.circular(14),
-                            border: Border.all(color: AppColors.borderSubtle),
+                            border: Border.all(color: AppColors.darkBorder),
                           ),
                           child: Row(
                             children: [
@@ -198,19 +193,16 @@ class _LoginScreenState extends State<LoginScreen> {
                                   child: Container(
                                     padding: const EdgeInsets.symmetric(vertical: 8),
                                     decoration: BoxDecoration(
-                                      color: !_isSignUp ? Colors.white : Colors.transparent,
+                                      color: !_isSignUp ? const Color(0xFF2F3336) : Colors.transparent,
                                       borderRadius: BorderRadius.circular(10),
-                                      boxShadow: !_isSignUp
-                                          ? [BoxShadow(color: Colors.black.withValues(alpha: 0.05), blurRadius: 4)]
-                                          : null,
                                     ),
                                     child: Center(
                                       child: Text(
                                         'Sign In',
-                                        style: TextStyle(
+                                        style: GoogleFonts.poppins(
                                           fontSize: 12,
-                                          fontWeight: !_isSignUp ? FontWeight.bold : FontWeight.normal,
-                                          color: AppColors.charcoal,
+                                          fontWeight: !_isSignUp ? FontWeight.w700 : FontWeight.normal,
+                                          color: !_isSignUp ? AppColors.white : AppColors.twitterTextSecondary,
                                         ),
                                       ),
                                     ),
@@ -227,19 +219,16 @@ class _LoginScreenState extends State<LoginScreen> {
                                   child: Container(
                                     padding: const EdgeInsets.symmetric(vertical: 8),
                                     decoration: BoxDecoration(
-                                      color: _isSignUp ? Colors.white : Colors.transparent,
+                                      color: _isSignUp ? const Color(0xFF2F3336) : Colors.transparent,
                                       borderRadius: BorderRadius.circular(10),
-                                      boxShadow: _isSignUp
-                                          ? [BoxShadow(color: Colors.black.withValues(alpha: 0.05), blurRadius: 4)]
-                                          : null,
                                     ),
                                     child: Center(
                                       child: Text(
                                         'Create Account',
-                                        style: TextStyle(
+                                        style: GoogleFonts.poppins(
                                           fontSize: 12,
-                                          fontWeight: _isSignUp ? FontWeight.bold : FontWeight.normal,
-                                          color: AppColors.charcoal,
+                                          fontWeight: _isSignUp ? FontWeight.w700 : FontWeight.normal,
+                                          color: _isSignUp ? AppColors.white : AppColors.twitterTextSecondary,
                                         ),
                                       ),
                                     ),
@@ -255,10 +244,11 @@ class _LoginScreenState extends State<LoginScreen> {
                         TextField(
                           controller: _emailController,
                           keyboardType: TextInputType.emailAddress,
+                          style: GoogleFonts.poppins(color: AppColors.white, fontSize: 13),
                           decoration: const InputDecoration(
                             labelText: 'Operator Email',
                             hintText: 'e.g. operator@company.com',
-                            prefixIcon: Icon(Icons.email_outlined, size: 20),
+                            prefixIcon: Icon(Icons.email_outlined, size: 20, color: AppColors.twitterTextSecondary),
                           ),
                         ),
                         const SizedBox(height: 16),
@@ -267,10 +257,11 @@ class _LoginScreenState extends State<LoginScreen> {
                         TextField(
                           controller: _passwordController,
                           obscureText: true,
+                          style: GoogleFonts.poppins(color: AppColors.white, fontSize: 13),
                           decoration: const InputDecoration(
                             labelText: 'Password',
                             hintText: 'Min 6 characters',
-                            prefixIcon: Icon(Icons.lock_outline, size: 20),
+                            prefixIcon: Icon(Icons.lock_outline, size: 20, color: AppColors.twitterTextSecondary),
                           ),
                         ),
                         const SizedBox(height: 20),
@@ -279,18 +270,18 @@ class _LoginScreenState extends State<LoginScreen> {
                           Container(
                             padding: const EdgeInsets.all(10),
                             decoration: BoxDecoration(
-                              color: AppColors.breaking.withValues(alpha: 0.08),
+                              color: const Color(0xFF221215),
                               borderRadius: BorderRadius.circular(10),
-                              border: Border.all(color: AppColors.breaking.withValues(alpha: 0.2)),
+                              border: Border.all(color: const Color(0xFFDC2626).withValues(alpha: 0.5)),
                             ),
                             child: Row(
                               children: [
-                                const Icon(Icons.error_outline, size: 16, color: AppColors.breaking),
+                                const Icon(Icons.error_outline, size: 16, color: Color(0xFFFF5252)),
                                 const SizedBox(width: 8),
                                 Expanded(
                                   child: Text(
                                     _errorMessage!,
-                                    style: const TextStyle(color: AppColors.breaking, fontSize: 11),
+                                    style: GoogleFonts.poppins(color: const Color(0xFFFF6B6B), fontSize: 11),
                                   ),
                                 ),
                               ],
@@ -299,23 +290,28 @@ class _LoginScreenState extends State<LoginScreen> {
                           const SizedBox(height: 16),
                         ],
 
+                        // High contrast Twitter pill button
                         ElevatedButton(
                           onPressed: _isLoading ? null : _handleSubmit,
                           style: ElevatedButton.styleFrom(
-                            backgroundColor: AppColors.crimson,
-                            foregroundColor: Colors.white,
+                            backgroundColor: AppColors.buttonPrimaryBg,
+                            foregroundColor: AppColors.buttonPrimaryText,
                             padding: const EdgeInsets.symmetric(vertical: 14),
-                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(999)),
                           ),
                           child: _isLoading
                               ? const SizedBox(
                                   width: 20,
                                   height: 20,
-                                  child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                                  child: CircularProgressIndicator(strokeWidth: 2, color: AppColors.buttonPrimaryText),
                                 )
                               : Text(
                                   _isSignUp ? 'Create Firebase Operator Account' : 'Sign In via Firebase',
-                                  style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold),
+                                  style: GoogleFonts.poppins(
+                                    fontSize: 13,
+                                    fontWeight: FontWeight.w700,
+                                    color: AppColors.buttonPrimaryText,
+                                  ),
                                 ),
                         ),
                       ],
@@ -338,12 +334,11 @@ class _LoginScreenState extends State<LoginScreen> {
                         ),
                       ),
                       const SizedBox(width: 6),
-                      const Text(
+                      Text(
                         'Project horizon-1ba53 Live & Operational',
-                        style: TextStyle(
+                        style: GoogleFonts.firaCode(
                           fontSize: 11,
-                          fontFamily: 'monospace',
-                          color: Colors.black45,
+                          color: AppColors.twitterTextSecondary,
                         ),
                       ),
                     ],

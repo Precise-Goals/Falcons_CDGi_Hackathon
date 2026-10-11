@@ -45,28 +45,33 @@ class _HomeShellState extends State<HomeShell> {
 
     return Scaffold(
       body: screens[_currentIndex],
-      bottomNavigationBar: NavigationBar(
-        selectedIndex: _currentIndex,
-        backgroundColor: Colors.white,
-        indicatorColor: AppColors.crimson.withValues(alpha: 0.12),
-        onDestinationSelected: (idx) => setState(() => _currentIndex = idx),
-        destinations: const [
-          NavigationDestination(
-            icon: Icon(Icons.dashboard_outlined),
-            selectedIcon: Icon(Icons.dashboard, color: AppColors.crimson),
-            label: 'Console',
-          ),
-          NavigationDestination(
-            icon: Icon(Icons.history_outlined),
-            selectedIcon: Icon(Icons.history, color: AppColors.crimson),
-            label: 'Trials History',
-          ),
-          NavigationDestination(
-            icon: Icon(Icons.settings_outlined),
-            selectedIcon: Icon(Icons.settings, color: AppColors.crimson),
-            label: 'Settings',
-          ),
-        ],
+      bottomNavigationBar: Container(
+        decoration: const BoxDecoration(
+          border: Border(top: BorderSide(color: AppColors.darkBorder, width: 0.8)),
+        ),
+        child: NavigationBar(
+          selectedIndex: _currentIndex,
+          backgroundColor: AppColors.twitterBlack,
+          indicatorColor: const Color(0xFF2F3336),
+          onDestinationSelected: (idx) => setState(() => _currentIndex = idx),
+          destinations: const [
+            NavigationDestination(
+              icon: Icon(Icons.dashboard_outlined, color: AppColors.twitterTextSecondary),
+              selectedIcon: Icon(Icons.dashboard, color: AppColors.white),
+              label: 'Console',
+            ),
+            NavigationDestination(
+              icon: Icon(Icons.history_outlined, color: AppColors.twitterTextSecondary),
+              selectedIcon: Icon(Icons.history, color: AppColors.white),
+              label: 'Trials History',
+            ),
+            NavigationDestination(
+              icon: Icon(Icons.settings_outlined, color: AppColors.twitterTextSecondary),
+              selectedIcon: Icon(Icons.settings, color: AppColors.white),
+              label: 'Settings',
+            ),
+          ],
+        ),
       ),
     );
   }
