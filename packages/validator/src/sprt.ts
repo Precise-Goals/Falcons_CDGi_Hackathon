@@ -168,3 +168,61 @@ export class WaldSPRT {
     this._decision = 'continue';
   }
 }
+
+/**
+ * Computes exact Wald stopping boundaries given false-positive (alpha) and false-negative (beta) error tolerances.
+ */
+export function computeWaldBoundaries(
+  alpha: number,
+  beta: number
+): { upperThreshold: number; lowerThreshold: number; A: number; B: number } {
+  const A = (1 - beta) / alpha;
+  const B = beta / (1 - alpha);
+  return {
+    upperThreshold: Math.log(A),
+    lowerThreshold: Math.log(B),
+    A,
+    B,
+  };
+}
+
+/**
+ * Calculates the exact accumulated Bernoulli log-likelihood ratio for observed error counts.
+ */
+export function computeLLR(
+  errors: number,
+  successes: number,
+  p0: number,
+  p1: number
+): number {
+  const logRatioFailure = Math.log(p1 / p0);
+  const logRatioSuccess = Math.log((1 - p1) / (1 - p0));
+  return errors * logRatioFailure + successes * logRatioSuccess;
+}
+
+/**
+ * Calculates the Average Sample Number (ASN) required under hypothesis p.
+ */
+export function calculateExpectedSampleSize(
+  p: number,
+  p0: number,
+  p1: number,
+  alpha: number,
+  beta: number
+): number {
+  const { upperThreshold, lowerThreshold } = computeWaldBoundaries(alpha, beta);
+  const logRatioFailure = Math.log(p1 / p0);
+  const logRatioSuccess = Math.log((1 - p1) / (1 - p0));
+  const expectedStep = p * logRatioFailure + (1 - p) * logRatioSuccess;
+
+  if (Math.abs(expectedStep) < 1e-7) {
+    return Math.round(upperThreshold * Math.abs(lowerThreshold));
+  }
+
+  // Under H0 (p = p0), prob of hitting upper threshold is alpha
+  // Under H1 (p = p1), prob of hitting upper threshold is 1 - beta
+  const probUpper = p === p0 ? alpha : p === p1 ? 1 - beta : 0.5;
+  const expectedTerminalLLR = probUpper * upperThreshold + (1 - probUpper) * lowerThreshold;
+
+  return Math.max(1, Math.round(Math.abs(expectedTerminalLLR / expectedStep)));
+}
