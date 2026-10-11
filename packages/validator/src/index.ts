@@ -2,5 +2,7 @@ export * from './validator.js';
 export * from './sprt.js';
 export * from './golden.js';
 export * from './canary.js';
+export * from './divergence.js';
+
 
 
