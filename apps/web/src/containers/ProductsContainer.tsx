@@ -532,8 +532,8 @@ export function ProductsContainer({
             </div>
 
             {/* Connection info card */}
-            <div className="border border-black/10 bg-white/95 rounded-[2rem] p-6 shadow-card space-y-3 text-xs font-mono">
-              <div className="flex justify-between items-center pb-2 border-b border-black/5">
+            <div className="border-2 border-black/15 bg-white/95 rounded-[2rem] p-6 shadow-sm space-y-3 text-xs font-mono">
+              <div className="flex justify-between items-center pb-2 border-b border-black/10">
                 <span className="font-display font-bold uppercase text-[11px] text-black">Connection Config</span>
                 <span className="text-[10px] text-crimson font-bold">STREAMABLE HTTP</span>
               </div>
@@ -547,7 +547,7 @@ export function ProductsContainer({
                 </div>
                 <div>Health: <code className="text-black font-semibold">GET /healthz (HTTP 200)</code></div>
               </div>
-              <div className="pt-2 border-t border-black/5">
+              <div className="pt-2 border-t border-black/10">
                 <div className="text-[10px] text-black/50 mb-1">Claude Desktop stdio Bridge:</div>
                 <div className="p-2 rounded-xl bg-black text-white text-[10px] overflow-x-auto">
                   node scripts/mcp-remote-client.mjs https://intra-vert.vercel.app/api/mcp
@@ -558,7 +558,7 @@ export function ProductsContainer({
 
           {/* Right: Live Tool Execution Output */}
           <div className="lg:col-span-2 space-y-6">
-            <div className="border border-black/10 bg-white/95 rounded-[2.5rem] p-8 shadow-card space-y-6">
+            <div className="border-2 border-black/15 bg-white/95 rounded-[2.5rem] p-8 shadow-sm space-y-6">
               <div className="flex justify-between items-center pb-4 border-b border-black/5">
                 <div>
                   <div className="flex items-center space-x-2">
