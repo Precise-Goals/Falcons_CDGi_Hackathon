@@ -165,6 +165,37 @@ settings:
 importers:
 
   .:
+    dependencies:
+      '@intra/adapter':
+        specifier: workspace:*
+        version: link:packages/adapter
+      '@intra/differ':
+        specifier: workspace:*
+        version: link:packages/differ
+      '@intra/impact':
+        specifier: workspace:*
+        version: link:packages/impact
+      '@intra/model':
+        specifier: workspace:*
+        version: link:packages/model
+      '@intra/observer':
+        specifier: workspace:*
+        version: link:packages/observer
+      '@intra/sdk':
+        specifier: workspace:*
+        version: link:packages/sdk
+      '@intra/shared':
+        specifier: workspace:*
+        version: link:packages/shared
+      '@intra/sim-services':
+        specifier: workspace:*
+        version: link:packages/sim-services
+      '@intra/validator':
+        specifier: workspace:*
+        version: link:packages/validator
+      fastify:
+        specifier: ^5.2.1
+        version: 5.12.5
     devDependencies:
       '@openzeppelin/contracts':
         specifier: ^5.6.1

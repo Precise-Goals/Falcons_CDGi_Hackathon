@@ -1,24 +1,37 @@
-export default async function handler(req: any, res: any) {
+function sendJson(res, statusCode, data) {
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization, x-api-key');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization, x-api-key, api-subscription-key');
+  if (typeof res.status === 'function' && typeof res.json === 'function') {
+    return res.status(statusCode).json(data);
+  }
+  res.statusCode = statusCode;
+  res.setHeader('Content-Type', 'application/json');
+  res.end(JSON.stringify(data));
+}
 
+function getBody(req) {
+  if (!req.body) return {};
+  if (typeof req.body === 'object') return req.body;
+  try { return JSON.parse(req.body); } catch { return {}; }
+}
+
+function handler(req, res) {
   if (req.method === 'OPTIONS') {
-    res.status(200).end();
-    return;
+    res.setHeader('Access-Control-Allow-Origin', '*');
+    res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
+    res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization, x-api-key, api-subscription-key');
+    res.statusCode = 200;
+    return res.end();
   }
 
-  let body = req.body;
-  if (typeof body === 'string') {
-    try { body = JSON.parse(body); } catch {}
-  }
-
-  const tool = body?.tool;
-  const params = body?.params || {};
+  const body = getBody(req);
+  const tool = body.tool;
+  const params = body.params || {};
 
   switch (tool) {
     case 'intra_list_dependencies':
-      return res.status(200).json({
+      return sendJson(res, 200, {
         services: [
           { service: 'users', endpoints: ['/users'] },
           { service: 'payments', endpoints: ['/payments/charge'] },
@@ -29,7 +42,7 @@ export default async function handler(req: any, res: any) {
       });
 
     case 'intra_get_contract':
-      return res.status(200).json({
+      return sendJson(res, 200, {
         service: params.service || 'users',
         endpoint: params.endpoint || '/users',
         schema: {
@@ -45,7 +58,7 @@ export default async function handler(req: any, res: any) {
       });
 
     case 'intra_recent_changes':
-      return res.status(200).json({
+      return sendJson(res, 200, {
         changes: [
           {
             id: 'chg_recent_m1',
@@ -62,7 +75,7 @@ export default async function handler(req: any, res: any) {
       });
 
     case 'intra_impact':
-      return res.status(200).json({
+      return sendJson(res, 200, {
         changeId: params.change_id || 'chg_recent_m1',
         affectedWorkflows: ['userProfile', 'userAudit'],
         totalAffected: 2,
@@ -71,7 +84,7 @@ export default async function handler(req: any, res: any) {
       });
 
     case 'intra_propose_adapter':
-      return res.status(200).json({
+      return sendJson(res, 200, {
         changeId: params.change_id || 'chg_recent_m1',
         strategy: 'rename',
         confidence: 0.95,
@@ -81,11 +94,11 @@ export default async function handler(req: any, res: any) {
 
     case 'intra_apply_adapter':
       if (params.confirm !== true) {
-        return res.status(400).json({
+        return sendJson(res, 400, {
           error: 'Explicit confirmation required. Pass { confirm: true } to apply adapter.',
         });
       }
-      return res.status(200).json({
+      return sendJson(res, 200, {
         applied: true,
         proposalId: params.proposal_id || 'prop_default',
         status: 'approved',
@@ -93,7 +106,7 @@ export default async function handler(req: any, res: any) {
       });
 
     case 'intra_health':
-      return res.status(200).json({
+      return sendJson(res, 200, {
         status: 'healthy',
         rateLimitHeadroom: 98,
         activeAdapters: 2,
@@ -101,8 +114,11 @@ export default async function handler(req: any, res: any) {
       });
 
     default:
-      return res.status(404).json({
+      return sendJson(res, 404, {
         error: `Tool "${tool}" not found`,
       });
   }
 }
+
+module.exports = handler;
+module.exports.default = handler;

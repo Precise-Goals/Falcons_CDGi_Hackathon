@@ -1,4 +1,22 @@
-let switchboardState = [
+function sendJson(res, statusCode, data) {
+  res.setHeader('Access-Control-Allow-Origin', '*');
+  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization, x-api-key, api-subscription-key');
+  if (typeof res.status === 'function' && typeof res.json === 'function') {
+    return res.status(statusCode).json(data);
+  }
+  res.statusCode = statusCode;
+  res.setHeader('Content-Type', 'application/json');
+  res.end(JSON.stringify(data));
+}
+
+function getBody(req) {
+  if (!req.body) return {};
+  if (typeof req.body === 'object') return req.body;
+  try { return JSON.parse(req.body); } catch { return {}; }
+}
+
+const switchboardState = [
   { id: 'M1', name: 'Field Rename', service: 'users', active: false, description: 'GET /users field name -> display_name' },
   { id: 'M2', name: 'Name Format Shift', service: 'users', active: false, description: 'name now "Last, First" instead of "First Last"' },
   { id: 'M3', name: 'Amount Unit Shift', service: 'payments', active: false, description: 'amount from dollars (float) to cents (int)' },
@@ -11,31 +29,29 @@ let switchboardState = [
   { id: 'M10', name: 'Enum Semantic Drift', service: 'users', active: false, description: 'status enum value active includes suspended users' },
 ];
 
-export default async function handler(req: any, res: any) {
-  res.setHeader('Access-Control-Allow-Origin', '*');
-  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization, x-api-key');
-
+function handler(req, res) {
   if (req.method === 'OPTIONS') {
-    res.status(200).end();
-    return;
+    res.setHeader('Access-Control-Allow-Origin', '*');
+    res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
+    res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization, x-api-key, api-subscription-key');
+    res.statusCode = 200;
+    return res.end();
   }
 
   if (req.method === 'POST') {
-    let body = req.body;
-    if (typeof body === 'string') {
-      try { body = JSON.parse(body); } catch {}
-    }
-    const { mutationId, active } = body || {};
+    const body = getBody(req);
+    const { mutationId, active } = body;
     if (mutationId) {
       const item = switchboardState.find((m) => m.id === mutationId);
       if (item) {
         item.active = !!active;
-        res.status(200).json({ success: true, mutation: item });
-        return;
+        return sendJson(res, 200, { success: true, mutation: item });
       }
     }
   }
 
-  res.status(200).json({ mutations: switchboardState });
+  return sendJson(res, 200, { mutations: switchboardState });
 }
+
+module.exports = handler;
+module.exports.default = handler;
