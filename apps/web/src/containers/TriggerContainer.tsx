@@ -26,10 +26,12 @@ import {
   getRecentTriggerEvents,
   StorageUploadResult
 } from '../lib/firebase';
+import { bleManager } from '../lib/bleManager';
 
 export interface TriggerContainerProps {
   user: UserProfile | null;
   onOpenAuth: () => void;
+  onDriftAlert?: (mutationId: string, confidence: number, verdict: string, hash: string) => void;
 }
 
 export interface TriggerExecutionResult {
@@ -48,7 +50,7 @@ export interface TriggerExecutionResult {
   validationPassed: boolean;
 }
 
-export function TriggerContainer({ user, onOpenAuth }: TriggerContainerProps) {
+export function TriggerContainer({ user, onOpenAuth, onDriftAlert }: TriggerContainerProps) {
   // 1. Initial State with procedural API schema
   const [activeSchema, setActiveSchema] = useState<GeneratedApiSchema>(() => generateRandomApi());
   const [editableJson, setEditableJson] = useState<string>(() => JSON.stringify(activeSchema, null, 2));
@@ -209,6 +211,17 @@ export function TriggerContainer({ user, onOpenAuth }: TriggerContainerProps) {
         action,
         timestamp: new Date().toISOString(),
       }));
+
+      // Stage 2.5: Dispatch real-time BLE drift alert packet to Android Companion (<20ms airlink)
+      bleManager.dispatchDriftAlert(
+        schemaToExecute.domain || triggerId,
+        confidence,
+        verdict,
+        payloadHash
+      );
+      if (onDriftAlert) {
+        onDriftAlert(schemaToExecute.domain || triggerId, confidence, verdict, payloadHash);
+      }
 
       // Stage 3: Upload Full JSON Artifact to Firebase Storage
       const storagePath = `api_triggers/${triggerId}.json`;

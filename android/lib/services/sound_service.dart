@@ -24,6 +24,25 @@ class SoundService {
     }
   }
 
+  /// Real-time 880Hz alert tone for BLE / hardware drift alerts
+  static Future<void> play880HzAlertTone({bool isCritical = true}) async {
+    if (!soundEnabled) return;
+
+    try {
+      // 1. High-priority system alert audio tone (880Hz audible alert)
+      await SystemSound.play(SystemSoundType.alert);
+
+      // 2. Hardware vibration feedback
+      await HapticFeedback.heavyImpact();
+      if (isCritical) {
+        await Future.delayed(const Duration(milliseconds: 100));
+        await HapticFeedback.heavyImpact();
+      }
+    } catch (_) {
+      // Graceful fallback if platform does not support hardware feedback
+    }
+  }
+
   /// Subtle click sound for UI actions
   static Future<void> playClickSound() async {
     if (!soundEnabled) return;

@@ -7,6 +7,7 @@ import { Footer } from './components/Footer';
 import { AuthModal } from './components/AuthModal';
 import { IntraClient } from '@intra/sdk';
 import { loadSession, saveSession } from './lib/firebase';
+import { bleManager } from './lib/bleManager';
 import {
   connectBridgeKeyWallet,
   connectBridgeKeyOperatorSession,
@@ -514,6 +515,15 @@ export default function App() {
         if (m.id === id) {
           const nextActive = !m.active;
           logLedgerChecksum(`mutation_toggle_${id}`, { id, active: nextActive });
+
+          // Dispatch real-time BLE drift alert packet to Android Companion
+          bleManager.dispatchDriftAlert(
+            m.id,
+            m.confidence ?? 0.95,
+            m.verdict ?? 'equivalent',
+            `sha256_${m.id}_${m.kind}`
+          );
+
           return { ...m, active: nextActive };
         }
         return m;
@@ -544,6 +554,16 @@ export default function App() {
       status: 'approved',
     });
   };
+
+  // Listen for mobile operator adapter approvals over BLE airlink
+  useEffect(() => {
+    const unsubscribe = bleManager.onAdapterAction((action) => {
+      if (action.proposalId && action.confirm) {
+        approveProposal(action.proposalId);
+      }
+    });
+    return unsubscribe;
+  }, [user]);
 
   const copyToClipboard = (text: string, key: string) => {
     navigator.clipboard?.writeText(text);
@@ -698,6 +718,13 @@ export default function App() {
       setEvalSchema(targetSchema);
       const result = await runDynamicEvaluation(targetSchema);
       setEvalResult(result);
+      // Dispatch real-time BLE drift alert packet to Android Companion
+      bleManager.dispatchDriftAlert(
+        targetSchema.domain,
+        result.confidence,
+        result.verdict,
+        result.sha256Digest || `sha256_${Date.now()}`
+      );
       await logLedgerChecksum('autonomous_verification_single', {
         domain: targetSchema.domain,
         endpoint: targetSchema.endpoint,
@@ -881,6 +908,9 @@ export default function App() {
             <TriggerContainer
               user={user}
               onOpenAuth={() => setShowLoginModal(true)}
+              onDriftAlert={(mutationId, confidence, verdict, hash) => {
+                bleManager.dispatchDriftAlert(mutationId, confidence, verdict, hash);
+              }}
             />
           )}
         </Suspense>

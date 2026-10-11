@@ -13,8 +13,12 @@ import {
   ShieldCheck,
   FileText,
   Zap,
+  Bluetooth,
+  BluetoothConnected,
+  BluetoothSearching,
 } from 'lucide-react';
 import { MainTab, UserProfile, DocsCategory } from '../types';
+import { bleManager } from '../lib/bleManager';
 
 export interface NavbarProps {
   activeTab: MainTab;
@@ -41,6 +45,11 @@ export function Navbar({
   const [docsDropdownOpen, setDocsDropdownOpen] = useState(false);
   const docsDropdownRef = useRef<HTMLDivElement>(null);
 
+  // Bluetooth Low Energy (BLE) Hardware Airlink State
+  const [bleConnected, setBleConnected] = useState<boolean>(() => bleManager.isConnected);
+  const [bleConnecting, setBleConnecting] = useState<boolean>(false);
+  const [bleToast, setBleToast] = useState<{ message: string; type: 'success' | 'warn' | 'info' } | null>(null);
+
   // Close dropdowns on outside click
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -54,6 +63,53 @@ export function Navbar({
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
+
+  // Subscribe to BLE connection changes & auto-reconnect to paired hardware node
+  useEffect(() => {
+    const unsubscribe = bleManager.onConnectionChange((connected) => {
+      setBleConnected(connected);
+      if (connected) {
+        setBleConnecting(false);
+      }
+    });
+
+    // Zero-click auto-reconnect if device was previously paired
+    bleManager.tryAutoReconnect().catch(() => {});
+
+    return unsubscribe;
+  }, []);
+
+  const showToast = (message: string, type: 'success' | 'warn' | 'info') => {
+    setBleToast({ message, type });
+    setTimeout(() => {
+      setBleToast((current) => (current?.message === message ? null : current));
+    }, 3500);
+  };
+
+  const handleBleClick = async () => {
+    if (bleConnected) {
+      bleManager.disconnect();
+      showToast('BLE Airlink Disconnected', 'warn');
+      return;
+    }
+
+    if (!bleManager.isSupported) {
+      showToast('Web Bluetooth unsupported in browser', 'warn');
+      return;
+    }
+
+    setBleConnecting(true);
+    showToast('Pairing Hardware Companion (<20ms BLE)...', 'info');
+    const success = await bleManager.connect();
+    setBleConnecting(false);
+
+    if (success) {
+      const devName = bleManager.deviceName || 'Android Companion';
+      showToast(`Airlink Active: ${devName} (<20ms)`, 'success');
+    } else {
+      showToast('Airlink pairing cancelled or timed out', 'warn');
+    }
+  };
 
   return (
     <header className="fixed top-5 left-0 right-0 z-50 px-4 pointer-events-none flex justify-center">
@@ -324,6 +380,41 @@ export function Navbar({
           <Zap className="w-3.5 h-3.5 text-amber-500 fill-amber-500" />
         </button>
 
+        {/* Hardware Node: Web Bluetooth (BLE) Airlink */}
+        <button
+          onClick={handleBleClick}
+          disabled={bleConnecting}
+          title={
+            bleConnected
+              ? `Hardware Node: Active Airlink (<20ms BLE) — Click to disconnect`
+              : bleConnecting
+              ? `Hardware Node: Pairing BLE Airlink...`
+              : `Hardware Node: BLE Disconnected (Click to Pair Android Companion)`
+          }
+          className={`relative flex items-center justify-center w-7 h-7 rounded-full transition-all ${
+            bleConnected
+              ? 'bg-emerald-500/15 text-emerald-600 border border-emerald-500/40 shadow-[0_0_12px_rgba(16,185,129,0.45)] ring-1 ring-emerald-500/30'
+              : bleConnecting
+              ? 'bg-amber-500/10 text-amber-600 border border-amber-500/40 animate-pulse'
+              : 'text-crimson/80 hover:text-crimson hover:bg-crimson/5 border border-crimson/25'
+          }`}
+        >
+          {bleConnecting ? (
+            <BluetoothSearching className="w-3.5 h-3.5 animate-spin text-amber-600" />
+          ) : bleConnected ? (
+            <>
+              <BluetoothConnected className="w-3.5 h-3.5 text-emerald-600" />
+              <span className="absolute -top-0.5 -right-0.5 w-2 h-2 rounded-full bg-emerald-500 ring-2 ring-white animate-ping" />
+              <span className="absolute -top-0.5 -right-0.5 w-2 h-2 rounded-full bg-emerald-500 ring-2 ring-white" />
+            </>
+          ) : (
+            <>
+              <Bluetooth className="w-3.5 h-3.5 text-crimson" />
+              <span className="absolute -top-0.5 -right-0.5 w-1.5 h-1.5 rounded-full bg-amber-500 ring-2 ring-white" />
+            </>
+          )}
+        </button>
+
         <div className="h-4 w-[1px] bg-black/10 mx-0.5" />
 
         {/* User Profile / Auth Pill */}
@@ -340,6 +431,26 @@ export function Navbar({
           )}
         </button>
       </nav>
+
+      {/* Bluetooth Airlink Status Toast */}
+      {bleToast && (
+        <div
+          className={`fixed top-20 left-1/2 -translate-x-1/2 z-[60] px-4 py-1.5 rounded-full text-xs font-mono font-bold shadow-lg backdrop-blur-md border animate-in fade-in slide-in-from-top-2 duration-200 flex items-center space-x-2 pointer-events-auto ${
+            bleToast.type === 'success'
+              ? 'bg-emerald-950/90 text-emerald-200 border-emerald-700/50 shadow-emerald-900/20'
+              : bleToast.type === 'info'
+              ? 'bg-black/90 text-white border-black/40'
+              : 'bg-crimson/90 text-white border-crimson/50 shadow-crimson/20'
+          }`}
+        >
+          <span
+            className={`w-2 h-2 rounded-full ${
+              bleToast.type === 'success' ? 'bg-emerald-400 animate-pulse' : bleToast.type === 'info' ? 'bg-amber-400' : 'bg-red-400'
+            }`}
+          />
+          <span>{bleToast.message}</span>
+        </div>
+      )}
     </header>
   );
 }

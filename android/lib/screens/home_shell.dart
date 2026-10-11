@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../services/engine_client.dart';
 import '../services/firebase_service.dart';
 import '../theme/app_theme.dart';
+import '../services/ble_service.dart';
 import 'dashboard_screen.dart';
 import 'history_screen.dart';
 import 'settings_screen.dart';
@@ -9,12 +10,14 @@ import 'settings_screen.dart';
 class HomeShell extends StatefulWidget {
   final EngineClient engineClient;
   final FirebaseService firebaseService;
+  final BleService? bleService;
   final VoidCallback onSignOut;
 
   const HomeShell({
     super.key,
     required this.engineClient,
     required this.firebaseService,
+    this.bleService,
     required this.onSignOut,
   });
 
@@ -28,7 +31,10 @@ class _HomeShellState extends State<HomeShell> {
   @override
   Widget build(BuildContext context) {
     final screens = [
-      DashboardScreen(engineClient: widget.engineClient),
+      DashboardScreen(
+        engineClient: widget.engineClient,
+        bleService: widget.bleService,
+      ),
       HistoryScreen(firebaseService: widget.firebaseService),
       SettingsScreen(
         engineClient: widget.engineClient,
