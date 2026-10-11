@@ -325,3 +325,43 @@ export function classifyPaginationDrift(
   };
 }
 
+export interface EnvelopeFlatteningClassification {
+  isFlattened: boolean;
+  detectedPrefix?: string;
+  unwrappedFields: string[];
+  confidence: number;
+}
+
+/**
+ * Detects webhook envelope flattener drift (M7), where a nested envelope structure
+ * (e.g. data.object.* or payload.*) is stripped and flattened into root-level keys.
+ */
+export function detectEnvelopeFlattening(
+  baselineKeys: string[],
+  currentKeys: string[]
+): EnvelopeFlatteningClassification {
+  const prefixes = ['data.object.', 'data.', 'payload.', 'event.data.'];
+  for (const prefix of prefixes) {
+    const matchingBase = baselineKeys.filter((k) => k.startsWith(prefix));
+    if (matchingBase.length >= 2) {
+      const strippedLeaves = matchingBase.map((k) => k.slice(prefix.length));
+      const matchCount = strippedLeaves.filter((leaf) => currentKeys.includes(leaf)).length;
+      if (matchCount >= 2 && matchCount / strippedLeaves.length >= 0.7) {
+        return {
+          isFlattened: true,
+          detectedPrefix: prefix,
+          unwrappedFields: strippedLeaves,
+          confidence: Math.round((matchCount / strippedLeaves.length) * 100) / 100,
+        };
+      }
+    }
+  }
+
+  return {
+    isFlattened: false,
+    unwrappedFields: [],
+    confidence: 0.0,
+  };
+}
+
+

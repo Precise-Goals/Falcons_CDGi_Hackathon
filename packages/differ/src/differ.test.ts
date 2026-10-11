@@ -6,6 +6,7 @@ import {
   stringSimilarity,
   clearLevenshteinCache,
   classifyPaginationDrift,
+  detectEnvelopeFlattening,
 } from './differ.js';
 import { Contract } from '@intra/shared';
 
@@ -293,6 +294,44 @@ describe('@intra/differ Change Detection & Semantic Classification', () => {
       expect(drift.hasDrift).toBe(false);
     });
   });
+
+  describe('M7 Webhook Envelope Flattener Drift Detection', () => {
+    it('detects nested data.object envelope flattening into root fields', () => {
+      const baselineKeys = [
+        'event_id',
+        'created_at',
+        'data.object.id',
+        'data.object.amount',
+        'data.object.currency',
+        'data.object.customer_id',
+      ];
+      const currentKeys = [
+        'event_id',
+        'created_at',
+        'id',
+        'amount',
+        'currency',
+        'customer_id',
+      ];
+
+      const res = detectEnvelopeFlattening(baselineKeys, currentKeys);
+      expect(res.isFlattened).toBe(true);
+      expect(res.detectedPrefix).toBe('data.object.');
+      expect(res.unwrappedFields).toContain('id');
+      expect(res.unwrappedFields).toContain('amount');
+      expect(res.confidence).toBe(1.0);
+    });
+
+    it('returns isFlattened false when payload shapes remain nested or standard', () => {
+      const baselineKeys = ['id', 'name', 'status'];
+      const currentKeys = ['id', 'name', 'status'];
+
+      const res = detectEnvelopeFlattening(baselineKeys, currentKeys);
+      expect(res.isFlattened).toBe(false);
+      expect(res.confidence).toBe(0.0);
+    });
+  });
 });
+
 
 
