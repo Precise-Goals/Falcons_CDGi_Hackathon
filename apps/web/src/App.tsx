@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, lazy, Suspense } from 'react';
-import { MainTab, UserProfile, MutationItem, EngineHealthResponse, AgentMode, ChatMessage, MstcPurchaseSuccess, DashboardSubView } from './types';
+import { MainTab, UserProfile, MutationItem, EngineHealthResponse, AgentMode, ChatMessage, MstcPurchaseSuccess, DashboardSubView, DocsCategory } from './types';
 import { INITIAL_MUTATIONS } from './lib/constants';
 import { computeSha256, logLedgerChecksum } from './lib/crypto';
 import { Navbar } from './components/Navbar';
@@ -50,12 +50,25 @@ function LoadingFallback() {
 }
 
 export default function App() {
+  // Docs subcategory: 'docs' (blueprint) | 'terms' (terms & policies) | 'research' (borderless academic paper)
+  const [docsCategory, setDocsCategory] = useState<DocsCategory>(() => {
+    if (typeof window !== 'undefined') {
+      const path = window.location.pathname.replace(/^\//, '').toLowerCase();
+      if (path === 'terms') return 'terms';
+      if (path === 'research' || path === 'patent') return 'research';
+    }
+    return 'docs';
+  });
+
   // Navigation: Home -> Products (Agent, MCP, SDK) -> Docs -> Pricing -> Dashboard -> Lab
   const [activeTab, setActiveTab] = useState<MainTab>(() => {
     if (typeof window !== 'undefined') {
       const path = window.location.pathname.replace(/^\//, '').toLowerCase();
       const hash = window.location.hash.replace(/^#/, '').toLowerCase();
       const target = path || hash;
+      if (target === 'terms' || target === 'research' || target === 'patent') {
+        return 'docs';
+      }
       const validTabs: MainTab[] = ['home', 'agent', 'mcp', 'sdk', 'docs', 'pricing', 'dashboard', 'eval'];
       if (validTabs.includes(target as MainTab)) {
         return target as MainTab;
@@ -65,6 +78,17 @@ export default function App() {
   });
 
   const [dashboardSubView, setDashboardSubView] = useState<DashboardSubView>('predict');
+
+  const handleDocsCategoryChange = (category: DocsCategory) => {
+    setDocsCategory(category);
+    setActiveTab('docs');
+    if (typeof window !== 'undefined') {
+      const newPath = category === 'docs' ? '/docs' : `/${category}`;
+      if (window.location.pathname !== newPath) {
+        window.history.pushState(null, '', newPath);
+      }
+    }
+  };
 
   const handleNavigateToTab = (tab: MainTab, subView?: DashboardSubView, mutationId?: string) => {
     setActiveTab(tab);
@@ -86,11 +110,22 @@ export default function App() {
   useEffect(() => {
     const handlePopState = () => {
       const path = window.location.pathname.replace(/^\//, '').toLowerCase();
-      const validTabs: MainTab[] = ['home', 'agent', 'mcp', 'sdk', 'docs', 'pricing', 'dashboard', 'eval'];
-      if (validTabs.includes(path as MainTab)) {
-        setActiveTab(path as MainTab);
-      } else if (!path) {
-        setActiveTab('home');
+      if (path === 'terms') {
+        setActiveTab('docs');
+        setDocsCategory('terms');
+      } else if (path === 'research' || path === 'patent') {
+        setActiveTab('docs');
+        setDocsCategory('research');
+      } else if (path === 'docs') {
+        setActiveTab('docs');
+        setDocsCategory('docs');
+      } else {
+        const validTabs: MainTab[] = ['home', 'agent', 'mcp', 'sdk', 'docs', 'pricing', 'dashboard', 'eval'];
+        if (validTabs.includes(path as MainTab)) {
+          setActiveTab(path as MainTab);
+        } else if (!path) {
+          setActiveTab('home');
+        }
       }
     };
     window.addEventListener('popstate', handlePopState);
@@ -730,6 +765,8 @@ export default function App() {
       <Navbar
         activeTab={activeTab}
         setActiveTab={setActiveTab}
+        docsCategory={docsCategory}
+        setDocsCategory={handleDocsCategoryChange}
         activeMutationsCount={activeMutationsCount}
         user={user}
         onOpenAuth={() => setShowLoginModal(true)}
@@ -779,7 +816,12 @@ export default function App() {
             />
           )}
 
-          {activeTab === 'docs' && <DocsContainer />}
+          {activeTab === 'docs' && (
+            <DocsContainer
+              docsCategory={docsCategory}
+              setDocsCategory={handleDocsCategoryChange}
+            />
+          )}
 
           {activeTab === 'pricing' && (
             <PricingContainer

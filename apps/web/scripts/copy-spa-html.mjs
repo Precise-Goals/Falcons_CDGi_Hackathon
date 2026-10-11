@@ -14,6 +14,9 @@ if (!fs.existsSync(indexHtmlPath)) {
 
 const routes = [
   'docs',
+  'terms',
+  'research',
+  'patent',
   'eval',
   'dashboard',
   'agent',

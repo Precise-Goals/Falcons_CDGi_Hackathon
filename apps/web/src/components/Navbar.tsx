@@ -10,12 +10,16 @@ import {
   DollarSign,
   FlaskConical,
   User as UserIcon,
+  ShieldCheck,
+  FileText,
 } from 'lucide-react';
-import { MainTab, UserProfile } from '../types';
+import { MainTab, UserProfile, DocsCategory } from '../types';
 
 export interface NavbarProps {
   activeTab: MainTab;
   setActiveTab: (tab: MainTab) => void;
+  docsCategory?: DocsCategory;
+  setDocsCategory?: (category: DocsCategory) => void;
   activeMutationsCount?: number;
   user: UserProfile | null;
   onOpenAuth: () => void;
@@ -24,6 +28,8 @@ export interface NavbarProps {
 export function Navbar({
   activeTab,
   setActiveTab,
+  docsCategory = 'docs',
+  setDocsCategory,
   activeMutationsCount = 0,
   user,
   onOpenAuth,
@@ -31,11 +37,17 @@ export function Navbar({
   const [productsDropdownOpen, setProductsDropdownOpen] = useState(false);
   const productsDropdownRef = useRef<HTMLDivElement>(null);
 
-  // Close dropdown on outside click
+  const [docsDropdownOpen, setDocsDropdownOpen] = useState(false);
+  const docsDropdownRef = useRef<HTMLDivElement>(null);
+
+  // Close dropdowns on outside click
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       if (productsDropdownRef.current && !productsDropdownRef.current.contains(event.target as Node)) {
         setProductsDropdownOpen(false);
+      }
+      if (docsDropdownRef.current && !docsDropdownRef.current.contains(event.target as Node)) {
+        setDocsDropdownOpen(false);
       }
     };
     document.addEventListener('mousedown', handleClickOutside);
@@ -161,18 +173,92 @@ export function Navbar({
           )}
         </div>
 
-        {/* Tab 3: Docs */}
-        <button
-          onClick={() => setActiveTab('docs')}
-          className={`flex items-center space-x-1.5 text-xs font-semibold px-3 py-1.5 rounded-full transition-all ${
-            activeTab === 'docs'
-              ? 'bg-black text-white shadow-sm'
-              : 'text-black/75 hover:text-black hover:bg-black/5'
-          }`}
-        >
-          <BookOpen className="w-3.5 h-3.5" />
-          <span>Docs</span>
-        </button>
+        {/* Tab 3: Docs Category Dropdown (Docs, Terms & Policies, Research & Patent) */}
+        <div className="relative" ref={docsDropdownRef}>
+          <button
+            onClick={() => setDocsDropdownOpen(!docsDropdownOpen)}
+            className={`flex items-center space-x-1 text-xs font-semibold px-3 py-1.5 rounded-full transition-all ${
+              activeTab === 'docs'
+                ? 'bg-black text-white shadow-sm'
+                : 'text-black/75 hover:text-black hover:bg-black/5'
+            }`}
+          >
+            <BookOpen className="w-3.5 h-3.5" />
+            <span>Docs</span>
+            <ChevronDown
+              className={`w-3 h-3 opacity-60 transition-transform duration-200 ${
+                docsDropdownOpen ? 'rotate-180' : ''
+              }`}
+            />
+          </button>
+
+          {docsDropdownOpen && (
+            <div className="absolute top-full mt-2 -left-6 w-64 bg-white rounded-[1.5rem] p-2.5 shadow-2xl space-y-1 z-[100] border border-[#E8E2D9] animate-in fade-in zoom-in-95 duration-150 ring-1 ring-black/5">
+              <button
+                onClick={() => {
+                  setActiveTab('docs');
+                  if (setDocsCategory) setDocsCategory('docs');
+                  setDocsDropdownOpen(false);
+                }}
+                className={`w-full flex items-center space-x-2.5 p-2.5 rounded-xl text-left transition ${
+                  activeTab === 'docs' && docsCategory === 'docs'
+                    ? 'bg-crimson text-white font-bold shadow-sm'
+                    : 'hover:bg-cream-subtle text-black'
+                }`}
+              >
+                <BookOpen className={`w-4 h-4 ${activeTab === 'docs' && docsCategory === 'docs' ? 'text-white' : 'text-crimson'}`} />
+                <div>
+                  <div className="text-xs font-bold">Docs (Blueprint)</div>
+                  <div className={`text-[10px] font-mono ${activeTab === 'docs' && docsCategory === 'docs' ? 'text-white/85' : 'text-black/50'}`}>
+                    Architecture & Algorithms
+                  </div>
+                </div>
+              </button>
+
+              <button
+                onClick={() => {
+                  setActiveTab('docs');
+                  if (setDocsCategory) setDocsCategory('terms');
+                  setDocsDropdownOpen(false);
+                }}
+                className={`w-full flex items-center space-x-2.5 p-2.5 rounded-xl text-left transition ${
+                  activeTab === 'docs' && docsCategory === 'terms'
+                    ? 'bg-crimson text-white font-bold shadow-sm'
+                    : 'hover:bg-cream-subtle text-black'
+                }`}
+              >
+                <ShieldCheck className={`w-4 h-4 ${activeTab === 'docs' && docsCategory === 'terms' ? 'text-white' : 'text-crimson'}`} />
+                <div>
+                  <div className="text-xs font-bold">Terms & Policies</div>
+                  <div className={`text-[10px] font-mono ${activeTab === 'docs' && docsCategory === 'terms' ? 'text-white/85' : 'text-black/50'}`}>
+                    Safe-Handling & Governance
+                  </div>
+                </div>
+              </button>
+
+              <button
+                onClick={() => {
+                  setActiveTab('docs');
+                  if (setDocsCategory) setDocsCategory('research');
+                  setDocsDropdownOpen(false);
+                }}
+                className={`w-full flex items-center space-x-2.5 p-2.5 rounded-xl text-left transition ${
+                  activeTab === 'docs' && docsCategory === 'research'
+                    ? 'bg-crimson text-white font-bold shadow-sm'
+                    : 'hover:bg-cream-subtle text-black'
+                }`}
+              >
+                <FileText className={`w-4 h-4 ${activeTab === 'docs' && docsCategory === 'research' ? 'text-white' : 'text-crimson'}`} />
+                <div>
+                  <div className="text-xs font-bold">Research & Patent</div>
+                  <div className={`text-[10px] font-mono ${activeTab === 'docs' && docsCategory === 'research' ? 'text-white/85' : 'text-black/50'}`}>
+                    Peer-Reviewed Paper & Patent
+                  </div>
+                </div>
+              </button>
+            </div>
+          )}
+        </div>
 
         {/* Tab 4: Pricing */}
         <button
