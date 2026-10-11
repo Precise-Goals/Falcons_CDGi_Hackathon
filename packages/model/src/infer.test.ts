@@ -3,6 +3,7 @@ import { inferContract } from './infer.js';
 import {
   analyzeNullability,
   validateNullabilityInvariant,
+  evaluateQuantileConstancy,
 } from './invariants.js';
 import { Observation } from '@intra/shared';
 
@@ -100,5 +101,55 @@ describe('Model Inference & Behavioural Fingerprinting', () => {
       expect(profMiss.isAlwaysNull).toBe(true);
     });
   });
+
+  describe('M3 Unit Shift Quantile Constancy Evaluator', () => {
+    it('detects 100x scale shift from floating dollars to integer cents', () => {
+      const dollarsQuantiles = [5.0, 12.5, 25.0, 49.99, 100.0];
+      const centsQuantiles = [500, 1250, 2500, 4999, 10000];
+
+      const res = evaluateQuantileConstancy(dollarsQuantiles, centsQuantiles);
+      expect(res.isUnitShift).toBe(true);
+      expect(res.scaleFactor).toBe(100);
+      expect(res.variance).toBe(0);
+      expect(res.confidence).toBe(1);
+    });
+
+    it('detects 0.01x scale shift from integer cents to floating dollars', () => {
+      const centsQuantiles = [1000, 2000, 5000];
+      const dollarsQuantiles = [10.0, 20.0, 50.0];
+
+      const res = evaluateQuantileConstancy(centsQuantiles, dollarsQuantiles);
+      expect(res.isUnitShift).toBe(true);
+      expect(res.scaleFactor).toBe(0.01);
+      expect(res.confidence).toBe(1);
+    });
+
+    it('rejects organic non-uniform price shifts as not a unit shift', () => {
+      const before = [10, 20, 30, 40, 50];
+      const organic = [12, 19, 45, 60, 52]; // unequal ratios: 1.2, 0.95, 1.5, etc.
+
+      const res = evaluateQuantileConstancy(before, organic, 0.02);
+      expect(res.isUnitShift).toBe(false);
+      expect(res.confidence).toBe(0);
+    });
+
+    it('handles identical quantiles as non-unit shift (scale 1.0)', () => {
+      const before = [10, 20, 30];
+      const identical = [10, 20, 30];
+
+      const res = evaluateQuantileConstancy(before, identical);
+      expect(res.isUnitShift).toBe(false);
+      expect(res.scaleFactor).toBe(1.0);
+    });
+
+    it('handles empty and mismatched quantile lengths gracefully', () => {
+      const resEmpty = evaluateQuantileConstancy([], []);
+      expect(resEmpty.isUnitShift).toBe(false);
+
+      const resMismatch = evaluateQuantileConstancy([1, 2], [1, 2, 3]);
+      expect(resMismatch.isUnitShift).toBe(false);
+    });
+  });
 });
+
 
