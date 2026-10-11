@@ -50,7 +50,7 @@ jobs:
         run: pnpm -w lint
 
       - name: Unit Tests & Coverage (G3-G4)
-        run: pnpm -w test --reporter=dot --coverage
+        run: pnpm -w test -- -- --reporter=dot --coverage
 
   integration:
     name: G8 Integration (Sim Services & Engine)
