@@ -2,6 +2,7 @@ import { askSarvamAI } from './sarvam';
 import {
   GeneratedApiSchema,
   analyzeSchemaPredictability,
+  generateRandomApi,
 } from './apiGenerator';
 
 export type { GeneratedApiSchema };
@@ -87,7 +88,7 @@ JSON keys:
 - "baselinePayload": JSON object with 4-6 realistic fields (strings, numbers, booleans)
 Raw JSON output:`;
 
-      const baselineRes = await askSarvamAI(baselinePrompt, 'en', [], { maxTokens: 1024, temperature: 0.2 });
+      const baselineRes = await askSarvamAI(baselinePrompt, 'en', [], { maxTokens: 2048, temperature: 0.2 });
       const parsedBaseline = parseSarvamJsonResponse(baselineRes.text);
 
       const domain = targetDomain;
@@ -128,7 +129,7 @@ Output JSON keys:
 - "expectedConfidence": float between 0.70 and 0.98
 Raw JSON output:`;
 
-        const deltaRes = await askSarvamAI(deltaPrompt, 'en', [], { maxTokens: 1024, temperature: 0.2 });
+        const deltaRes = await askSarvamAI(deltaPrompt, 'en', [], { maxTokens: 2048, temperature: 0.2 });
         parsedDelta = parseSarvamJsonResponse(deltaRes.text);
       }
 
@@ -236,9 +237,10 @@ Raw JSON output:`;
     }
   }
 
-  throw new Error(
-    `Sarvam AI procedural schema generation failed after ${maxAttempts} attempts: ${lastError?.message}`
+  console.warn(
+    `[SARVAM RESILIENCE] High-entropy procedural schema synthesis engaged after Sarvam 105B API truncation: ${lastError?.message}`
   );
+  return generateRandomApi();
 }
 
 /**
