@@ -1,6 +1,6 @@
 function sendJson(res, statusCode, data) {
   res.setHeader('Access-Control-Allow-Origin', '*');
-  res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
+  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS, PATCH');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization, x-api-key, api-subscription-key');
   if (typeof res.status === 'function' && typeof res.json === 'function') {
     return res.status(statusCode).json(data);
@@ -19,10 +19,20 @@ function getBody(req) {
 function handler(req, res) {
   if (req.method === 'OPTIONS') {
     res.setHeader('Access-Control-Allow-Origin', '*');
-    res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
+    res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS, PATCH');
     res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization, x-api-key, api-subscription-key');
     res.statusCode = 200;
     return res.end();
+  }
+
+  if (req.method === 'GET') {
+    return sendJson(res, 200, {
+      status: 'active',
+      service: 'Intra Customer MCP Tool Calling Endpoint',
+      method: 'POST',
+      acceptedPayload: { tool: 'string', params: 'object' },
+      timestamp: new Date().toISOString(),
+    });
   }
 
   const body = getBody(req);
