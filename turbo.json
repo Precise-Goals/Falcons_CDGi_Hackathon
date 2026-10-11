@@ -1,9 +1,55 @@
 {
   "$schema": "https://turbo.build/schema.json",
+  "globalEnv": [
+    "FIREBASE_API_KEY",
+    "FIREBASE_AUTH_DOMAIN",
+    "FIREBASE_PROJECT_ID",
+    "FIREBASE_STORAGE_BUCKET",
+    "FIREBASE_MESSAGING_SENDER_ID",
+    "FIREBASE_APP_ID",
+    "FIREBASE_MEASUREMENT_ID",
+    "FIREBASE_DATABASE_URL",
+    "SARVAM_API_KEY",
+    "SARVAM_BASE_URL",
+    "SARVAM_MODEL",
+    "MST_TESTNET_RPC",
+    "CHAIN_ID",
+    "OPERATOR_PRIVATE_KEY",
+    "MIN_BALANCE",
+    "INTRA_SUBSCRIPTION_NFT_ADDRESS",
+    "VITE_*",
+    "PORT",
+    "DATABASE_URL",
+    "CORS_ORIGIN",
+    "MCP_API_KEYS",
+    "INTRA_API_URL",
+    "INTRA_API_KEY",
+    "MCP_PORT",
+    "SIM_USERS_PORT",
+    "SIM_PAYMENTS_PORT",
+    "SIM_SEARCH_PORT",
+    "SIM_NOTIFICATIONS_PORT",
+    "SIM_MCP_PORT",
+    "SIM_SWITCHBOARD_PORT",
+    "NODE_ENV",
+    "VERCEL",
+    "VERCEL_ENV",
+    "VERCEL_URL"
+  ],
   "tasks": {
     "build": {
       "dependsOn": ["^build"],
-      "outputs": ["dist/**", "build/**"]
+      "outputs": ["dist/**", "build/**"],
+      "env": [
+        "FIREBASE_*",
+        "SARVAM_*",
+        "MST_*",
+        "CHAIN_ID",
+        "INTRA_*",
+        "VITE_*",
+        "OPERATOR_PRIVATE_KEY",
+        "MIN_BALANCE"
+      ]
     },
     "test": {
       "dependsOn": ["^build"],
