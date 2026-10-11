@@ -22,6 +22,7 @@ import {
   ArrowRight
 } from 'lucide-react';
 import { DocsCategory } from '../types';
+import { ResearchPaperViewer } from '../components/ResearchPaperViewer';
 
 export interface DocsContainerProps {
   docsCategory?: DocsCategory;
@@ -36,6 +37,7 @@ export function DocsContainer({
 }: DocsContainerProps) {
   const [activeFilter, setActiveFilter] = useState<DocSectionFilter>('all');
   const [copiedCite, setCopiedCite] = useState<string | null>(null);
+  const [researchViewMode, setResearchViewMode] = useState<'pdf' | 'article'>('pdf');
 
   const handleCopyCitation = (citeKey: string, text: string) => {
     if (typeof navigator !== 'undefined' && navigator.clipboard) {
@@ -105,7 +107,42 @@ export function DocsContainer({
       {/* CATEGORY 1: BORDERLESS NATIVE RESEARCH PAPER (docsCategory === 'research') */}
       {/* ========================================================================= */}
       {docsCategory === 'research' && (
-        <article className="w-full mx-auto max-w-4xl px-2 sm:px-4 py-8 space-y-12 text-[#111111] leading-relaxed selection:bg-crimson/15 selection:text-crimson">
+        <div className="w-full mx-auto max-w-5xl space-y-6">
+          {/* View Mode Switcher Pill */}
+          <div className="flex flex-wrap items-center justify-between gap-4 p-2 bg-cream-subtle rounded-2xl border border-black/10">
+            <div className="flex items-center space-x-1.5">
+              <button
+                onClick={() => setResearchViewMode('pdf')}
+                className={`flex items-center space-x-2 px-3.5 py-1.5 rounded-xl text-xs font-mono font-bold transition-all ${
+                  researchViewMode === 'pdf'
+                    ? 'bg-crimson text-white shadow-xs'
+                    : 'text-black/70 hover:text-black hover:bg-black/5'
+                }`}
+              >
+                <FileText className="w-3.5 h-3.5" />
+                <span>Original Research Paper Pages (Vector PDF)</span>
+              </button>
+              <button
+                onClick={() => setResearchViewMode('article')}
+                className={`flex items-center space-x-2 px-3.5 py-1.5 rounded-xl text-xs font-mono font-bold transition-all ${
+                  researchViewMode === 'article'
+                    ? 'bg-black text-white shadow-xs'
+                    : 'text-black/70 hover:text-black hover:bg-black/5'
+                }`}
+              >
+                <BookOpen className="w-3.5 h-3.5" />
+                <span>Article Reader Mode</span>
+              </button>
+            </div>
+            <div className="text-[11px] font-mono text-black/50 pr-2 hidden sm:block">
+              Zero Iframe &bull; Native High-DPI Vector &bull; Selectable Text &bull; Interactive Hyperlinks
+            </div>
+          </div>
+
+          {researchViewMode === 'pdf' ? (
+            <ResearchPaperViewer />
+          ) : (
+            <article className="w-full mx-auto max-w-4xl px-2 sm:px-4 py-8 space-y-12 text-[#111111] leading-relaxed selection:bg-crimson/15 selection:text-crimson">
           {/* Subtle Publication Header & Action Bar */}
           <div className="flex flex-wrap items-center justify-between gap-3 pb-6 border-b border-black/10 font-mono text-xs text-black/60">
             <div className="flex items-center space-x-2">
@@ -764,7 +801,9 @@ export function DocsContainer({
               </li>
             </ol>
           </section>
-        </article>
+            </article>
+          )}
+        </div>
       )}
 
       {/* ========================================================================= */}
