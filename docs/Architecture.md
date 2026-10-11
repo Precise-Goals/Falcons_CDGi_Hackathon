@@ -171,7 +171,7 @@ The `mcpserver/` acts as a thin REST client to the core engine, allowing custome
 
 ## 8. Cross-References
 
-- [Harness & Mission](Harness.md)
+- [Harness & Mission](HARNESS.md)
 - [Tech Stack](Stack.md)
 - [Design System & UI Tokens](design.md)
 - [Assumptions & Ongoing State](../.harness/STATE.md)
