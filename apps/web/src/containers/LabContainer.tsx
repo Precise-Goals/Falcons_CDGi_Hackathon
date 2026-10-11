@@ -595,7 +595,7 @@ export function LabContainer({
                         <div className="flex items-center space-x-2">
                           <span className="font-bold text-black">#{idx + 1} {ev.schema.domain}</span>
                           <span className="text-[10px] text-black/50">({ev.schema.endpoint})</span>
-                          <span className="text-[10px] px-2 py-0.5 rounded-full bg-cream font-semibold border border-black/10">
+                          <span className="text-[10px] font-mono text-black/60 font-semibold px-2 py-0.5 rounded-lg bg-black/5">
                             {ev.schema.mutationType}
                           </span>
                         </div>
@@ -783,15 +783,15 @@ export function LabContainer({
                   </span>
                 </div>
 
-                {/* Filter pills & export actions */}
+                {/* Filter tabs & export actions */}
                 <div className="flex items-center gap-2 flex-wrap">
-                  <div className="flex items-center space-x-1 bg-white/10 rounded-full px-2 py-1 text-[10px]">
-                    <Filter className="w-3 h-3 text-white/50" />
+                  <div className="flex items-center space-x-1 bg-white/5 border border-white/10 rounded-xl px-2.5 py-1 text-[10px]">
+                    <Filter className="w-3 h-3 text-white/50 mr-1" />
                     {['ALL', 'OBSERVE', 'MODEL', 'PREDICT', 'MCP', 'DIFF', 'IMPACT', 'POLICY', 'ADAPTER', 'VALIDATE', 'SARVAM_AI', 'LEDGER'].map((st) => (
                       <button
                         key={st}
                         onClick={() => setLogFilterStage(st)}
-                        className={`px-2 py-0.5 rounded-full transition ${
+                        className={`px-2 py-0.5 rounded-lg transition ${
                           logFilterStage === st ? 'bg-crimson text-white font-bold' : 'text-white/60 hover:text-white'
                         }`}
                       >
@@ -802,7 +802,7 @@ export function LabContainer({
 
                   <button
                     onClick={() => copyToClipboard(batchReport.logs.map((l: EvalLogEntry) => `[${l.timestamp}] [${l.stage}] ${l.message}`).join('\n'), 'terminal_logs')}
-                    className="px-3 py-1 rounded-full bg-white/10 hover:bg-white/20 text-[10px] text-white flex items-center space-x-1 transition"
+                    className="px-3 py-1 rounded-xl bg-white/10 hover:bg-white/20 border border-white/10 text-[10px] text-white flex items-center space-x-1.5 transition"
                   >
                     <Copy className="w-3 h-3" />
                     <span>{copiedKey === 'terminal_logs' ? 'Copied' : 'Copy'}</span>
@@ -810,7 +810,7 @@ export function LabContainer({
 
                   <button
                     onClick={handleExportVerificationJson}
-                    className="px-3 py-1 rounded-full bg-emerald-950 text-emerald-300 hover:bg-emerald-900 border border-emerald-700/50 text-[10px] flex items-center space-x-1 transition"
+                    className="px-3 py-1 rounded-xl bg-emerald-950 text-emerald-300 hover:bg-emerald-900 border border-emerald-700/50 text-[10px] flex items-center space-x-1.5 transition"
                   >
                     <Download className="w-3 h-3" />
                     <span>Export JSON</span>
