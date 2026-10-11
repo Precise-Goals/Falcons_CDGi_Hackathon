@@ -136,3 +136,15 @@ export interface SwitchboardMutation {
   active: boolean;
   description: string;
 }
+
+export interface ChangeSetRollup {
+  service: string;
+  endpoint: string;
+  totalChanges: number;
+  highestSeverity: 'low' | 'medium' | 'high' | 'critical';
+  hasBreakingChanges: boolean;
+  averageConfidence: number;
+  changesByKind: Partial<Record<ChangeKind, number>>;
+  samplesSummary: string[];
+}
+

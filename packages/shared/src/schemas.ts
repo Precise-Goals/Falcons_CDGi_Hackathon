@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import type { Change, ChangeKind, ChangeSetRollup, Impact } from './types.js';
 
 export const ObservationSchema = z.object({
   id: z.string(),
@@ -127,3 +128,78 @@ export const MigrationProposalSchema = z.object({
   status: z.enum(['pending', 'approved', 'rejected']),
   createdAt: z.string(),
 });
+
+export const ChangeSetRollupSchema = z.object({
+  service: z.string(),
+  endpoint: z.string(),
+  totalChanges: z.number().int().min(0),
+  highestSeverity: z.enum(['low', 'medium', 'high', 'critical']),
+  hasBreakingChanges: z.boolean(),
+  averageConfidence: z.number().min(0).max(1),
+  changesByKind: z.record(z.string(), z.number()),
+  samplesSummary: z.array(z.string()),
+});
+
+export function rollupChangeSet(
+  service: string,
+  endpoint: string,
+  changes: Change[],
+  impacts?: Impact[]
+): ChangeSetRollup {
+  const totalChanges = changes.length;
+  if (totalChanges === 0) {
+    return {
+      service,
+      endpoint,
+      totalChanges: 0,
+      highestSeverity: 'low',
+      hasBreakingChanges: false,
+      averageConfidence: 1.0,
+      changesByKind: {},
+      samplesSummary: [],
+    };
+  }
+
+  const hasBreakingChanges = changes.some((c) => c.semanticVerdict === 'breaking');
+  const avgConf =
+    changes.reduce((sum, c) => sum + c.confidence, 0) / totalChanges;
+
+  const changesByKind: Partial<Record<ChangeKind, number>> = {};
+  const sampleSet = new Set<string>();
+
+  for (const c of changes) {
+    changesByKind[c.kind] = (changesByKind[c.kind] || 0) + 1;
+    for (const sample of c.evidence.samples) {
+      sampleSet.add(sample);
+    }
+  }
+
+  const severityRank: Record<'low' | 'medium' | 'high' | 'critical', number> = {
+    low: 1,
+    medium: 2,
+    high: 3,
+    critical: 4,
+  };
+  let highestSeverity: 'low' | 'medium' | 'high' | 'critical' = 'low';
+  if (impacts && impacts.length > 0) {
+    for (const imp of impacts) {
+      if (severityRank[imp.severity] > severityRank[highestSeverity]) {
+        highestSeverity = imp.severity;
+      }
+    }
+  } else if (hasBreakingChanges) {
+    highestSeverity = 'high';
+  }
+
+  return {
+    service,
+    endpoint,
+    totalChanges,
+    highestSeverity,
+    hasBreakingChanges,
+    averageConfidence: Math.round(avgConf * 1000) / 1000,
+    changesByKind,
+    samplesSummary: Array.from(sampleSet),
+  };
+}
+
