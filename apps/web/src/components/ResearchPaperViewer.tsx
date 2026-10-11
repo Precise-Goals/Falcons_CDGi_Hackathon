@@ -307,7 +307,7 @@ export function ResearchPaperViewer() {
           {/* Share Link */}
           <button
             onClick={handleCopyShareLink}
-            className="flex items-center space-x-1.5 px-3 py-1.5 rounded-xl border border-black/10 bg-white hover:border-black/25 text-black text-xs font-mono font-semibold transition shadow-2xs"
+            className="flex items-center space-x-1.5 px-3 py-1.5 rounded-xl border border-black/10 bg-white hover:border-black/25 text-black text-xs font-mono font-semibold transition shadow-sm"
           >
             {copiedLink ? <Check className="w-3.5 h-3.5 text-emerald-600" /> : <Share2 className="w-3.5 h-3.5 text-black/60" />}
             <span>{copiedLink ? 'Copied' : 'Share'}</span>
@@ -317,7 +317,7 @@ export function ResearchPaperViewer() {
           <a
             href="/research.pdf"
             download="Intra-Research-Paper.pdf"
-            className="flex items-center space-x-1.5 px-3.5 py-1.5 rounded-xl bg-crimson hover:bg-crimson-hover text-white text-xs font-mono font-bold transition shadow-xs"
+            className="flex items-center space-x-1.5 px-3.5 py-1.5 rounded-xl bg-crimson hover:bg-crimson-hover text-white text-xs font-mono font-bold transition shadow-sm"
           >
             <Download className="w-3.5 h-3.5" />
             <span>Download (306 KB)</span>
