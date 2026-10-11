@@ -8,16 +8,24 @@ import {
   Check,
   Cpu,
   Code2,
+  Zap,
+  Sliders,
+  Layers,
+  FlaskConical,
 } from 'lucide-react';
 import {
   AgentMode,
   ChatMessage,
   MutationItem,
+  MainTab,
+  DashboardSubView,
 } from '../types';
+import { MarkdownView } from '../components/MarkdownView';
 
 export interface ProductsContainerProps {
   activeProductTab: 'agent' | 'mcp' | 'sdk';
   onSelectProductTab: (tab: 'agent' | 'mcp' | 'sdk') => void;
+  onNavigateToTab?: (tab: MainTab, subView?: DashboardSubView, mutationId?: string) => void;
   // Agent Props
   agentMode: AgentMode;
   setAgentMode: (mode: AgentMode) => void;
@@ -50,6 +58,7 @@ export interface ProductsContainerProps {
 export function ProductsContainer({
   activeProductTab,
   onSelectProductTab,
+  onNavigateToTab,
   agentMode,
   setAgentMode,
   agentLanguage,
@@ -217,36 +226,175 @@ export function ProductsContainer({
           {/* Chat Dialogue Container */}
           <div className="border border-black/10 bg-white/95 rounded-[2.5rem] p-6 shadow-card space-y-4 min-h-[340px] flex flex-col justify-between">
             <div className="space-y-4 overflow-y-auto max-h-[460px] pr-2">
-              {chatMessages.map((msg, i) => (
-                <div
-                  key={i}
-                  className={`flex flex-col ${msg.sender === 'user' ? 'items-end' : 'items-start'} space-y-1.5`}
-                >
-                  <div className="flex items-center space-x-1.5 text-[10px] font-mono text-black/40">
-                    <span>{msg.sender === 'user' ? 'DEVELOPER' : 'INTRA AGENT'}</span>
-                    {msg.sha && <span>&bull; SHA: {msg.sha.slice(0, 8)}</span>}
-                  </div>
+              {chatMessages.map((msg, i) => {
+                // Smart heuristic detection of referenced mutation for ecosystem deep-linking
+                let targetMutation = 'M1';
+                const lower = msg.text.toLowerCase();
+                if (lower.includes('m10') || lower.includes('enum')) targetMutation = 'M10';
+                else if (lower.includes('m9') || lower.includes('tool')) targetMutation = 'M9';
+                else if (lower.includes('m8') || lower.includes('rate')) targetMutation = 'M8';
+                else if (lower.includes('m7') || lower.includes('webhook')) targetMutation = 'M7';
+                else if (lower.includes('m6') || lower.includes('truncat')) targetMutation = 'M6';
+                else if (lower.includes('m5') || lower.includes('pagination') || lower.includes('cursor')) targetMutation = 'M5';
+                else if (lower.includes('m4') || lower.includes('currency')) targetMutation = 'M4';
+                else if (lower.includes('m3') || lower.includes('unit') || lower.includes('cent') || lower.includes('dollar')) targetMutation = 'M3';
+                else if (lower.includes('m2') || lower.includes('format')) targetMutation = 'M2';
+                else if (lower.includes('m1') || lower.includes('rename')) targetMutation = 'M1';
+
+                return (
                   <div
-                    className={`p-4 rounded-2xl max-w-xl text-xs leading-relaxed ${
-                      msg.sender === 'user'
-                        ? 'bg-black text-white rounded-br-none'
-                        : 'bg-cream-subtle border border-black/5 text-black rounded-bl-none shadow-sm'
-                    }`}
+                    key={i}
+                    className={`flex flex-col ${msg.sender === 'user' ? 'items-end' : 'items-start'} space-y-1.5`}
                   >
-                    <p>{msg.text}</p>
-                    {msg.planSteps && (
-                      <div className="mt-3 space-y-2 pt-2 border-t border-black/10 font-mono text-[11px]">
-                        {msg.planSteps.map((step, idx) => (
-                          <div key={idx} className="flex items-start space-x-2">
-                            <span className="text-crimson font-bold">{idx + 1}.</span>
-                            <span>{step}</span>
+                    <div className="flex items-center space-x-1.5 text-[10px] font-mono text-black/40">
+                      <span>{msg.sender === 'user' ? 'DEVELOPER' : 'INTRA ADAPTATION AGENT'}</span>
+                      {msg.sha && <span>&bull; SHA: {msg.sha.slice(0, 8)}</span>}
+                    </div>
+                    <div
+                      className={`p-4 rounded-2xl max-w-xl text-xs leading-relaxed ${
+                        msg.sender === 'user'
+                          ? 'bg-black text-white rounded-br-none'
+                          : 'bg-cream-subtle border border-black/5 text-black rounded-bl-none shadow-sm'
+                      }`}
+                    >
+                      {msg.sender === 'user' ? (
+                        <p className="leading-relaxed">{msg.text}</p>
+                      ) : (
+                        <MarkdownView content={msg.text} />
+                      )}
+
+                      {msg.planSteps && (
+                        <div className="mt-3 space-y-2 pt-2 border-t border-black/10 font-mono text-[11px]">
+                          {msg.planSteps.map((step, idx) => (
+                            <div key={idx} className="flex items-start space-x-2">
+                              <span className="text-crimson font-bold">{idx + 1}.</span>
+                              <span>{step}</span>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+
+                      {/* Interactive Ecosystem Action Panel on AI Findings */}
+                      {msg.sender === 'agent' && (
+                        <div className="mt-4 pt-3 border-t border-black/10 space-y-2">
+                          <div className="flex items-center justify-between">
+                            <span className="text-[10px] font-mono font-bold text-black/50 uppercase tracking-wider flex items-center space-x-1">
+                              <Zap className="w-3 h-3 text-crimson" />
+                              <span>Ecosystem Actions & Deep-Links:</span>
+                            </span>
+                            {msg.sha && (
+                              <span className="text-[9px] font-mono text-crimson font-bold bg-crimson/10 px-1.5 py-0.5 rounded border border-crimson/20">
+                                SEAL: {msg.sha.slice(0, 8)}
+                              </span>
+                            )}
                           </div>
-                        ))}
-                      </div>
-                    )}
+
+                          <div className="flex flex-wrap gap-1.5 pt-0.5">
+                            {/* Action 1: SDK Dynamic Proxy */}
+                            <button
+                              onClick={() => {
+                                setSdkSelectedMutation(targetMutation);
+                                if (onNavigateToTab) {
+                                  onNavigateToTab('sdk', undefined, targetMutation);
+                                } else {
+                                  onSelectProductTab('sdk');
+                                }
+                              }}
+                              className="flex items-center space-x-1 px-2.5 py-1 rounded-lg bg-black text-white text-[11px] font-semibold hover:bg-black/80 transition shadow-xs"
+                              title="Test dynamically adapted payload in Client SDK Proxy"
+                            >
+                              <Code2 className="w-3 h-3 text-emerald-400" />
+                              <span>Apply to SDK Proxy</span>
+                            </button>
+
+                            {/* Action 2: Switchboard */}
+                            <button
+                              onClick={() => {
+                                if (onNavigateToTab) {
+                                  onNavigateToTab('dashboard', 'switchboard', targetMutation);
+                                }
+                              }}
+                              className="flex items-center space-x-1 px-2.5 py-1 rounded-lg bg-white border border-black/15 text-black text-[11px] font-semibold hover:border-crimson hover:text-crimson transition shadow-xs"
+                              title={`Jump to Switchboard and toggle ${targetMutation}`}
+                            >
+                              <Sliders className="w-3 h-3 text-crimson" />
+                              <span>Test in Switchboard ({targetMutation})</span>
+                            </button>
+
+                            {/* Action 3: Impact Blast Radius */}
+                            <button
+                              onClick={() => {
+                                if (onNavigateToTab) {
+                                  onNavigateToTab('dashboard', 'impact', targetMutation);
+                                }
+                              }}
+                              className="flex items-center space-x-1 px-2.5 py-1 rounded-lg bg-white border border-black/15 text-black text-[11px] font-semibold hover:border-crimson hover:text-crimson transition shadow-xs"
+                              title="Inspect downstream Shipwell workflows affected by this change"
+                            >
+                              <Layers className="w-3 h-3 text-blue-600" />
+                              <span>Inspect Blast Radius</span>
+                            </button>
+
+                            {/* Action 4: Stress Lab */}
+                            <button
+                              onClick={() => {
+                                if (onNavigateToTab) {
+                                  onNavigateToTab('eval');
+                                }
+                              }}
+                              className="flex items-center space-x-1 px-2.5 py-1 rounded-lg bg-white border border-black/15 text-black text-[11px] font-semibold hover:border-crimson hover:text-crimson transition shadow-xs"
+                              title="Run 50-sample dynamic stress test in autonomous laboratory"
+                            >
+                              <FlaskConical className="w-3 h-3 text-purple-600" />
+                              <span>Stress Test in Lab</span>
+                            </button>
+
+                            {/* Action 5: Customer MCP */}
+                            <button
+                              onClick={() => {
+                                if (onNavigateToTab) {
+                                  onNavigateToTab('mcp');
+                                } else {
+                                  onSelectProductTab('mcp');
+                                }
+                              }}
+                              className="flex items-center space-x-1 px-2.5 py-1 rounded-lg bg-white border border-black/15 text-black text-[11px] font-semibold hover:border-crimson hover:text-crimson transition shadow-xs"
+                              title="Inspect tool definitions and recent changes via MCP Server"
+                            >
+                              <Terminal className="w-3 h-3 text-amber-600" />
+                              <span>Inspect in MCP</span>
+                            </button>
+
+                            {/* Action 6: Copy Findings */}
+                            <button
+                              onClick={() =>
+                                copyToClipboard(
+                                  `${msg.text}\n\n[INTRA AUDIT CHECKSUM]: ${msg.sha || 'sha256:verified'}`,
+                                  `msg-${i}`
+                                )
+                              }
+                              className="flex items-center space-x-1 px-2 py-1 rounded-lg bg-white border border-black/15 text-black/70 text-[11px] hover:text-black transition"
+                              title="Copy findings and cryptographic checksum"
+                            >
+                              {copiedKey === `msg-${i}` ? (
+                                <>
+                                  <Check className="w-3 h-3 text-emerald-600" />
+                                  <span className="text-emerald-600 font-bold">Copied</span>
+                                </>
+                              ) : (
+                                <>
+                                  <Copy className="w-3 h-3" />
+                                  <span>Copy</span>
+                                </>
+                              )}
+                            </button>
+                          </div>
+                        </div>
+                      )}
+                    </div>
                   </div>
-                </div>
-              ))}
+                );
+              })}
 
               {agentLoading && (
                 <div className="flex flex-col items-start space-y-1.5">

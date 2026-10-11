@@ -13,12 +13,17 @@ import {
   GitPullRequest,
   CheckCircle2,
   AlertTriangle,
+  Cpu,
+  Code2,
+  Terminal,
+  FlaskConical,
 } from 'lucide-react';
 import {
   MutationItem,
   EngineHealthResponse,
   DashboardSubView,
   PredictedUpgrade,
+  MainTab,
 } from '../types';
 import { logLedgerChecksum } from '../lib/crypto';
 
@@ -36,6 +41,9 @@ export interface DashboardContainerProps {
   resetAll: () => Promise<void>;
   copiedKey: string | null;
   copyToClipboard: (text: string, key: string) => void;
+  dashboardView?: DashboardSubView;
+  setDashboardView?: (view: DashboardSubView) => void;
+  onNavigateTab?: (tab: MainTab, subView?: DashboardSubView, mutationId?: string) => void;
 }
 
 export function DashboardContainer({
@@ -51,8 +59,13 @@ export function DashboardContainer({
   resetAll,
   copiedKey,
   copyToClipboard,
+  dashboardView: controlledView,
+  setDashboardView: setControlledView,
+  onNavigateTab,
 }: DashboardContainerProps) {
-  const [dashboardView, setDashboardView] = useState<DashboardSubView>('predict');
+  const [internalView, setInternalView] = useState<DashboardSubView>('predict');
+  const dashboardView = controlledView ?? internalView;
+  const setDashboardView = setControlledView ?? setInternalView;
 
   // Pure Algorithmic Upgrade Predictor State
   const [sampleApiEndpoint, setSampleApiEndpoint] = useState<string>('https://api.stripe.com/v1/charges');
@@ -301,6 +314,46 @@ export function DashboardContainer({
             <div className="text-[10px] text-black/60 font-semibold">Zero Bypass</div>
           </div>
         </div>
+
+        {/* Interconnected Ecosystem Fast Bridges */}
+        {onNavigateTab && (
+          <div className="flex flex-wrap items-center justify-between gap-2 p-2.5 rounded-2xl bg-cream-subtle border border-black/5 text-xs">
+            <div className="flex items-center space-x-1.5 text-[11px] font-mono text-black/50">
+              <Sparkles className="w-3.5 h-3.5 text-crimson" />
+              <span className="font-bold text-black uppercase">Ecosystem Fast Bridges:</span>
+            </div>
+            <div className="flex flex-wrap items-center gap-1.5">
+              <button
+                onClick={() => onNavigateTab('agent')}
+                className="flex items-center space-x-1 px-3 py-1 rounded-full bg-white border border-black/10 hover:border-crimson text-black text-[11px] font-medium transition shadow-xs"
+              >
+                <Cpu className="w-3 h-3 text-crimson" />
+                <span>Adaptation Agent</span>
+              </button>
+              <button
+                onClick={() => onNavigateTab('sdk')}
+                className="flex items-center space-x-1 px-3 py-1 rounded-full bg-white border border-black/10 hover:border-emerald-600 text-black text-[11px] font-medium transition shadow-xs"
+              >
+                <Code2 className="w-3 h-3 text-emerald-600" />
+                <span>Client SDK Proxy</span>
+              </button>
+              <button
+                onClick={() => onNavigateTab('mcp')}
+                className="flex items-center space-x-1 px-3 py-1 rounded-full bg-white border border-black/10 hover:border-amber-600 text-black text-[11px] font-medium transition shadow-xs"
+              >
+                <Terminal className="w-3 h-3 text-amber-600" />
+                <span>Customer MCP</span>
+              </button>
+              <button
+                onClick={() => onNavigateTab('eval')}
+                className="flex items-center space-x-1 px-3 py-1 rounded-full bg-white border border-black/10 hover:border-purple-600 text-black text-[11px] font-medium transition shadow-xs"
+              >
+                <FlaskConical className="w-3 h-3 text-purple-600" />
+                <span>Stress Lab (/eval)</span>
+              </button>
+            </div>
+          </div>
+        )}
 
         {/* Sub-Navigation Pill Dock for Dashboard Views */}
         <div className="flex flex-wrap items-center gap-2 pt-2 border-t border-black/5">

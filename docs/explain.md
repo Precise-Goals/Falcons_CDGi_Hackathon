@@ -32,6 +32,115 @@ Here is our honest architectural breakdown:
 
 ---
 
+## Section 0: The Core Problem Statement Explained in Depth
+
+### 0.1 The Reality: Modern Software is Other People's Software
+
+Every production system built today is fundamentally an assembly of external dependencies:
+* Payment gateways (Stripe, PayPal, Adyen)
+* Identity and Auth providers (Firebase, Auth0, WorkOS)
+* Telemetry and logistics trackers (ShipEngine, EasyPost, Twilio)
+* Large Language Models & AI Agent tool servers (Anthropic, OpenAI, Model Context Protocol)
+
+When any of these external systems changes its behavior, the consuming application breaks. In traditional software engineering, teams assume that:
+1. Providers will publish breaking changes under new major API versions (`/v2/`, `/v3/`).
+2. Providers will maintain up-to-date OpenAPI/Swagger specifications.
+3. Consuming contract tests (like Pact) will catch regressions before deployment.
+
+**In reality, none of these assumptions hold in production:**
+* Enterprise SaaS providers frequently ship unannounced changes in existing minor/patch endpoints.
+* Third parties will never run your internal consumer pacts on their private servers.
+* Documentation and OpenAPI schemas lag behind deployed code by weeks or months.
+* The most catastrophic bugs are **silent semantic shifts**—payloads that are 100% syntactically valid JSON, but mean something completely different.
+
+---
+
+### 0.2 The 80% Blind Spot: Why Schema Validators Pass Broken Code
+
+Traditional validation tools (JSON Schema, Zod, OpenAPI diff, TypeScript interfaces) only check **structural syntax**:
+```typescript
+interface ChargeResponse {
+  id: string;
+  amount: number;      // <- Validates as number
+  status: string;      // <- Validates as string
+  currency?: string;   // <- Validates as optional string
+}
+```
+
+Consider what happens when the payment provider updates their service:
+* Yesterday: `{ "id": "ch_1", "amount": 25.00, "status": "active" }` (Charged $25.00 USD).
+* Today: `{ "id": "ch_1", "amount": 2500, "status": "active" }` (Charged 2500 cents).
+
+To your JSON Schema validator, `2500` is a valid `number`! The validator passes green. Your backend processes the payload without throwing any error. But your database records an un-adapted charge, resulting in massive financial corruption. 
+
+**This is the fundamental problem Intra solves:**
+> **Documented schemas are not enough. Software must observe real traffic, learn empirical behavioral invariants, detect semantic and behavioural drift, quantify blast radius on consuming code, and autonomously synthesize backward-compatible adapters or refuse safely.**
+
+---
+
+### 0.3 The 11 Failure Taxonomy Classes (Anatomy of Silent Incidents)
+
+| # | Class | Concrete Real-World Example | Passes Schema? | Blast Radius & Production Consequence |
+|---|---|---|:---:|---|
+| **M1** | **Field Rename** | `name` $\to$ `display_name` | **YES** | Consuming code reading `user.name` receives `undefined`. User profiles display blank; database saves null. |
+| **M2** | **Format Shift** | `"Alice Walker"` $\to$ `"Walker, Alice"` | **YES** | String split logic (`fullName.split(' ')[0]`) extracts `"Walker"` as the first name, corrupting customer communications. |
+| **M3** | **Unit / Scale Shift** | `amount: 25.0` (dollars) $\to$ `2500` (cents) | **YES** | Severe money bugs. Customers are 100× overcharged or merchants receive 1% of transaction value. |
+| **M4** | **Default Flip** | Omitted `currency` flips from `USD` $\to$ `EUR` | **YES** | Transactions settle in wrong currency, incurring exchange rate losses and reconciliation mismatches. |
+| **M5** | **Pagination Shift** | `offset=20` deprecated $\to$ opaque `next_cursor` | **PARTIAL** | Offset queries return 400 or repeat page 1 indefinitely, causing infinite loops and data exhaustion. |
+| **M6** | **Silent Truncation** | Requesting `limit=100` returns only `20` items | **YES** | Downstream analytics, sync jobs, and batch exports quietly drop 80% of data with zero error logs. |
+| **M7** | **Webhook Flattening** | `{ event: { type: "order.paid" } }` $\to$ `{ type: "order.paid" }` | **YES** | Webhook receivers looking for `payload.event.type` crash on `TypeError: Cannot read properties of undefined`. |
+| **M8** | **Rate Limit Drift** | Provider tightens burst from 100/s $\to$ 20/s | **N/A** | Downstream retries fail with unhandled HTTP 429 errors; retry storms take down internal microservices. |
+| **M9** | **MCP / Tool Drift** | Tool argument `query` $\to$ `q`; altered docstrings | **YES** | AI agents invoke tools with invalid arguments, failing customer workflows or hallucinating parameters. |
+| **M10** | **Enum Semantics** | `status: "active"` now includes suspended users | **YES** | Fraudulent and banned accounts regain access to services because application logic checks `status === 'active'`. |
+| **M11** | **Gradual Rollout** | Multi-server canary rollout of new payload | **PARTIAL** | Flapping responses (50% old shape, 50% new shape) cause intermittent, non-reproducible bugs. |
+
+---
+
+### 0.4 Hyrum's Law & The Observational Contract
+
+Software systems cannot rely on provider promises. Hyrum Wright (Software Engineer at Google) formulated **Hyrum's Law**:
+> *"With a sufficient number of users of an API, it does not matter what you promise in the contract: all observable behaviors of your system will be depended on by somebody."*
+
+Because consumers depend on observable behavior, **the real contract is the observed behavior, not the specification.** Intra operationalizes Hyrum's Law:
+1. **Passive Ingestion**: Ingest live production traffic through zero-overhead proxies and SDK wrappers.
+2. **Behavioral Invariant Synthesis**: Derive empirical bounds (types, regex formats, enum sets, quantiles, relational invariants) from actual execution traces.
+3. **Continuous Diffing**: Detect when observed reality diverges from established baselines.
+
+---
+
+### 0.5 The Closed-Loop Architecture: From Incident to Autonomous Healing
+
+Unlike point tools that only alert developers in Slack, Intra is an **autonomous closed-loop healing system**:
+
+```
+ ┌────────────────────────────────────────────────────────────────────────┐
+ │                     THE INTRA CLOSED-LOOP PIPELINE                     │
+ └────────────────────────────────────────────────────────────────────────┘
+
+    [1. OBSERVE]     Zero-overhead proxy / SDK interceptor captures traffic
+          │          scrubs PII, and streams observations.
+          ▼
+    [2. LEARN]       Mines empirical Daikon invariants, t-digest quantiles,
+          │          and HyperLogLog cardinality profiles per field.
+          ▼
+    [3. DETECT]      Dual-witness gate (CUSUM change-points + invariant
+          │          violations) isolates true drift from natural traffic noise.
+          ▼
+    [4. IMPACT]      TypeScript AST compiler analysis maps blast radius to
+          │          specific downstream workflows (e.g. checkout, userProfile).
+          ▼
+    [5. ADAPT]       FlashFill typed DSL synthesizes safe, deterministic
+          │          transformations ($<1$ ms in-process proxy execution).
+          ▼
+    [6. VALIDATE]    Golden test replay & Wald's SPRT canary gating promotes
+          │          adapter or rolls back instantly if regression occurs.
+          ▼
+    [7. LEDGER]      Every observation, adapter, and state transition is sealed
+                     with WebCrypto SHA-256 and mapped to MST blockchain keys.
+```
+
+---
+
 ## Section 1: Detailed Breakdown of Core Algorithms
 
 ```

@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, lazy, Suspense } from 'react';
-import { MainTab, UserProfile, MutationItem, EngineHealthResponse, AgentMode, ChatMessage, MstcPurchaseSuccess } from './types';
+import { MainTab, UserProfile, MutationItem, EngineHealthResponse, AgentMode, ChatMessage, MstcPurchaseSuccess, DashboardSubView } from './types';
 import { INITIAL_MUTATIONS } from './lib/constants';
 import { computeSha256, logLedgerChecksum } from './lib/crypto';
 import { Navbar } from './components/Navbar';
@@ -59,6 +59,22 @@ export default function App() {
     }
     return 'home';
   });
+
+  const [dashboardSubView, setDashboardSubView] = useState<DashboardSubView>('predict');
+
+  const handleNavigateToTab = (tab: MainTab, subView?: DashboardSubView, mutationId?: string) => {
+    setActiveTab(tab);
+    if (subView) {
+      setDashboardSubView(subView);
+    }
+    if (mutationId) {
+      setSelectedMutationId(mutationId);
+      setSdkSelectedMutation(mutationId);
+    }
+    if (tab === 'eval') {
+      window.history.pushState(null, '', '/eval');
+    }
+  };
 
   // User Authentication & Session State (Connected to real Firebase horizon-1ba53)
   const [user, setUser] = useState<UserProfile | null>(() => {
@@ -585,6 +601,7 @@ export default function App() {
             <ProductsContainer
               activeProductTab={activeTab}
               onSelectProductTab={(tab) => setActiveTab(tab)}
+              onNavigateToTab={handleNavigateToTab}
               agentMode={agentMode}
               setAgentMode={setAgentMode}
               agentLanguage={agentLanguage}
@@ -640,6 +657,9 @@ export default function App() {
               resetAll={resetAll}
               copiedKey={copiedKey}
               copyToClipboard={copyToClipboard}
+              dashboardView={dashboardSubView}
+              setDashboardView={setDashboardSubView}
+              onNavigateTab={handleNavigateToTab}
             />
           )}
 
