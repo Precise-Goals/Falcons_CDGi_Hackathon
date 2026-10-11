@@ -1,3 +1,4 @@
+import { useState, useRef, useEffect } from 'react';
 import {
   Globe,
   Send,
@@ -12,6 +13,7 @@ import {
   Sliders,
   Layers,
   FlaskConical,
+  ArrowDown,
 } from 'lucide-react';
 import {
   AgentMode,
@@ -83,6 +85,26 @@ export function ProductsContainer({
   copyToClipboard,
   copiedKey,
 }: ProductsContainerProps) {
+  // Chat auto-scroll to present state
+  const messagesEndRef = useRef<HTMLDivElement>(null);
+  const chatScrollContainerRef = useRef<HTMLDivElement>(null);
+  const [isAtBottom, setIsAtBottom] = useState(true);
+
+  const scrollToPresentChat = (smooth = true) => {
+    messagesEndRef.current?.scrollIntoView({ behavior: smooth ? 'smooth' : 'auto' });
+  };
+
+  useEffect(() => {
+    scrollToPresentChat(true);
+  }, [chatMessages, agentLoading]);
+
+  const handleChatScroll = () => {
+    if (!chatScrollContainerRef.current) return;
+    const { scrollTop, scrollHeight, clientHeight } = chatScrollContainerRef.current;
+    const distanceFromBottom = scrollHeight - scrollTop - clientHeight;
+    setIsAtBottom(distanceFromBottom < 80);
+  };
+
   return (
     <div className="space-y-8">
       {/* Product Suite Top Sub-Nav Selector */}
@@ -224,8 +246,12 @@ export function ProductsContainer({
           </div>
 
           {/* Chat Dialogue Container */}
-          <div className="border border-black/10 bg-white/95 rounded-[2.5rem] p-6 shadow-card space-y-4 min-h-[340px] flex flex-col justify-between">
-            <div className="space-y-4 overflow-y-auto max-h-[460px] pr-2">
+          <div className="relative border border-black/10 bg-white/95 rounded-[2.5rem] p-6 shadow-card space-y-4 min-h-[380px] flex flex-col justify-between">
+            <div
+              ref={chatScrollContainerRef}
+              onScroll={handleChatScroll}
+              className="space-y-4 overflow-y-auto h-[480px] max-h-[60vh] pr-2 scroll-smooth"
+            >
               {chatMessages.map((msg, i) => {
                 // Smart heuristic detection of referenced mutation for ecosystem deep-linking
                 let targetMutation = 'M1';
@@ -410,7 +436,20 @@ export function ProductsContainer({
                   </div>
                 </div>
               )}
+              {/* Anchor to scroll to present chat */}
+              <div ref={messagesEndRef} className="h-1" />
             </div>
+
+            {/* Jump to Present Chat Pill */}
+            {!isAtBottom && (
+              <button
+                onClick={() => scrollToPresentChat(true)}
+                className="absolute bottom-20 right-10 z-10 flex items-center space-x-1.5 px-3 py-1.5 rounded-full bg-crimson text-white text-[11px] font-mono font-bold shadow-lg hover:bg-crimson-hover transition transform hover:-translate-y-0.5"
+              >
+                <ArrowDown className="w-3.5 h-3.5 animate-bounce" />
+                <span>Present Chat</span>
+              </button>
+            )}
 
             {/* Chat Input Field */}
             <div className="pt-3 border-t border-black/5 flex items-center space-x-2">

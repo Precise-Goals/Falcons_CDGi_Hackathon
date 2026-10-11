@@ -161,6 +161,99 @@ export function MarkdownView({ content }: MarkdownViewProps) {
         continue;
       }
 
+      // Markdown Table parsing (starts with pipe and followed by delimiter row)
+      if (
+        line.includes('|') &&
+        i + 1 < rawLines.length &&
+        /^\|?(\s*:?-+:?\s*\|)+\s*:?-+:?\s*\|?$/.test(rawLines[i + 1].trim())
+      ) {
+        flushList(i);
+
+        const splitRow = (rowStr: string): string[] => {
+          let s = rowStr.trim();
+          if (s.startsWith('|')) s = s.slice(1);
+          if (s.endsWith('|')) s = s.slice(0, -1);
+          return s.split('|').map((c) => c.trim());
+        };
+
+        const headerCells = splitRow(line);
+        const delimiterCells = splitRow(rawLines[i + 1]);
+
+        const alignments = delimiterCells.map((d) => {
+          if (d.startsWith(':') && d.endsWith(':')) return 'center';
+          if (d.endsWith(':')) return 'right';
+          return 'left';
+        });
+
+        const dataRows: string[][] = [];
+        let j = i + 2;
+        while (j < rawLines.length) {
+          const rowLine = rawLines[j].trim();
+          if (!rowLine || !rowLine.includes('|')) break;
+          if (rowLine.startsWith('```')) break;
+          dataRows.push(splitRow(rowLine));
+          j++;
+        }
+
+        const tableKeyIdx = i;
+        i = j - 1; // Advance outer index to the end of the table block
+
+        elements.push(
+          <div
+            key={`table-${tableKeyIdx}`}
+            className="my-3 overflow-x-auto rounded-2xl border border-black/10 bg-white shadow-sm"
+          >
+            <table className="w-full text-left border-collapse text-xs">
+              <thead className="bg-[#FAF9F5] border-b border-black/10 text-black/75 font-mono text-[10px] uppercase tracking-wider">
+                <tr>
+                  {headerCells.map((h, colIdx) => (
+                    <th
+                      key={colIdx}
+                      className={`px-3.5 py-2.5 font-bold border-r border-black/5 last:border-r-0 ${
+                        alignments[colIdx] === 'center'
+                          ? 'text-center'
+                          : alignments[colIdx] === 'right'
+                          ? 'text-right'
+                          : 'text-left'
+                      }`}
+                    >
+                      {formatInlineText(h)}
+                    </th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {dataRows.map((row, rowIdx) => (
+                  <tr
+                    key={rowIdx}
+                    className="border-b border-black/5 last:border-b-0 hover:bg-crimson/[0.02] transition-colors even:bg-black/[0.015]"
+                  >
+                    {headerCells.map((_, colIdx) => {
+                      const cellVal = row[colIdx] || '';
+                      return (
+                        <td
+                          key={colIdx}
+                          className={`px-3.5 py-2 font-sans text-xs text-black/85 border-r border-black/5 last:border-r-0 leading-relaxed ${
+                            alignments[colIdx] === 'center'
+                              ? 'text-center'
+                              : alignments[colIdx] === 'right'
+                              ? 'text-right'
+                              : 'text-left'
+                          }`}
+                        >
+                          {formatInlineText(cellVal)}
+                        </td>
+                      );
+                    })}
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        );
+        continue;
+      }
+
       // Headers
       if (trimmed.startsWith('# ')) {
         flushList(i);

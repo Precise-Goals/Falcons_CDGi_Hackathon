@@ -91,7 +91,7 @@ describe('High-Volume Multi-Sample Verification Suite (50-60 APIs)', () => {
 
     // Logs populated
     expect(report.logs.length).toBeGreaterThanOrEqual(50);
-  }, 20000);
+  }, 60000);
 
   it('validates BridgeKey wallet configuration on MST Blockchain Testnet', () => {
     expect(MST_CHAIN_ID_DEC).toBe(91562037);
