@@ -136,7 +136,7 @@ describe('@intra/impact Blast Radius & Dependency Mapping', () => {
     });
 
     it('asserts critical severity rating on payment charge routes with medium/high verdict', () => {
-      const analyzer = new ImpactAnalyzer();
+      const analyzer = new ImpactAnalyzer({ escalateFinancialRoutes: true });
       const change: Change = {
         id: 'chg_pay_01',
         service: 'payments',

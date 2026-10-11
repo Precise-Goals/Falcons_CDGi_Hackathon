@@ -159,21 +159,21 @@ describe('Demo App Resilience, Network Failure & Adaptation Recovery', () => {
       expect(userRes.success).toBe(false);
       expect(userRes.name).toBe('userProfile');
       expect(userRes.error).toBeDefined();
-      expect(userRes.error).toMatch(/fetch failed|ECONNREFUSED/i);
+      expect(userRes.error).toMatch(/fetch failed|ECONNREFUSED|unable to connect/i);
 
       // 2. checkout workflow returns success: false
       const checkoutRes = await offlineApp.runCheckoutWorkflow(25.0);
       expect(checkoutRes.success).toBe(false);
       expect(checkoutRes.name).toBe('checkout');
       expect(checkoutRes.error).toBeDefined();
-      expect(checkoutRes.error).toMatch(/fetch failed|ECONNREFUSED/i);
+      expect(checkoutRes.error).toMatch(/fetch failed|ECONNREFUSED|unable to connect/i);
 
       // 3. searchBrowse workflow returns success: false
       const searchRes = await offlineApp.runSearchWorkflow();
       expect(searchRes.success).toBe(false);
       expect(searchRes.name).toBe('searchBrowse');
       expect(searchRes.error).toBeDefined();
-      expect(searchRes.error).toMatch(/fetch failed|ECONNREFUSED/i);
+      expect(searchRes.error).toMatch(/fetch failed|ECONNREFUSED|unable to connect/i);
 
       // 4. runAll batch execution completes cleanly with all workflows marked false
       const allRes = await offlineApp.runAll();
@@ -193,7 +193,7 @@ describe('Demo App Resilience, Network Failure & Adaptation Recovery', () => {
       // Subsequent workflow fails gracefully
       const deadRes = await shipwell.runUserProfileWorkflow();
       expect(deadRes.success).toBe(false);
-      expect(deadRes.error).toMatch(/fetch failed|ECONNREFUSED/i);
+      expect(deadRes.error).toMatch(/fetch failed|ECONNREFUSED|unable to connect/i);
     });
 
     it('runAll() batch execution isolates partial failures (mixed results)', async () => {

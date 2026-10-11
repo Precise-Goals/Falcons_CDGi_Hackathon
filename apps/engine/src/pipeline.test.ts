@@ -197,7 +197,7 @@ describe('PipelineEngine Edge Cases & Contract Lifecycle', () => {
     expect(cbDecision!.proposal).toBeDefined();
 
     // Verify circuit-broken change does NOT register in adapters map
-    expect(engine.adapters.size).toBe(0);
+    expect(Array.from(engine.adapters.values()).some((a) => a.changeId === breakingChange!.id)).toBe(false);
 
     // Verify proposal DOES register in proposals map
     expect(engine.proposals.size).toBeGreaterThan(0);

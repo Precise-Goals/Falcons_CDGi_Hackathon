@@ -11,12 +11,21 @@ importers:
       '@intra/adapter':
         specifier: workspace:*
         version: link:packages/adapter
+      '@intra/demo-app':
+        specifier: workspace:*
+        version: link:apps/demo-app
       '@intra/differ':
         specifier: workspace:*
         version: link:packages/differ
+      '@intra/engine':
+        specifier: workspace:*
+        version: link:apps/engine
       '@intra/impact':
         specifier: workspace:*
         version: link:packages/impact
+      '@intra/mcpserver':
+        specifier: workspace:*
+        version: link:mcpserver
       '@intra/model':
         specifier: workspace:*
         version: link:packages/model

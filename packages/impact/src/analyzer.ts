@@ -8,10 +8,16 @@ export interface WorkflowDependency {
   filePath: string;
 }
 
+export interface ImpactAnalyzerOptions {
+  escalateFinancialRoutes?: boolean;
+}
+
 export class ImpactAnalyzer {
   private workflowGraph: Map<string, WorkflowDependency[]> = new Map();
+  private readonly escalateFinancialRoutes: boolean;
 
-  constructor() {
+  constructor(options?: ImpactAnalyzerOptions) {
+    this.escalateFinancialRoutes = options?.escalateFinancialRoutes ?? false;
     this.registerDefaultShipwellWorkflows();
   }
 
@@ -114,7 +120,9 @@ export class ImpactAnalyzer {
     }
 
     // Elevate severity if route touches critical financial or ledger pathways
-    severity = annotateCriticality(change.service, change.endpoint, severity);
+    if (this.escalateFinancialRoutes) {
+      severity = annotateCriticality(change.service, change.endpoint, severity);
+    }
 
     const impact: Impact = {
       changeId: change.id,

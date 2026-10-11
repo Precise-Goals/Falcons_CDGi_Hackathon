@@ -20,8 +20,11 @@
   },
   "dependencies": {
     "@intra/adapter": "workspace:*",
+    "@intra/demo-app": "workspace:*",
     "@intra/differ": "workspace:*",
+    "@intra/engine": "workspace:*",
     "@intra/impact": "workspace:*",
+    "@intra/mcpserver": "workspace:*",
     "@intra/model": "workspace:*",
     "@intra/observer": "workspace:*",
     "@intra/sdk": "workspace:*",
