@@ -154,3 +154,49 @@ export function annotateCriticality(
   }
   return currentSeverity;
 }
+
+/**
+ * Aggregated summary representation for multi-change impact reports.
+ */
+export interface ImpactSummary {
+  totalImpacts: number;
+  criticalCount: number;
+  highCount: number;
+  mediumCount: number;
+  lowCount: number;
+  affectedWorkflows: string[];
+  impacts: Impact[];
+  generatedAt: string;
+}
+
+/**
+ * Rolls up an array of individual impact models into an aggregate summary.
+ */
+export function generateImpactSummary(impacts: Impact[]): ImpactSummary {
+  const workflows = new Set<string>();
+  let criticalCount = 0;
+  let highCount = 0;
+  let mediumCount = 0;
+  let lowCount = 0;
+
+  for (const imp of impacts) {
+    for (const wf of imp.affectedWorkflows) {
+      workflows.add(wf);
+    }
+    if (imp.severity === 'critical') criticalCount++;
+    else if (imp.severity === 'high') highCount++;
+    else if (imp.severity === 'medium') mediumCount++;
+    else if (imp.severity === 'low') lowCount++;
+  }
+
+  return {
+    totalImpacts: impacts.length,
+    criticalCount,
+    highCount,
+    mediumCount,
+    lowCount,
+    affectedWorkflows: Array.from(workflows).sort(),
+    impacts,
+    generatedAt: new Date().toISOString(),
+  };
+}

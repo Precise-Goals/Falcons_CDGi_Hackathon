@@ -1,5 +1,9 @@
-import { describe, it, expect } from 'vitest';
-import { ImpactAnalyzer, isFinancialOrPaymentRoute, annotateCriticality } from './analyzer.js';
+import {
+  ImpactAnalyzer,
+  isFinancialOrPaymentRoute,
+  annotateCriticality,
+  generateImpactSummary,
+} from './analyzer.js';
 import { extractPropertyAccesses } from './ast.js';
 import { CallGraphTracer } from './callgraph.js';
 import { Change } from '@intra/shared';
@@ -154,6 +158,32 @@ describe('@intra/impact Blast Radius & Dependency Mapping', () => {
       expect(annotateCriticality('payments', '/payments/charge', 'medium')).toBe('critical');
       expect(annotateCriticality('payments', '/payments/charge', 'high')).toBe('critical');
       expect(annotateCriticality('search', '/search/query', 'medium')).toBe('medium');
+    });
+
+    it('generates structured ImpactSummary JSON aggregating multiple impacts', () => {
+      const summary = generateImpactSummary([
+        {
+          changeId: 'c1',
+          affectedWorkflows: ['checkout', 'userProfile'],
+          fieldPaths: ['payments.amount'],
+          severity: 'critical',
+          dependencyChain: [],
+        },
+        {
+          changeId: 'c2',
+          affectedWorkflows: ['checkout'],
+          fieldPaths: ['payments.currency'],
+          severity: 'low',
+          dependencyChain: [],
+        },
+      ]);
+
+      expect(summary.totalImpacts).toBe(2);
+      expect(summary.criticalCount).toBe(1);
+      expect(summary.lowCount).toBe(1);
+      expect(summary.highCount).toBe(0);
+      expect(summary.affectedWorkflows).toEqual(['checkout', 'userProfile']);
+      expect(summary.generatedAt).toBeDefined();
     });
   });
 });
