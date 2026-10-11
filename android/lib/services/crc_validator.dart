@@ -47,6 +47,11 @@ class BleCrcValidator {
     return (~crc) & 0xFFFFFFFF;
   }
 
+  /// Verifies payload matches expected 32-bit CRC checksum.
+  static bool verifyCrc32(List<int> payload, int expectedCrc) {
+    return computeCrc32(payload) == (expectedCrc & 0xFFFFFFFF);
+  }
+
   /// Appends 2-byte big-endian CRC16 checksum to packet.
   static Uint8List appendCrc16(Uint8List payload) {
     final crc = computeCrc16(payload);
