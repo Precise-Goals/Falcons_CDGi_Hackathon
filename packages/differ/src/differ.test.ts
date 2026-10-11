@@ -195,5 +195,60 @@ describe('@intra/differ Change Detection & Semantic Classification', () => {
       expect(rename?.semanticVerdict).toBe('equivalent');
     });
   });
+
+  describe('Security Enum Drift & Breaking Change Classification', () => {
+    it('flags revocation or terminal enum omission as breaking change for circuit breaker', () => {
+      const base = makeBaseContract({
+        schema: {
+          types: { id: 'string', account_state: 'string' },
+          optionality: [],
+          enums: { account_state: ['ACTIVE', 'PENDING', 'SUSPENDED', 'REVOKED'] },
+          formats: {},
+        },
+      });
+
+      const mutated = makeBaseContract({
+        schema: {
+          types: { id: 'string', account_state: 'string' },
+          optionality: [],
+          enums: { account_state: ['ACTIVE', 'PENDING'] }, // dropped SUSPENDED & REVOKED
+          formats: {},
+        },
+      });
+
+      const changes = detectChanges(base, mutated, ['obs_security_drift']);
+      const enumChange = changes.find((c) => c.kind === 'enum_semantics');
+      expect(enumChange).toBeDefined();
+      expect(enumChange?.semanticVerdict).toBe('breaking');
+      expect(enumChange?.confidence).toBeGreaterThanOrEqual(0.95);
+      expect((enumChange?.after as any).missingEnums).toContain('REVOKED');
+      expect((enumChange?.after as any).missingEnums).toContain('SUSPENDED');
+    });
+
+    it('classifies benign non-security enum drops as lossy rather than breaking', () => {
+      const base = makeBaseContract({
+        schema: {
+          types: { id: 'string', ui_theme: 'string' },
+          optionality: [],
+          enums: { ui_theme: ['light', 'dark', 'solarized'] },
+          formats: {},
+        },
+      });
+
+      const mutated = makeBaseContract({
+        schema: {
+          types: { id: 'string', ui_theme: 'string' },
+          optionality: [],
+          enums: { ui_theme: ['light', 'dark'] }, // solarized dropped
+          formats: {},
+        },
+      });
+
+      const changes = detectChanges(base, mutated, ['obs_ui']);
+      const enumChange = changes.find((c) => c.kind === 'enum_semantics');
+      expect(enumChange).toBeDefined();
+      expect(enumChange?.semanticVerdict).toBe('lossy');
+    });
+  });
 });
 
