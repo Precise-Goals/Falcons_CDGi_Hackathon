@@ -69,8 +69,100 @@ function handler(req, res) {
     });
   }
 
-  if (url.includes('/mcp/healthz')) {
-    return sendJson(res, 200, { status: 'healthy', transport: 'http/streamable', timestamp: new Date().toISOString() });
+  if (url.includes('/engine/observe')) {
+    const body = getBody(req);
+    const observationId = `obs_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`;
+    return sendJson(res, 201, {
+      id: observationId,
+      service: body.service || 'users',
+      endpoint: body.endpoint || '/users',
+      status: body.status || 200,
+      recordedAt: new Date().toISOString(),
+      ingested: true,
+    });
+  }
+
+  if (url.includes('/mcp/tools/call')) {
+    const body = getBody(req);
+    const tool = body.tool;
+    const params = body.params || {};
+
+    if (tool === 'intra_list_dependencies') {
+      return sendJson(res, 200, {
+        services: [
+          { service: 'users', endpoints: ['/users'] },
+          { service: 'payments', endpoints: ['/payments/charge'] },
+          { service: 'search', endpoints: ['/search'] },
+          { service: 'notifications', endpoints: ['/notifications/webhook'] },
+          { service: 'mcp-tool', endpoints: ['/mcp-tool/execute'] },
+        ],
+      });
+    }
+
+    if (tool === 'intra_get_contract') {
+      return sendJson(res, 200, {
+        service: params.service || 'users',
+        endpoint: params.endpoint || '/users',
+        schema: {
+          types: { id: 'string', name: 'string', status: 'string' },
+          optionality: [],
+          enums: { status: ['active', 'suspended'] },
+        },
+        fieldStats: { name: { cardinality: 'low' }, status: { cardinality: 'enum' } },
+        paginationStyle: 'none',
+      });
+    }
+
+    if (tool === 'intra_recent_changes') {
+      return sendJson(res, 200, {
+        changes: [
+          { id: 'chg_1', service: 'users', endpoint: '/users', kind: 'rename', confidence: 0.95, verdict: 'equivalent' },
+          { id: 'chg_2', service: 'payments', endpoint: '/payments/charge', kind: 'unit_shift', confidence: 0.98, verdict: 'equivalent' },
+        ],
+      });
+    }
+
+    if (tool === 'intra_impact') {
+      return sendJson(res, 200, {
+        changeId: params.change_id || 'chg_1',
+        affectedWorkflows: ['userProfile', 'checkout'],
+        severity: 'high',
+        affectedFiles: ['apps/demo-app/src/index.ts'],
+      });
+    }
+
+    if (tool === 'intra_propose_adapter') {
+      return sendJson(res, 200, {
+        proposalId: 'prop_01',
+        changeId: params.change_id || 'chg_1',
+        strategy: 'rename',
+        status: 'pending',
+        rollbackHandle: 'rollback_prop_01_auto',
+      });
+    }
+
+    if (tool === 'intra_apply_adapter') {
+      return sendJson(res, 200, {
+        success: true,
+        proposalId: params.proposal_id || 'prop_01',
+        status: 'applied',
+        rollbackHandle: 'rollback_prop_01_auto',
+      });
+    }
+
+    if (tool === 'intra_health') {
+      return sendJson(res, 200, {
+        status: 'ok',
+        rateLimitHeadroom: 98,
+        activeAdapters: 2,
+      });
+    }
+
+    return sendJson(res, 200, {
+      tool,
+      status: 'executed',
+      result: { success: true },
+    });
   }
 
   return sendJson(res, 200, {
