@@ -80,17 +80,15 @@ export function HomeContainer({
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-center relative z-10">
             {/* Left Column: Bold Editorial Typography & Mission */}
             <div className="lg:col-span-7 space-y-6">
-              <div className="flex flex-wrap items-center gap-2">
-                <span className="px-3 py-1 rounded-full bg-crimson text-white font-mono text-xs font-bold shadow-xs flex items-center space-x-1.5">
-                  <Zap className="w-3 h-3 text-white" />
+              <div className="flex items-center flex-wrap gap-2 text-xs font-mono uppercase tracking-wider text-black/80 font-semibold">
+                <span className="inline-flex items-center space-x-1.5 text-crimson font-black tracking-widest">
+                  <Zap className="w-3.5 h-3.5 text-crimson animate-pulse" />
                   <span>INTRA RUNTIME RESILIENCE</span>
                 </span>
-                <span className="px-3 py-1 rounded-full bg-black text-white font-mono text-xs font-semibold">
-                  CLOSED-LOOP ARCHITECTURE
-                </span>
-                <span className="px-2.5 py-1 rounded-full bg-black/5 text-black/70 font-mono text-[11px] border border-black/10">
-                  docs/lock.md &bull; v2.4
-                </span>
+                <span className="text-black/30 font-light">|</span>
+                <span className="text-black/90 font-bold">CLOSED-LOOP ARCHITECTURE</span>
+                <span className="text-black/30 font-light">|</span>
+                <span className="text-black/60">docs/lock.md &bull; v2.4</span>
               </div>
 
               <h1 className="font-display text-4xl sm:text-5xl lg:text-6xl font-black tracking-tight text-black leading-[1.08]">
@@ -391,7 +389,7 @@ export function HomeContainer({
             <div className="p-6 rounded-[2rem] border border-black/10 bg-cream-subtle space-y-4 shadow-sm">
               <div className="flex justify-between items-center">
                 <span className="font-mono text-[10px] font-bold text-crimson uppercase">Scenario 01 &bull; Financial Disaster</span>
-                <span className="px-2 py-0.5 rounded-full bg-rose-100 text-rose-800 text-[10px] font-mono font-bold">M3 Unit Shift</span>
+                <span className="px-2 py-0.5 rounded-md bg-rose-100 text-rose-800 text-[10px] font-mono font-bold">M3 Unit Shift</span>
               </div>
               <h3 className="font-display font-bold text-base text-black">
                 Float Dollars &rarr; Integer Cents (<code className="font-mono">25.0</code> &rarr; <code className="font-mono">2500</code>)
@@ -412,7 +410,7 @@ export function HomeContainer({
             <div className="p-6 rounded-[2rem] border border-black/10 bg-cream-subtle space-y-4 shadow-sm">
               <div className="flex justify-between items-center">
                 <span className="font-mono text-[10px] font-bold text-amber-600 uppercase">Scenario 02 &bull; Lossy Format Drift</span>
-                <span className="px-2 py-0.5 rounded-full bg-amber-100 text-amber-800 text-[10px] font-mono font-bold">M2 Format Shift</span>
+                <span className="px-2 py-0.5 rounded-md bg-amber-100 text-amber-800 text-[10px] font-mono font-bold">M2 Format Shift</span>
               </div>
               <h3 className="font-display font-bold text-base text-black">
                 First Last &rarr; Last, First (<code className="font-mono">"Alice Walker"</code> &rarr; <code className="font-mono">"Walker, Alice"</code>)
@@ -433,7 +431,7 @@ export function HomeContainer({
             <div className="p-6 rounded-[2rem] border border-black/10 bg-cream-subtle space-y-4 shadow-sm">
               <div className="flex justify-between items-center">
                 <span className="font-mono text-[10px] font-bold text-indigo-600 uppercase">Scenario 03 &bull; Infinite Loop Crash</span>
-                <span className="px-2 py-0.5 rounded-full bg-indigo-100 text-indigo-800 text-[10px] font-mono font-bold">M5 Pagination</span>
+                <span className="px-2 py-0.5 rounded-md bg-indigo-100 text-indigo-800 text-[10px] font-mono font-bold">M5 Pagination</span>
               </div>
               <h3 className="font-display font-bold text-base text-black">
                 Offset &rarr; Opaque Cursor (<code className="font-mono">limit/offset</code> &rarr; <code className="font-mono">nextCursor</code>)
@@ -454,7 +452,7 @@ export function HomeContainer({
             <div className="p-6 rounded-[2rem] border border-black/10 bg-cream-subtle space-y-4 shadow-sm">
               <div className="flex justify-between items-center">
                 <span className="font-mono text-[10px] font-bold text-crimson uppercase">Scenario 04 &bull; Security Vulnerability</span>
-                <span className="px-2 py-0.5 rounded-full bg-crimson/15 text-crimson text-[10px] font-mono font-bold">M10 Enum Drift</span>
+                <span className="px-2 py-0.5 rounded-md bg-crimson/15 text-crimson text-[10px] font-mono font-bold">M10 Enum Drift</span>
               </div>
               <h3 className="font-display font-bold text-base text-black">
                 Suspended Accounts Return <code className="font-mono">status: "active"</code>
@@ -530,7 +528,7 @@ export function HomeContainer({
                 <div className="space-y-2">
                   <div className="flex justify-between items-center">
                     <span className="font-display font-black text-2xl text-crimson">{stage.step}</span>
-                    <span className="px-2.5 py-0.5 rounded-full bg-black/5 text-[10px] font-mono text-black/60 font-bold">{stage.badge}</span>
+                    <span className="px-2.5 py-0.5 rounded-md bg-black/5 text-[10px] font-mono text-black/60 font-bold">{stage.badge}</span>
                   </div>
                   <h3 className="font-display font-bold text-sm text-black">{stage.title}</h3>
                   <p className="text-[11px] text-black/65 leading-relaxed">{stage.desc}</p>

@@ -32,9 +32,9 @@ class AppColors {
   static const Color twitterTextLight = Color(0xFFE7E9EA);
   static const Color twitterTextMuted = Color(0xFF536471);
 
-  // High-contrast Twitter/X pill button palette
-  static const Color buttonPrimaryBg = Color(0xFFFFFFFF); // High-contrast white pill
-  static const Color buttonPrimaryText = Color(0xFF000000); // 100% crisp readable jet black
+  // Red & Black Minimalist Material Twitter-style Palette
+  static const Color buttonPrimaryBg = Color(0xFFC8102E); // Crimson Red button
+  static const Color buttonPrimaryText = Color(0xFFFFFFFF); // High-contrast White text
   static const Color buttonSecondaryBg = Color(0xFF202327); // Dark secondary pill
   static const Color buttonSecondaryText = Color(0xFFFFFFFF);
   static const Color buttonDangerBg = Color(0xFF1F1114);
@@ -51,15 +51,15 @@ class AppTheme {
       useMaterial3: true,
       brightness: Brightness.dark,
       scaffoldBackgroundColor: AppColors.twitterBlack,
-      primaryColor: AppColors.buttonPrimaryBg,
+      primaryColor: AppColors.crimson,
       fontFamily: GoogleFonts.poppins().fontFamily,
       textTheme: baseTextTheme.apply(
         bodyColor: AppColors.twitterTextLight,
         displayColor: AppColors.twitterTextLight,
       ),
       colorScheme: const ColorScheme.dark(
-        primary: AppColors.buttonPrimaryBg,
-        onPrimary: AppColors.buttonPrimaryText,
+        primary: AppColors.crimson,
+        onPrimary: AppColors.white,
         surface: AppColors.darkPatch,
         onSurface: AppColors.twitterTextLight,
         secondary: AppColors.crimson,
