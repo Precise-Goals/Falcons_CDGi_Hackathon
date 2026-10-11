@@ -81,6 +81,31 @@ export function DocsContainer() {
             Formal theoretical principles, streaming sketch complexity bounds, empirical evaluation logs, and peer-reviewed academic citations governing the 6-stage closed-loop Intra adaptation ecosystem.
           </p>
 
+          {/* Authorship & Technical Paper Downloads */}
+          <div className="pt-2 flex flex-wrap items-center gap-3">
+            <a
+              href="/research.pdf"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex items-center space-x-1.5 px-4 py-2 rounded-xl bg-crimson text-white text-xs font-mono font-bold hover:bg-crimson-hover transition shadow-sm"
+            >
+              <span>Download Research Paper (PDF)</span>
+              <span className="text-[10px] opacity-80">&bull; 306 KB</span>
+            </a>
+            <a
+              href="/research.docx"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex items-center space-x-1.5 px-4 py-2 rounded-xl bg-black text-white text-xs font-mono font-bold hover:bg-black/80 transition shadow-sm"
+            >
+              <span>Download Research Paper (DOCX)</span>
+              <span className="text-[10px] opacity-80">&bull; 304 KB</span>
+            </a>
+            <span className="text-xs font-sans text-black/50">
+              Authors: <strong className="text-black">Sarthak Patil, Karan Verma, Sneha Sharma, Sneha Patidar</strong> (October 2026)
+            </span>
+          </div>
+
           {/* Interactive Navigation Filter Pills */}
           <div className="pt-4 flex flex-wrap gap-2">
             {[
