@@ -1,5 +1,10 @@
 import { describe, it, expect } from 'vitest';
-import { WaldSPRT } from './sprt.js';
+import {
+  WaldSPRT,
+  computeWaldBoundaries,
+  computeLLR,
+  calculateExpectedSampleSize,
+} from './sprt.js';
 
 describe("Wald's Sequential Probability Ratio Test (@intra/validator)", () => {
   it('initializes with default parameters and computes symmetric boundaries', () => {
@@ -117,5 +122,33 @@ describe("Wald's Sequential Probability Ratio Test (@intra/validator)", () => {
       badSPRT.step(isError);
     }
     expect(badSPRT.decision).toBe('rollback');
+  });
+
+  describe('Analytical Wald Calculators', () => {
+    it('computes symmetric log boundaries for balanced alpha and beta (0.05)', () => {
+      const { upperThreshold, lowerThreshold, A, B } = computeWaldBoundaries(0.05, 0.05);
+      expect(A).toBeCloseTo(19, 4);
+      expect(B).toBeCloseTo(1 / 19, 4);
+      expect(upperThreshold).toBeCloseTo(Math.log(19), 4);
+      expect(lowerThreshold).toBeCloseTo(-Math.log(19), 4);
+    });
+
+    it('computes exact log-likelihood ratios matching step accumulation', () => {
+      const llr = computeLLR(2, 0, 0.01, 0.05);
+      expect(llr).toBeGreaterThan(computeWaldBoundaries(0.05, 0.05).upperThreshold);
+
+      const llrSuccess = computeLLR(0, 100, 0.01, 0.05);
+      expect(llrSuccess).toBeLessThan(computeWaldBoundaries(0.05, 0.05).lowerThreshold);
+    });
+
+    it('calculates average sample number (ASN) expectations under H0 and H1', () => {
+      const asnUnderH0 = calculateExpectedSampleSize(0.01, 0.01, 0.05, 0.05, 0.05);
+      expect(asnUnderH0).toBeGreaterThan(10);
+      expect(asnUnderH0).toBeLessThan(200);
+
+      const asnUnderH1 = calculateExpectedSampleSize(0.05, 0.01, 0.05, 0.05, 0.05);
+      expect(asnUnderH1).toBeGreaterThan(5);
+      expect(asnUnderH1).toBeLessThan(100);
+    });
   });
 });
