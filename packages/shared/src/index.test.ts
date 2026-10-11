@@ -5,7 +5,10 @@ import {
   ContractSchema,
   ImpactSchema,
   AdapterSchema,
+  ChangeSetRollupSchema,
+  rollupChangeSet,
   type Change,
+  type Impact,
   type Observation,
 } from './index.js';
 
@@ -90,4 +93,71 @@ describe('@intra/shared Domain Types & Schemas', () => {
 
     expect(AdapterSchema.safeParse(adapter).success).toBe(true);
   });
+
+  describe('ChangeSet Rollup & Confidence Weighting', () => {
+    it('generates an empty rollup when no changes exist', () => {
+      const rollup = rollupChangeSet('payment-service', '/charges', []);
+      expect(rollup.totalChanges).toBe(0);
+      expect(rollup.highestSeverity).toBe('low');
+      expect(rollup.hasBreakingChanges).toBe(false);
+      expect(rollup.averageConfidence).toBe(1.0);
+      expect(ChangeSetRollupSchema.safeParse(rollup).success).toBe(true);
+    });
+
+    it('aggregates multiple changes, calculates average confidence, and dedupes samples', () => {
+      const changes: Change[] = [
+        {
+          id: 'c1',
+          service: 'payment-service',
+          endpoint: '/charges',
+          kind: 'rename',
+          documented: false,
+          before: { amount: 10 },
+          after: { charge_amount: 10 },
+          evidence: { samples: ['obs-1', 'obs-2'], stats: {} },
+          semanticVerdict: 'equivalent',
+          confidence: 0.9,
+          detectedAt: '2026-10-10T00:00:00Z',
+        },
+        {
+          id: 'c2',
+          service: 'payment-service',
+          endpoint: '/charges',
+          kind: 'unit_shift',
+          documented: false,
+          before: { amount: 10 },
+          after: { amount: 1000 },
+          evidence: { samples: ['obs-2', 'obs-3'], stats: {} },
+          semanticVerdict: 'breaking',
+          confidence: 0.8,
+          detectedAt: '2026-10-10T00:01:00Z',
+        },
+      ];
+
+      const impacts: Impact[] = [
+        {
+          changeId: 'c2',
+          affectedWorkflows: ['billing'],
+          fieldPaths: ['amount'],
+          severity: 'critical',
+          dependencyChain: ['billing.ts'],
+        },
+      ];
+
+      const rollup = rollupChangeSet('payment-service', '/charges', changes, impacts);
+      expect(rollup.totalChanges).toBe(2);
+      expect(rollup.hasBreakingChanges).toBe(true);
+      expect(rollup.highestSeverity).toBe('critical');
+      expect(rollup.averageConfidence).toBe(0.85);
+      expect(rollup.changesByKind.rename).toBe(1);
+      expect(rollup.changesByKind.unit_shift).toBe(1);
+      expect(rollup.samplesSummary).toHaveLength(3);
+      expect(rollup.samplesSummary).toContain('obs-1');
+      expect(rollup.samplesSummary).toContain('obs-2');
+      expect(rollup.samplesSummary).toContain('obs-3');
+
+      expect(ChangeSetRollupSchema.safeParse(rollup).success).toBe(true);
+    });
+  });
 });
+
