@@ -352,6 +352,24 @@ export class PBESynthesizer {
       }
     }
 
+    // Inductive substring slice deduction from training pairs
+    for (const { input, output } of train) {
+      if (typeof input === 'string' && typeof output === 'string' && output.length > 0) {
+        const idx = input.indexOf(output);
+        if (idx !== -1) {
+          const start = idx;
+          const end = idx + output.length;
+          candidates.push({
+            name: `slice(${start}, ${end})`,
+            depth: 1,
+            complexity: 3,
+            execute: (x) => String(x).slice(start, end),
+            toCode: () => `(x) => String(x).slice(${start}, ${end})`,
+          });
+        }
+      }
+    }
+
     return candidates;
   }
 
@@ -424,3 +442,15 @@ export function synthesizeProgram<TIn = unknown, TOut = unknown>(
   const synthesizer = new PBESynthesizer(options);
   return synthesizer.synthesize(examples);
 }
+
+/**
+ * String Transformation DSL rules and evaluation primitives.
+ */
+export const StringTransformationDSL = {
+  slice: (str: string, start: number, end?: number) => str.slice(start, end),
+  concat: (a: string, b: string, delimiter = '') => `${a}${delimiter}${b}`,
+  replace: (str: string, pattern: string, replacement: string) => str.replaceAll(pattern, replacement),
+  pad: (str: string, targetLength: number, padChar = '0') => str.padStart(targetLength, padChar),
+  prefix: (str: string, prefixStr: string) => `${prefixStr}${str}`,
+  suffix: (str: string, suffixStr: string) => `${str}${suffixStr}`,
+};
