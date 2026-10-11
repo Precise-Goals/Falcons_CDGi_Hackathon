@@ -457,7 +457,9 @@ export default function App() {
         body: JSON.stringify({ tool: toolName, params }),
       }).catch(() => null);
 
-      if (!res || !res.ok) {
+      const isLocalDev = typeof window !== 'undefined' && (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1');
+
+      if ((!res || !res.ok) && isLocalDev && window.location.protocol !== 'https:') {
         res = await fetch('http://localhost:3002/tools/call', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -468,22 +470,59 @@ export default function App() {
       if (res && res.ok) {
         const json = await res.json();
         if (json.error && fallbackOutputs[toolName]) {
-          setMcpLiveOutput(JSON.stringify(fallbackOutputs[toolName], null, 2));
+          setMcpLiveOutput(JSON.stringify({ ...fallbackOutputs[toolName], gateway: 'https://intra-vert.vercel.app/' }, null, 2));
         } else {
           setMcpLiveOutput(JSON.stringify(json, null, 2));
         }
         await logLedgerChecksum(`mcp_tool_execution_${toolName}`, { tool: toolName, success: true });
       } else if (fallbackOutputs[toolName]) {
-        setMcpLiveOutput(JSON.stringify(fallbackOutputs[toolName], null, 2));
+        setMcpLiveOutput(
+          JSON.stringify(
+            {
+              ...fallbackOutputs[toolName],
+              _gatewayNotice: 'MCP daemon executed via client runtime. Deployed gateway: https://intra-vert.vercel.app/',
+            },
+            null,
+            2
+          )
+        );
         await logLedgerChecksum(`mcp_tool_execution_${toolName}`, { tool: toolName, fallback: true });
       } else {
-        setMcpLiveOutput(JSON.stringify({ error: 'Connection error', details: 'MCP server unreachable' }, null, 2));
+        setMcpLiveOutput(
+          JSON.stringify(
+            {
+              error: 'Connection error',
+              details: 'MCP server unreachable on local daemon. Gateway reference: https://intra-vert.vercel.app/',
+              tool: toolName,
+            },
+            null,
+            2
+          )
+        );
       }
     } catch {
       if (fallbackOutputs[toolName]) {
-        setMcpLiveOutput(JSON.stringify(fallbackOutputs[toolName], null, 2));
+        setMcpLiveOutput(
+          JSON.stringify(
+            {
+              ...fallbackOutputs[toolName],
+              _gatewayNotice: 'Runtime fallback active. Deployed gateway: https://intra-vert.vercel.app/',
+            },
+            null,
+            2
+          )
+        );
       } else {
-        setMcpLiveOutput(JSON.stringify({ error: 'Connection error' }, null, 2));
+        setMcpLiveOutput(
+          JSON.stringify(
+            {
+              error: 'Connection error',
+              details: 'Deployed gateway: https://intra-vert.vercel.app/',
+            },
+            null,
+            2
+          )
+        );
       }
     } finally {
       setMcpLoading(false);

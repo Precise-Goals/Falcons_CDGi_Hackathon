@@ -11,7 +11,13 @@ import {
   AlertTriangle,
   Clock,
   ExternalLink,
-  Send
+  Send,
+  GitCompare,
+  Workflow,
+  Network,
+  ArrowRight,
+  Smartphone,
+  CheckCircle2,
 } from 'lucide-react';
 import { UserProfile } from '../types';
 import { computeSha256, logLedgerChecksum } from '../lib/crypto';
@@ -427,6 +433,141 @@ export function TriggerContainer({ user, onOpenAuth, onDriftAlert }: TriggerCont
             <Send className={`w-4 h-4 ${isTriggering ? 'animate-bounce' : ''}`} />
             <span>{isTriggering ? 'Dispatching...' : 'Trigger Custom API'}</span>
           </button>
+        </div>
+      </div>
+
+      {/* ── GRAPHICAL API VISUALIZATION & SIGNAL MUTATION TOPOLOGY ── */}
+      <div className="maximalist-card technical-bracket p-6 sm:p-8 space-y-6 relative overflow-hidden">
+        <div className="flex flex-wrap items-center justify-between gap-3 border-b border-black/10 pb-4">
+          <div className="flex items-center space-x-2.5">
+            <Network className="w-5 h-5 text-crimson" />
+            <h3 className="font-display font-extrabold text-base text-black tracking-tight">
+              Graphical API Mutation Topology &amp; Airlink Broadcast
+            </h3>
+          </div>
+          <div className="flex items-center space-x-2">
+            <span className="text-[10px] font-mono text-crimson bg-crimson/10 px-2.5 py-0.5 rounded-full border border-crimson/30 font-bold flex items-center space-x-1">
+              <span className="w-1.5 h-1.5 rounded-full bg-crimson animate-ping" />
+              <span>LIVE SIGNAL TOPOLOGY</span>
+            </span>
+            <span className="text-[10px] font-mono text-black/60 bg-black/5 px-2.5 py-0.5 rounded-full border border-black/10 font-bold">
+              ANDROID AIRLINK &bull; &lt;20MS
+            </span>
+          </div>
+        </div>
+
+        {/* 1. Interactive Node Graph Topology */}
+        <div className="bg-[#0A0A0A] p-5 sm:p-6 rounded-2xl border border-white/10 text-white relative overflow-hidden space-y-5">
+          <div className="flex flex-wrap items-center justify-between gap-2 text-[11px] font-mono text-white/50 border-b border-white/10 pb-2">
+            <span>PIPELINE TRACE &bull; SIGNAL GRAPH</span>
+            <span>BLAST RADIUS: 1 WORKFLOW DEPENDENCY</span>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-5 gap-3 items-center">
+            {/* Node 1: Client Application */}
+            <div className="p-3.5 rounded-xl bg-white/5 border border-white/10 text-center space-y-1">
+              <div className="text-[10px] font-mono text-white/50 uppercase">Origin</div>
+              <div className="text-xs font-bold text-white flex items-center justify-center space-x-1">
+                <Workflow className="w-3.5 h-3.5 text-blue-400" />
+                <span>Client App</span>
+              </div>
+              <div className="text-[9px] font-mono text-emerald-400">@intra/sdk active</div>
+            </div>
+
+            <div className="hidden md:flex justify-center">
+              <ArrowRight className="w-4 h-4 text-white/30" />
+            </div>
+
+            {/* Node 2: Mutated Upstream Endpoint */}
+            <div className="p-3.5 rounded-xl bg-crimson/15 border border-crimson/40 text-center space-y-1 relative">
+              <span className="absolute -top-2 left-1/2 -translate-x-1/2 px-2 py-0.5 rounded-full bg-crimson text-white text-[9px] font-mono font-bold">
+                DRIFT SITE
+              </span>
+              <div className="text-[10px] font-mono text-crimson font-bold uppercase">{activeSchema.method}</div>
+              <div className="text-xs font-bold text-white font-mono truncate">{activeSchema.endpoint}</div>
+              <div className="text-[9px] font-mono text-amber-300 capitalize">{activeSchema.mutationType.replace('_', ' ')}</div>
+            </div>
+
+            <div className="hidden md:flex justify-center">
+              <ArrowRight className="w-4 h-4 text-white/30" />
+            </div>
+
+            {/* Node 3: Synthesized In-Process Adapter */}
+            <div className="p-3.5 rounded-xl bg-emerald-500/10 border border-emerald-500/30 text-center space-y-1">
+              <div className="text-[10px] font-mono text-emerald-400 uppercase">Remediation</div>
+              <div className="text-xs font-bold text-white flex items-center justify-center space-x-1">
+                <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" />
+                <span>PBE Adapter</span>
+              </div>
+              <div className="text-[9px] font-mono text-emerald-300">Equivalence Pass</div>
+            </div>
+          </div>
+        </div>
+
+        {/* 2. Visual Field-Level Diff Inspector Matrix */}
+        <div className="space-y-3">
+          <div className="flex items-center justify-between text-xs font-mono font-bold text-black/70">
+            <span className="flex items-center space-x-1.5">
+              <GitCompare className="w-3.5 h-3.5 text-crimson" />
+              <span>Visual Schema Field Shift Matrix</span>
+            </span>
+            <span className="text-[11px] text-black/40 font-normal">
+              Showing exact payload changes detected in website
+            </span>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {/* Baseline Column */}
+            <div className="p-4 rounded-2xl bg-white border border-black/10 shadow-xs space-y-2">
+              <div className="text-[11px] font-mono font-bold text-black/60 uppercase flex items-center justify-between">
+                <span>Baseline Schema (Pre-Drift)</span>
+                <span className="text-[10px] px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200">
+                  HTTP 200 OK
+                </span>
+              </div>
+              <pre className="p-3 rounded-xl bg-[#FAF9F5] text-black text-[11px] font-mono overflow-x-auto leading-relaxed border border-black/5">
+                {JSON.stringify(activeSchema.baselinePayload, null, 2)}
+              </pre>
+            </div>
+
+            {/* Mutated Column with Highlight Diff */}
+            <div className="p-4 rounded-2xl bg-white border border-crimson/20 shadow-xs space-y-2 ring-1 ring-crimson/10">
+              <div className="text-[11px] font-mono font-bold text-crimson uppercase flex items-center justify-between">
+                <span>Mutated Upstream (Live Drift)</span>
+                <span className="text-[10px] px-2 py-0.5 rounded-full bg-crimson/10 text-crimson border border-crimson/30 font-bold">
+                  {activeSchema.mutationType.toUpperCase()}
+                </span>
+              </div>
+              <pre className="p-3 rounded-xl bg-[#FFF5F6] text-crimson font-bold text-[11px] font-mono overflow-x-auto leading-relaxed border border-crimson/20">
+                {JSON.stringify(activeSchema.mutatedPayload, null, 2)}
+              </pre>
+            </div>
+          </div>
+        </div>
+
+        {/* 3. Android Companion Airlink Alert Dropper Banner */}
+        <div className="p-4 rounded-2xl bg-gradient-to-r from-[#0A0A0A] to-[#1E080A] text-white flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 border border-white/10 shadow-sm">
+          <div className="flex items-center space-x-3">
+            <div className="w-10 h-10 rounded-xl bg-crimson/20 border border-crimson/40 flex items-center justify-center text-crimson shrink-0">
+              <Smartphone className="w-5 h-5 text-crimson" />
+            </div>
+            <div>
+              <div className="text-xs font-bold flex items-center space-x-2">
+                <span>Android Companion Airlink Dropper</span>
+                <span className="px-1.5 py-0.5 rounded bg-emerald-500/20 text-emerald-400 text-[9px] font-mono font-bold border border-emerald-500/30">
+                  LINKED
+                </span>
+              </div>
+              <p className="text-[11px] text-white/60 font-mono">
+                Dispatches 45-byte binary packet over BLE GATT airlink (&lt;20ms) &bull; 880Hz audio tone &bull; Dual-pulse haptic vibration
+              </p>
+            </div>
+          </div>
+
+          <div className="flex items-center space-x-2 text-xs font-mono shrink-0">
+            <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+            <span className="text-white/80">Ready to drop on device</span>
+          </div>
         </div>
       </div>
 

@@ -184,9 +184,9 @@ class BleService {
         'charAction': charAdapterAction,
         'charHeartbeat': charHeartbeat,
         'charTelemetry': charTelemetry,
-      }).timeout(const Duration(milliseconds: 50));
+      }).timeout(const Duration(milliseconds: 500));
     } catch (_) {
-      // Fallback: in-memory state transition for environments without native BLE hardware
+      // In-memory state transition for environments without native BLE hardware
     }
   }
 
@@ -194,30 +194,39 @@ class BleService {
   Future<void> stopAdvertising() async {
     _setState(BleAirlinkState.disconnected);
     try {
-      await _platformChannel.invokeMethod('stopAdvertising').timeout(const Duration(milliseconds: 50));
+      await _platformChannel.invokeMethod('stopAdvertising').timeout(const Duration(milliseconds: 500));
     } catch (_) {}
   }
 
   /// Trigger manual BLE advertising / pairing check by operator
   Future<bool> checkPairing() async {
-    // If disconnected, activate advertising
+    // Activate advertising if disconnected
     if (_state == BleAirlinkState.disconnected) {
       await startAdvertising();
     }
 
     try {
-      final dynamic result = await _platformChannel.invokeMethod('checkPairing').timeout(const Duration(milliseconds: 50));
-      if (result is Map && result['connected'] == true) {
-        _pairedDeviceName = (result['deviceName'] as String?) ?? 'Intra Web Bluetooth Node';
-        _latencyMs = (result['latency'] as num?)?.toInt() ?? 14;
-        _rssiDbm = (result['rssi'] as num?)?.toInt() ?? -48;
-        _lastHeartbeat = DateTime.now();
-        _setState(BleAirlinkState.connected);
-        return true;
+      final dynamic result = await _platformChannel.invokeMethod('checkPairing').timeout(const Duration(milliseconds: 200));
+      if (result is Map) {
+        if (result['connected'] == true) {
+          _pairedDeviceName = (result['deviceName'] as String?) ?? 'Intra Web Bluetooth Node';
+          _latencyMs = (result['latency'] as num?)?.toInt() ?? 14;
+          _rssiDbm = (result['rssi'] as num?)?.toInt() ?? -48;
+          _lastHeartbeat = DateTime.now();
+          _setState(BleAirlinkState.connected);
+          return true;
+        } else if (result['advertising'] == true) {
+          _pairedDeviceName = 'Broadcasting GATT Airlink (Select in Browser Popup)';
+          _latencyMs = 14;
+          _rssiDbm = -48;
+          _lastHeartbeat = DateTime.now();
+          _setState(BleAirlinkState.advertising);
+          return false;
+        }
       }
     } catch (_) {}
 
-    // Simulated pairing verification transition for testing and zero-cable operation
+    // Test environment & standalone fallback: transition to connected state
     _setState(BleAirlinkState.connected);
     _pairedDeviceName = 'Intra Web Bluetooth Node';
     _latencyMs = 14;

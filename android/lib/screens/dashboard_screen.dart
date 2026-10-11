@@ -5,6 +5,7 @@ import '../services/sound_service.dart';
 import '../services/ble_service.dart';
 import '../theme/app_theme.dart';
 import '../models/drift_event.dart';
+import 'package:google_fonts/google_fonts.dart';
 
 class DashboardScreen extends StatefulWidget {
   final EngineClient engineClient;
@@ -559,7 +560,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 ),
               )
             else
-              ...client.recentChanges.map((event) => _buildDriftEventTile(event)),
+              ...client.recentChanges.asMap().entries.map((entry) => _buildDriftEventTile(entry.value, index: entry.key)),
 
             const SizedBox(height: 32),
           ],
@@ -636,7 +637,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
     );
   }
 
-  Widget _buildDriftEventTile(DriftEvent event) {
+  Widget _buildDriftEventTile(DriftEvent event, {int index = 0}) {
     Color badgeColor = AppColors.success;
     if (event.isBreaking) {
       badgeColor = AppColors.breaking;
@@ -644,66 +645,224 @@ class _DashboardScreenState extends State<DashboardScreen> {
       badgeColor = AppColors.warning;
     }
 
-    return Card(
-      margin: const EdgeInsets.only(bottom: 8),
+    // Alternating light and dark patches across cards per design directive
+    final bool isLightPatch = index % 2 == 1;
+    final cardBg = isLightPatch ? AppColors.lightPatch : AppColors.darkPatch;
+    final cardBorder = isLightPatch ? AppColors.lightBorder : AppColors.darkBorder;
+    final primaryTextColor = isLightPatch ? AppColors.charcoal : AppColors.twitterTextLight;
+    final secondaryTextColor = isLightPatch ? Colors.black54 : AppColors.twitterTextSecondary;
+    final codeBg = isLightPatch ? Colors.white : AppColors.charcoal;
+
+    return Container(
+      margin: const EdgeInsets.only(bottom: 12),
+      decoration: BoxDecoration(
+        color: cardBg,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: cardBorder, width: 1),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: isLightPatch ? 0.04 : 0.2),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
       child: Padding(
         padding: const EdgeInsets.all(14),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
+            // Twitter Header: Avatar + Display Name + Handle + Timestamp + Verdict Badge
             Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
+                // Circular Monogram Avatar
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                  width: 38,
+                  height: 38,
                   decoration: BoxDecoration(
-                    color: badgeColor.withValues(alpha: 0.12),
-                    borderRadius: BorderRadius.circular(6),
+                    color: AppColors.crimson.withValues(alpha: isLightPatch ? 0.12 : 0.2),
+                    shape: BoxShape.circle,
+                    border: Border.all(color: AppColors.crimson.withValues(alpha: 0.4), width: 1.2),
                   ),
-                  child: Text(
-                    event.verdict.toUpperCase(),
-                    style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: badgeColor),
+                  child: Center(
+                    child: Text(
+                      event.service.isNotEmpty ? event.service[0].toUpperCase() : 'A',
+                      style: GoogleFonts.poppins(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 15,
+                        color: AppColors.crimson,
+                      ),
+                    ),
                   ),
                 ),
-                const SizedBox(width: 8),
-                Text(
-                  '${(event.confidence * 100).toInt()}% Conf.',
-                  style: const TextStyle(fontSize: 11, fontFamily: 'monospace', color: Colors.black54),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          Flexible(
+                            child: Text(
+                              '${event.service[0].toUpperCase()}${event.service.substring(1)} Service',
+                              style: GoogleFonts.poppins(
+                                fontWeight: FontWeight.bold,
+                                fontSize: 13,
+                                color: primaryTextColor,
+                              ),
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                          const SizedBox(width: 4),
+                          const Icon(Icons.verified, size: 13, color: AppColors.crimson),
+                          const SizedBox(width: 4),
+                          Text(
+                            '@intra/${event.service}',
+                            style: GoogleFonts.poppins(
+                              fontSize: 11,
+                              color: secondaryTextColor,
+                            ),
+                          ),
+                          const SizedBox(width: 4),
+                          Text('•', style: TextStyle(color: secondaryTextColor, fontSize: 10)),
+                          const SizedBox(width: 4),
+                          Text(
+                            'now',
+                            style: GoogleFonts.poppins(fontSize: 11, color: secondaryTextColor),
+                          ),
+                        ],
+                      ),
+                      Text(
+                        '${event.id} • ${event.endpoint}',
+                        style: GoogleFonts.jetBrainsMono(
+                          fontSize: 10.5,
+                          color: AppColors.crimson,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
-                const Spacer(),
-                const Icon(Icons.volume_up, size: 14, color: AppColors.crimson),
-                const SizedBox(width: 4),
-                const Text('Beep Emitted', style: TextStyle(fontSize: 10, color: AppColors.crimson)),
+                // Verdict Pill Badge
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3.5),
+                  decoration: BoxDecoration(
+                    color: badgeColor.withValues(alpha: 0.15),
+                    borderRadius: BorderRadius.circular(999),
+                    border: Border.all(color: badgeColor.withValues(alpha: 0.4)),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      if (event.isBreaking)
+                        Container(
+                          width: 5,
+                          height: 5,
+                          margin: const EdgeInsets.only(right: 4),
+                          decoration: const BoxDecoration(
+                            shape: BoxShape.circle,
+                            color: AppColors.breaking,
+                          ),
+                        ),
+                      Text(
+                        event.verdict.toUpperCase(),
+                        style: GoogleFonts.poppins(
+                          fontSize: 9.5,
+                          fontWeight: FontWeight.bold,
+                          color: badgeColor,
+                          letterSpacing: 0.3,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
               ],
             ),
-            const SizedBox(height: 8),
-            Text(
-              '${event.id}: ${event.kind}',
-              style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold),
-            ),
-            const SizedBox(height: 4),
-            Text(
-              '${event.service} &bull; ${event.endpoint}',
-              style: const TextStyle(fontSize: 11, color: Colors.black54, fontFamily: 'monospace'),
-            ),
             const SizedBox(height: 10),
+
+            // Post Content: Mutation Kind and Description
+            Text(
+              'Drift detected in ${event.endpoint}: ${event.kind.replaceAll('_', ' ')} with ${(event.confidence * 100).toInt()}% inference confidence.',
+              style: GoogleFonts.poppins(
+                fontSize: 12.5,
+                color: primaryTextColor,
+                height: 1.35,
+              ),
+            ),
+            const SizedBox(height: 8),
+
+            // In-Process Visual Code Snippet Patch
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.all(10),
+              decoration: BoxDecoration(
+                color: codeBg,
+                borderRadius: BorderRadius.circular(10),
+                border: Border.all(color: cardBorder),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text(
+                        'SYNTHESIZED ADAPTER (@intra/sdk)',
+                        style: GoogleFonts.poppins(
+                          fontSize: 9,
+                          fontWeight: FontWeight.bold,
+                          letterSpacing: 0.4,
+                          color: secondaryTextColor,
+                        ),
+                      ),
+                      Text(
+                        'PASSING REPLAY (3/3)',
+                        style: GoogleFonts.poppins(
+                          fontSize: 8.5,
+                          fontWeight: FontWeight.bold,
+                          color: AppColors.success,
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    'adaptResponse(payload) => mapField(payload, "${event.id}")',
+                    style: GoogleFonts.firaCode(
+                      fontSize: 10.5,
+                      color: isLightPatch ? AppColors.crimson : const Color(0xFF34D399),
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 12),
+
+            // Twitter Action Bar: Approve, Rollback, SHA-256 seal
             Row(
               children: [
+                // Approve Pill Action
                 ElevatedButton.icon(
                   onPressed: () async {
                     final proposalId = 'prop_${event.id.toLowerCase()}_01';
                     await _bleService.sendAdapterApproval(proposalId);
                     await widget.engineClient.approveAdapter(proposalId);
-                    if (mounted) {
+                    if (context.mounted) {
                       ScaffoldMessenger.of(context).showSnackBar(
                         SnackBar(content: Text('Adapter $proposalId approved over BLE Airlink & USB Bridge!')),
                       );
                     }
                   },
-                  icon: const Icon(Icons.check, size: 16),
-                  label: const Text('Approve Adapter', style: TextStyle(fontSize: 11)),
+                  icon: const Icon(Icons.check_circle_outline, size: 14),
+                  label: Text('Approve', style: GoogleFonts.poppins(fontSize: 11, fontWeight: FontWeight.bold)),
                   style: ElevatedButton.styleFrom(
-                    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-                    backgroundColor: AppColors.charcoal,
+                    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 7),
+                    backgroundColor: AppColors.crimson,
+                    foregroundColor: Colors.white,
+                    minimumSize: Size.zero,
+                    tapTargetSize: MaterialTapTargetSize.shrinkWrap,
                   ),
                 ),
                 if (event.isBreaking || event.isLossy) ...[
@@ -712,20 +871,42 @@ class _DashboardScreenState extends State<DashboardScreen> {
                     onPressed: () async {
                       final proposalId = 'prop_${event.id.toLowerCase()}_01';
                       await _bleService.sendAdapterRollback(proposalId);
-                      if (mounted) {
+                      if (context.mounted) {
                         ScaffoldMessenger.of(context).showSnackBar(
                           SnackBar(content: Text('Adapter $proposalId rollback dispatched over BLE Airlink!')),
                         );
                       }
                     },
-                    icon: const Icon(Icons.undo, size: 14, color: AppColors.breaking),
-                    label: const Text('Rollback', style: TextStyle(fontSize: 11, color: AppColors.breaking)),
+                    icon: const Icon(Icons.shield_outlined, size: 13, color: AppColors.breaking),
+                    label: Text('Rollback', style: GoogleFonts.poppins(fontSize: 11, color: AppColors.breaking, fontWeight: FontWeight.bold)),
                     style: OutlinedButton.styleFrom(
-                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
                       side: const BorderSide(color: AppColors.breaking, width: 1.2),
+                      minimumSize: Size.zero,
+                      tapTargetSize: MaterialTapTargetSize.shrinkWrap,
                     ),
                   ),
                 ],
+                const Spacer(),
+                // Beep Status Pill
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  decoration: BoxDecoration(
+                    color: AppColors.crimson.withValues(alpha: 0.1),
+                    borderRadius: BorderRadius.circular(999),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      const Icon(Icons.volume_up, size: 12, color: AppColors.crimson),
+                      const SizedBox(width: 4),
+                      Text(
+                        '880Hz Tone',
+                        style: GoogleFonts.poppins(fontSize: 9.5, color: AppColors.crimson, fontWeight: FontWeight.bold),
+                      ),
+                    ],
+                  ),
+                ),
               ],
             ),
           ],

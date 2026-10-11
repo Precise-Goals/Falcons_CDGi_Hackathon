@@ -15,6 +15,24 @@ export interface WalletState {
 export const MST_CHAIN_ID_HEX = '0x5752035'; // 91562037 in hex
 export const MST_CHAIN_ID_DEC = 91562037;
 
+export const EIP712_PIPELINE_DOMAIN = {
+  name: 'Intra Autonomous SRE Governance',
+  version: '1',
+  chainId: MST_CHAIN_ID_DEC,
+  verifyingContract: ENV.INTRA_SUBSCRIPTION_NFT_ADDRESS,
+};
+
+export const EIP712_PIPELINE_TYPES = {
+  PipelineStageExecution: [
+    { name: 'pipelineId', type: 'string' },
+    { name: 'stageNumber', type: 'uint8' },
+    { name: 'stageName', type: 'string' },
+    { name: 'checksum', type: 'string' },
+    { name: 'timestamp', type: 'string' },
+    { name: 'summary', type: 'string' },
+  ],
+};
+
 export async function fetchMstBalance(address: string): Promise<string> {
   const provider = new ethers.JsonRpcProvider(ENV.MST_TESTNET_RPC);
   const balanceWei = await provider.getBalance(address);

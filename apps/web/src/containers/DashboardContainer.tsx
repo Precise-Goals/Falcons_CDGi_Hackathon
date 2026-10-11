@@ -26,6 +26,7 @@ import {
   MainTab,
 } from '../types';
 import { logLedgerChecksum } from '../lib/crypto';
+import { execute7StagePipeline, PipelineExecutionReport } from '../lib/pipelineEngine7';
 
 export interface DashboardContainerProps {
   engineHealth: EngineHealthResponse | null;
@@ -89,6 +90,28 @@ export function DashboardContainer({
     )
   );
   const [predictedUpgrades, setPredictedUpgrades] = useState<PredictedUpgrade[]>([]);
+  const [pipelineReport, setPipelineReport] = useState<PipelineExecutionReport | null>(null);
+  const [pipelineRunning, setPipelineRunning] = useState<boolean>(false);
+
+  const handleExecute7StagePipeline = async () => {
+    setPipelineRunning(true);
+    try {
+      const report = await execute7StagePipeline({
+        targetService: 'PostgreSQL Primary',
+        incidentId: 'PD-8745',
+      });
+      setPipelineReport(report);
+      await logLedgerChecksum('pipeline_7stage_sre_executed', {
+        incidentId: report.incidentId,
+        merkleRoot: report.merkleRoot,
+        commander: report.commanderSigner,
+      });
+    } catch (err) {
+      console.error('7-Stage pipeline execution failed:', err);
+    } finally {
+      setPipelineRunning(false);
+    }
+  };
 
   // Pure Algorithmic Analysis of Upstream Schemas for Future Upgrades
   const runPureUpgradePrediction = (endpoint: string, jsonStr: string, shouldLog = false) => {
@@ -751,6 +774,119 @@ export function DashboardContainer({
                 </div>
               ))}
             </div>
+          </div>
+
+          {/* 7-Stage Cryptographic Autonomous SRE Pipeline Console */}
+          <div className="skeuo-card rounded-[2.5rem] p-8 space-y-6">
+            <div className="flex flex-wrap items-center justify-between gap-4 border-b border-black/10 pb-4">
+              <div>
+                <span className="verified-badge bg-crimson/10 text-crimson border border-crimson/30">
+                  CRYPTOGRAPHIC RESILIENCE RUNTIME
+                </span>
+                <h3 className="font-display font-extrabold text-xl text-black mt-1">
+                  7-Stage Autonomous Incident Remediation &amp; Provenance
+                </h3>
+                <p className="text-xs text-black/60 mt-1">
+                  Executes telemetry APM probing, Kahn DAG acyclic sequencing, Sarvam AI reasoning, EIP-712 wallet consensus, and Merkle root anchoring.
+                </p>
+              </div>
+
+              <button
+                onClick={handleExecute7StagePipeline}
+                disabled={pipelineRunning}
+                className="skeuo-button-primary px-6 py-2.5 rounded-2xl text-white text-xs font-mono font-bold flex items-center space-x-2 shadow-md transition"
+              >
+                {pipelineRunning ? (
+                  <>
+                    <RefreshCw className="w-4 h-4 animate-spin" />
+                    <span>Executing 7-Stage Cryptographic Pipeline...</span>
+                  </>
+                ) : (
+                  <>
+                    <Zap className="w-4 h-4 fill-current" />
+                    <span>Execute 7-Stage Pipeline</span>
+                  </>
+                )}
+              </button>
+            </div>
+
+            {pipelineReport ? (
+              <div className="space-y-6 font-mono text-xs">
+                {/* Provenance Header Badges */}
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                  <div className="p-3.5 rounded-2xl bg-cream-subtle border border-black/10 space-y-1">
+                    <span className="text-[10px] text-black/50 block font-bold uppercase">Incident Ref</span>
+                    <strong className="text-black font-bold text-sm">{pipelineReport.incidentId}</strong>
+                  </div>
+                  <div className="p-3.5 rounded-2xl bg-cream-subtle border border-black/10 space-y-1">
+                    <span className="text-[10px] text-black/50 block font-bold uppercase">MTTR Duration</span>
+                    <strong className="text-emerald-700 font-bold text-sm">{pipelineReport.mttrSeconds}s</strong>
+                  </div>
+                  <div className="p-3.5 rounded-2xl bg-cream-subtle border border-black/10 space-y-1">
+                    <span className="text-[10px] text-black/50 block font-bold uppercase">Network Anchored</span>
+                    <strong className="text-black font-bold text-sm">MST #{pipelineReport.chainId}</strong>
+                  </div>
+                  <div className="p-3.5 rounded-2xl bg-cream-subtle border border-black/10 space-y-1">
+                    <span className="text-[10px] text-black/50 block font-bold uppercase">Auto-Remediated</span>
+                    <strong className="text-crimson font-bold text-sm">YES (Autonomous)</strong>
+                  </div>
+                </div>
+
+                {/* Merkle Root & EIP-712 Signature Bar */}
+                <div className="p-4 rounded-2xl bg-[#0A0A0A] text-white space-y-2 border border-white/10">
+                  <div className="flex flex-wrap items-center justify-between gap-2 text-[11px] border-b border-white/10 pb-2">
+                    <span className="text-white/60">CRYPTOGRAPHIC MERKLE ROOT:</span>
+                    <span className="text-emerald-400 font-bold truncate max-w-md">{pipelineReport.merkleRoot}</span>
+                  </div>
+                  <div className="flex flex-wrap items-center justify-between gap-2 text-[11px]">
+                    <span className="text-white/60">EIP-712 COMMANDER SIGNER:</span>
+                    <span className="text-amber-300 font-bold truncate max-w-md">{pipelineReport.commanderSigner}</span>
+                  </div>
+                </div>
+
+                {/* 7 Stages Inspection Grid */}
+                <div className="space-y-3">
+                  <span className="font-display font-bold text-xs text-black uppercase tracking-wider block">
+                    7-Pipeline Cryptographic Proof Records (SHA-256 Checksums &amp; Telemetry Data)
+                  </span>
+
+                  <div className="space-y-2.5">
+                    {pipelineReport.stages.map((st) => (
+                      <div
+                        key={st.stage}
+                        className="p-4 rounded-2xl bg-white border border-black/10 shadow-xs space-y-2"
+                      >
+                        <div className="flex flex-wrap items-center justify-between gap-2">
+                          <div className="flex items-center space-x-2">
+                            <span className="w-6 h-6 rounded-lg bg-black text-white text-[11px] font-bold flex items-center justify-center font-mono">
+                              {st.stage}
+                            </span>
+                            <span className="font-bold text-black text-xs">{st.name}</span>
+                            <span className="text-[10px] text-black/40 font-mono">({st.pipelineId})</span>
+                          </div>
+                          <span className="text-[10px] px-2.5 py-0.5 rounded-full bg-cream-subtle border border-black/10 text-crimson font-bold truncate max-w-xs">
+                            Checksum: {st.checksum.substring(0, 18)}...
+                          </span>
+                        </div>
+                        <p className="text-[11px] text-black/70 font-sans">{st.summary}</p>
+                        <details className="text-[10px] font-mono text-black/60 pt-1">
+                          <summary className="cursor-pointer hover:text-black font-semibold">
+                            View Structured Telemetry Payload (JSON)
+                          </summary>
+                          <pre className="p-3 mt-2 rounded-xl bg-[#FAF9F5] text-black overflow-x-auto border border-black/5">
+                            {JSON.stringify(st.data, null, 2)}
+                          </pre>
+                        </details>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            ) : (
+              <div className="p-8 text-center text-black/40 font-mono text-xs space-y-2 border border-dashed border-black/15 rounded-2xl">
+                <p>Click &quot;Execute 7-Stage Pipeline&quot; to run live APM probing, Kahn DAG sorting, and Merkle root anchoring.</p>
+              </div>
+            )}
           </div>
         </div>
       )}

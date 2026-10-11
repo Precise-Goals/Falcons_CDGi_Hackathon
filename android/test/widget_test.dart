@@ -1,9 +1,13 @@
 import 'package:flutter_test/flutter_test.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:intra_companion/main.dart';
 import 'package:intra_companion/services/firebase_service.dart';
 import 'package:intra_companion/services/engine_client.dart';
 
 void main() {
+  TestWidgetsFlutterBinding.ensureInitialized();
+  GoogleFonts.config.allowRuntimeFetching = false;
+
   testWidgets('Intra Companion App renders login screen initially', (WidgetTester tester) async {
     final firebaseService = FirebaseService();
     final engineClient = EngineClient(firebaseService: firebaseService);

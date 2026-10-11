@@ -16,6 +16,7 @@ import {
   Bluetooth,
   BluetoothConnected,
   BluetoothSearching,
+  Key,
 } from 'lucide-react';
 import { MainTab, UserProfile, DocsCategory } from '../types';
 import { bleManager } from '../lib/bleManager';
@@ -416,6 +417,30 @@ export function Navbar({
         </button>
 
         <div className="h-4 w-[1px] bg-black/10 mx-0.5" />
+
+        {/* Web3 Wallet State & Signer Indicator */}
+        {user?.walletAddress ? (
+          <button
+            onClick={onOpenAuth}
+            title={`Connected to MST Blockchain Testnet (91562037)\nAddress: ${user.walletAddress}\nBalance: ${user.mstBalance || '0.00'} MST\nClick to manage wallet`}
+            className="flex items-center space-x-1.5 px-3 py-1.5 rounded-full bg-emerald-500/10 text-emerald-700 border border-emerald-500/30 text-xs font-mono font-bold hover:bg-emerald-500/15 transition"
+          >
+            <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+            <span className="hidden md:inline">MST:</span>
+            <span>
+              {user.walletAddress.substring(0, 6)}...{user.walletAddress.substring(user.walletAddress.length - 4)}
+            </span>
+          </button>
+        ) : (
+          <button
+            onClick={onOpenAuth}
+            title="Connect Web3 Wallet (MetaMask / BridgeKey) on MST Blockchain Testnet"
+            className="flex items-center space-x-1 px-2.5 py-1.5 rounded-full bg-crimson/10 hover:bg-crimson/20 border border-crimson/30 text-xs font-mono font-bold text-crimson transition"
+          >
+            <Key className="w-3 h-3 text-crimson" />
+            <span className="hidden md:inline">Connect Wallet</span>
+          </button>
+        )}
 
         {/* User Profile / Auth Pill */}
         <button
