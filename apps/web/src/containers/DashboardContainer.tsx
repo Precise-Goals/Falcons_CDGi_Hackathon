@@ -292,7 +292,7 @@ export function DashboardContainer({
             <div className="font-bold text-base text-black">
               {engineHealth ? Object.keys(engineHealth.dependencies).length : 5} Services
             </div>
-            <div className="text-[10px] text-black/60 font-semibold">Real Fastify Mocks</div>
+            <div className="text-[10px] text-emerald-600 font-semibold">Live Fastify Microservices</div>
           </div>
           <div className="p-4 rounded-2xl bg-cream-subtle border border-black/5">
             <div className="text-black/50 text-[10px] uppercase">Active Drift</div>

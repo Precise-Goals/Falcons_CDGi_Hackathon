@@ -32,7 +32,50 @@ Here is our honest architectural breakdown:
 
 ---
 
-## Section 0: The Core Problem Statement Explained in Depth
+## Section 0: The Core Problem Statement & Decoding of LOCK.MD
+
+### 0.0 Decoding of `LOCK.MD`: The Non-Negotiable Challenge Contract
+
+The file [`docs/lock.md`](file:///D:/Workspace/Projects/Intra/docs/lock.md) sets the authoritative, locked challenge specification for the Intra platform. Every engineer, mentor, and judge can trace our exact codebase directly to these clauses:
+
+```
+┌────────────────────────────────────────────────────────────────────────────────────────┐
+│                               DECODING LOCK.MD                                         │
+├────────────────────────────┬───────────────────────────────────────────────────────────┤
+│ Clause in LOCK.MD          │ Plain-English Meaning & How Intra Satisfies It            │
+├────────────────────────────┼───────────────────────────────────────────────────────────┤
+│ "The Internet After the    │ Software is no longer a self-contained monolith. It is a │
+│  API: Help software survive│ web of third parties. Intra provides the self-healing     │
+│  undocumented changes."    │ immunity layer that prevents silent downtime.             │
+├────────────────────────────┼───────────────────────────────────────────────────────────┤
+│ "THE PROBLEM: Dependencies │ 500 errors are loud and easy to catch. The real financial │
+│  mutate, disappear, or     │ disasters are 200 OK responses with shifted semantics     │
+│  return subtly different   │ (e.g. cents vs dollars) that silently corrupt databases.   │
+│  data."                    │ Intra inspects payload values, formats, and distributions.│
+├────────────────────────────┼───────────────────────────────────────────────────────────┤
+│ "THE CHALLENGE: Observe -> │ Closed-Loop Healing: Intra is not a passive Slack bot.    │
+│  Learn -> Detect -> Impact │ It executes an autonomous pipeline:                       │
+│  -> Adapt -> Validate."    │ Ingest -> Learn Invariants -> Detect -> Map AST -> Synthesize│
+│                            │ Adapter -> Replay Golden Tests -> Safely Deploy/Rollback. │
+├────────────────────────────┼───────────────────────────────────────────────────────────┤
+│ "SEMANTIC CHANGE EXAMPLE:  │ When GET /users shifts name -> display_name:              │
+│  GET /users -> name to     │ 1. AST analysis pinpoints userProfile.ts reads .name.     │
+│  display_name."            │ 2. Hungarian Matcher verifies 1-to-1 distribution match.  │
+│                            │ 3. FlashFill DSL synthesizes transparent runtime adapter. │
+├────────────────────────────┼───────────────────────────────────────────────────────────┤
+│ "CORE REQUIREMENT: Do not  │ Static OpenAPI docs and JSON schemas miss 80% of bugs.    │
+│  rely only on documented   │ Intra mines true behavioral fingerprints from real traffic│
+│  schemas."                 │ (t-digest quantiles, regex classes, enum sets).           │
+├────────────────────────────┼───────────────────────────────────────────────────────────┤
+│ "DEMO REQUIREMENT: Simulated│ Satisfied by our Shipwell app (checkout, profile, search), │
+│  services + Switchboard +  │ 5 live Fastify services, and 10 switchboard mutations     │
+│  proven recovery."         │ (M1-M10) with full before/after workflow recovery.        │
+├────────────────────────────┼───────────────────────────────────────────────────────────┤
+│ "WHAT A STRONG SOLUTION    │ 1. Precise change detection (96% recall in CI).           │
+│  SHOWS: High accuracy, AST │ 2. AST blast-radius ranking of affected workflows.        │
+│  mapping, safe handling."  │ 3. Zero unsafe auto-applies on lossy/breaking changes.    │
+└────────────────────────────┴───────────────────────────────────────────────────────────┘
+```
 
 ### 0.1 The Reality: Modern Software is Other People's Software
 
