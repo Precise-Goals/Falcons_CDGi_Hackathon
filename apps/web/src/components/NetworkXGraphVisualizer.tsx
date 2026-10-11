@@ -1547,7 +1547,7 @@ export function NetworkXGraphVisualizer() {
 
         {/* Tactical Inspector Panel (1 Column) */}
         <div className="space-y-4">
-          <div className="p-5 rounded-2xl bg-white border border-black/15 shadow-sm space-y-4">
+          <div className="p-6 rounded-3xl bg-white border-2 border-black/15 shadow-sm space-y-4">
             <div className="flex items-center justify-between border-b border-black/10 pb-3">
               <span className="font-display font-bold text-xs uppercase tracking-wider text-black flex items-center gap-1.5">
                 <Cpu className="w-3.5 h-3.5 text-crimson" />
@@ -1627,7 +1627,7 @@ export function NetworkXGraphVisualizer() {
           </div>
 
           {/* Simulation Tuning Controls */}
-          <div className="p-5 rounded-2xl bg-white border border-black/15 shadow-sm space-y-3 font-mono text-xs">
+          <div className="p-6 rounded-3xl bg-white border-2 border-black/15 shadow-sm space-y-3 font-mono text-xs">
             <span className="font-display font-bold text-xs uppercase tracking-wider text-black flex items-center gap-1.5 border-b border-black/10 pb-2">
               <Sliders className="w-3.5 h-3.5 text-crimson" />
               Physics Engine Parameters
