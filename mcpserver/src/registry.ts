@@ -86,6 +86,14 @@ export const CUSTOMER_MCP_TOOLS: McpToolDefinition[] = [
       properties: {},
     },
   },
+  {
+    name: 'intra_ping',
+    description: 'Pings the MCP server to verify protocol connectivity and transport liveness',
+    inputSchema: {
+      type: 'object',
+      properties: {},
+    },
+  },
 ];
 
 /**

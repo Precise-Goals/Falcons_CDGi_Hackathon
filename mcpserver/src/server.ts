@@ -174,6 +174,15 @@ export function buildMcpServer(
               return await res.json();
             }
 
+            case 'intra_ping': {
+              return {
+                pong: true,
+                timestamp: new Date().toISOString(),
+                protocol: 'mcp/1.0',
+                serverVersion: '0.1.0',
+              };
+            }
+
             default:
               return reply.status(404).send({ error: `Unknown tool: ${tool}` });
           }

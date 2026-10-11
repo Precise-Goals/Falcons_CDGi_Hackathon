@@ -47,4 +47,19 @@ describe('Customer MCP Server (mcpserver/)', () => {
     expect(res.statusCode).toBe(400);
     expect(res.json().error).toContain('confirm: true');
   });
+
+  it('responds with pong and server version when invoking intra_ping', async () => {
+    const res = await app.inject({
+      method: 'POST',
+      url: '/tools/call',
+      payload: {
+        tool: 'intra_ping',
+      },
+    });
+    expect(res.statusCode).toBe(200);
+    const json = res.json();
+    expect(json.pong).toBe(true);
+    expect(json.protocol).toBe('mcp/1.0');
+    expect(json.serverVersion).toBe('0.1.0');
+  });
 });
