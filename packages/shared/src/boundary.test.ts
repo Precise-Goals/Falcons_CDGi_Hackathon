@@ -353,6 +353,51 @@ describe('Adversarial & Boundary Test Suite: @intra/shared', () => {
         });
         expect(ObservationSchema.safeParse(minimalObs).success).toBe(true);
       });
+
+      it('parses structured RFC 7807 problem details and nested errorBody payloads', () => {
+        const rfc7807Error = {
+          type: 'https://api.intra.dev/errors/rate-limit-exceeded',
+          title: 'Too Many Requests',
+          status: 429,
+          detail: 'Quota exceeded: 120 calls per minute exhausted',
+          instance: '/orders/charge-99182',
+          invalidParams: [{ name: 'api_key', reason: 'throttled' }],
+        };
+        const obsRfc = buildValidObservation({
+          status: 429,
+          errorBody: rfc7807Error,
+        });
+        expect(ObservationSchema.safeParse(obsRfc).success).toBe(true);
+
+        const graphQlError = {
+          errors: [
+            {
+              message: 'Field "totalPrice" is deprecated and requires subselection',
+              locations: [{ line: 12, column: 5 }],
+              path: ['order', 'totalPrice'],
+              extensions: { code: 'DEPRECATED_SYNTAX', severity: 'WARNING' },
+            },
+          ],
+        };
+        const obsGql = buildValidObservation({
+          status: 200,
+          errorBody: graphQlError,
+        });
+        expect(ObservationSchema.safeParse(obsGql).success).toBe(true);
+      });
+
+      it('accepts string, array, and arbitrary primitive errorBody values', () => {
+        expect(
+          ObservationSchema.safeParse(
+            buildValidObservation({ status: 500, errorBody: 'Internal Gateway Timeout: upstream down' })
+          ).success
+        ).toBe(true);
+        expect(
+          ObservationSchema.safeParse(
+            buildValidObservation({ status: 400, errorBody: ['err_code_1', 'err_code_2'] })
+          ).success
+        ).toBe(true);
+      });
     });
   });
 
