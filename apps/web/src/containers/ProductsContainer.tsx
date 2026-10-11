@@ -493,22 +493,30 @@ export function ProductsContainer({
 
               <div className="space-y-2">
                 {(liveToolsList.length > 0
-                  ? liveToolsList
+                  ? [...liveToolsList].sort((a, b) => {
+                      const order = ['intra_health', 'intra_get_contract', 'intra_recent_changes', 'intra_impact', 'intra_propose_adapter', 'intra_apply_adapter', 'intra_list_dependencies'];
+                      const idxA = order.indexOf(a.name);
+                      const idxB = order.indexOf(b.name);
+                      return (idxA !== -1 ? idxA : 99) - (idxB !== -1 ? idxB : 99);
+                    })
                   : [
-                      { name: 'intra_recent_changes', description: 'List active mutations & drift with confidence' },
+                      { name: 'intra_health', description: 'Check rate-limit headroom & system status' },
                       { name: 'intra_get_contract', description: 'Fetch behavioral contract for service & endpoint' },
-                      { name: 'intra_list_dependencies', description: 'Query all observed services & endpoints' },
+                      { name: 'intra_recent_changes', description: 'List active mutations & drift with confidence' },
                       { name: 'intra_impact', description: 'Trace affected workflows & AST blast radius' },
                       { name: 'intra_propose_adapter', description: 'Generate TypeScript adapter & migration PR' },
                       { name: 'intra_apply_adapter', description: 'Apply adapter to live canary runtime' },
-                      { name: 'intra_health', description: 'Check rate-limit headroom & system status' },
+                      { name: 'intra_list_dependencies', description: 'Query all observed services & endpoints' },
                     ]
                 ).map((tool) => {
                   const isSelected = selectedMcpTool === tool.name;
                   return (
                     <button
                       key={tool.name}
-                      onClick={() => setSelectedMcpTool(tool.name)}
+                      onClick={() => {
+                        setSelectedMcpTool(tool.name);
+                        executeMcpTool(tool.name);
+                      }}
                       className={`w-full text-left p-3.5 rounded-2xl border transition ${
                         isSelected
                           ? 'border-crimson bg-crimson/5 shadow-sm'

@@ -12,14 +12,19 @@ import {
   Sparkles,
   Zap,
   Check,
-  Copy
+  Copy,
+  FileText,
+  Download,
+  ExternalLink,
+  Maximize2
 } from 'lucide-react';
 
-type DocSectionFilter = 'all' | 'algorithms' | 'principles' | 'citations' | 'mutations' | 'api';
+type DocSectionFilter = 'all' | 'paper' | 'algorithms' | 'principles' | 'citations' | 'mutations' | 'api';
 
 export function DocsContainer() {
   const [activeFilter, setActiveFilter] = useState<DocSectionFilter>('all');
   const [copiedCite, setCopiedCite] = useState<string | null>(null);
+  const [isPdfExpanded, setIsPdfExpanded] = useState<boolean>(false);
 
   const handleCopyCitation = (citeKey: string, text: string) => {
     navigator.clipboard.writeText(text);
@@ -110,6 +115,7 @@ export function DocsContainer() {
           <div className="pt-4 flex flex-wrap gap-2">
             {[
               { id: 'all', label: 'All Blueprint Sections', icon: Layers },
+              { id: 'paper', label: 'Embedded Research Paper (PDF)', icon: FileText },
               { id: 'algorithms', label: 'High-ROI Algorithms & Proofs', icon: Binary },
               { id: 'principles', label: 'Theoretical Principles', icon: Cpu },
               { id: 'citations', label: 'Academic & Industrial Citations', icon: BookOpen },
@@ -136,6 +142,94 @@ export function DocsContainer() {
           </div>
         </div>
       </div>
+
+      {/* ── EMBEDDED RESEARCH PAPER (PDF READER): Interactive Formal Specification ── */}
+      {(activeFilter === 'all' || activeFilter === 'paper') && (
+        <div className="border border-black/10 bg-white/95 rounded-[2.5rem] p-6 sm:p-8 shadow-card space-y-6">
+          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 pb-4 border-b border-black/10">
+            <div>
+              <div className="flex items-center space-x-2">
+                <span className="verified-badge flex items-center space-x-1.5">
+                  <FileText className="w-3 h-3 text-crimson" />
+                  <span>FORMAL RESEARCH PAPER VIEWER</span>
+                </span>
+                <span className="text-[10px] font-mono text-black/50 bg-black/5 px-2 py-0.5 rounded-full border border-black/5">
+                  OCTOBER 2026 EDITION
+                </span>
+              </div>
+              <h2 className="font-display font-bold text-xl sm:text-2xl text-black mt-1">
+                The Internet After the API: Engineering Specification & Evaluation
+              </h2>
+              <p className="text-xs text-black/60 font-sans mt-0.5">
+                Authored by Sarthak Patil, Karan Verma, Sneha Sharma, and Sneha Patidar. 100% peer-reviewed empirical proofs and streaming algorithms.
+              </p>
+            </div>
+
+            {/* Viewer Controls */}
+            <div className="flex flex-wrap items-center gap-2">
+              <button
+                onClick={() => setIsPdfExpanded((prev) => !prev)}
+                className="flex items-center space-x-1.5 px-3 py-1.5 rounded-xl border border-black/10 bg-cream-subtle text-black text-xs font-mono font-semibold hover:bg-black/5 transition"
+                title="Toggle Expanded Height"
+              >
+                <Maximize2 className="w-3.5 h-3.5 text-black/70" />
+                <span>{isPdfExpanded ? 'Compact View' : 'Full Height View'}</span>
+              </button>
+              <a
+                href="/research.pdf"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center space-x-1.5 px-3 py-1.5 rounded-xl border border-black/10 bg-white text-black text-xs font-mono font-semibold hover:border-black/30 transition shadow-xs"
+              >
+                <ExternalLink className="w-3.5 h-3.5 text-black/70" />
+                <span>Open in Tab</span>
+              </a>
+              <a
+                href="/research.pdf"
+                download="Intra-Research-Paper.pdf"
+                className="flex items-center space-x-1.5 px-3.5 py-1.5 rounded-xl bg-crimson text-white text-xs font-mono font-bold hover:bg-crimson-hover transition shadow-sm"
+              >
+                <Download className="w-3.5 h-3.5" />
+                <span>Download PDF (306 KB)</span>
+              </a>
+            </div>
+          </div>
+
+          {/* Embedded PDF iframe */}
+          <div className="relative w-full rounded-2xl overflow-hidden border border-black/15 bg-cream-subtle shadow-inner">
+            <iframe
+              src="/research.pdf#toolbar=1&navpanes=0&scrollbar=1"
+              className={`w-full transition-all duration-300 ${isPdfExpanded ? 'h-[1100px]' : 'h-[750px]'} bg-white`}
+              title="Intra Research Paper (PDF Reader)"
+            />
+          </div>
+
+          {/* Paper Abstract & Highlights Card */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 pt-2">
+            <div className="p-4 rounded-2xl bg-cream-subtle border border-black/5 space-y-1.5">
+              <span className="text-[10px] font-mono font-bold text-crimson uppercase tracking-wider">Contribution 01</span>
+              <h4 className="font-display font-bold text-xs text-black">Continuous Behavioral Fingerprinting</h4>
+              <p className="text-[11px] text-black/65 leading-relaxed">
+                Derives streaming probability density sketches using T-Digest and HyperLogLog without retaining raw payloads or sensitive PII.
+              </p>
+            </div>
+            <div className="p-4 rounded-2xl bg-cream-subtle border border-black/5 space-y-1.5">
+              <span className="text-[10px] font-mono font-bold text-crimson uppercase tracking-wider">Contribution 02</span>
+              <h4 className="font-display font-bold text-xs text-black">Hungarian Optimal Schema Alignment</h4>
+              <p className="text-[11px] text-black/65 leading-relaxed">
+                Bipartite cost matrix optimization prevents combinatorial explosion when diagnosing multi-field rename cascades under M1.
+              </p>
+            </div>
+            <div className="p-4 rounded-2xl bg-cream-subtle border border-black/5 space-y-1.5">
+              <span className="text-[10px] font-mono font-bold text-crimson uppercase tracking-wider">Contribution 03</span>
+              <h4 className="font-display font-bold text-xs text-black">Wald SPRT Canary Promotion</h4>
+              <p className="text-[11px] text-black/65 leading-relaxed">
+                Sequential Probability Ratio Testing guarantees &alpha;=0.01 and &beta;=0.05 bounds before promoting dynamic in-process adapters.
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* ── VECTOR ARCHITECTURE FLOW: 6-Stage Closed Loop ── */}
       {(activeFilter === 'all' || activeFilter === 'principles' || activeFilter === 'algorithms') && (
