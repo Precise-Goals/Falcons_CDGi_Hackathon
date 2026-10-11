@@ -1,0 +1,11 @@
+{
+  "status": "success",
+  "tool": "intra_mcp_dispatcher",
+  "timestamp": "2026-10-11T09:47:00.000Z",
+  "result": {
+    "message": "MCP Tool executed successfully in edge simulation mode.",
+    "activeAdapters": ["M1_field_rename", "M3_unit_shift"],
+    "health": "operational",
+    "verified": true
+  }
+}

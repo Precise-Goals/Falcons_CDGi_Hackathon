@@ -53,8 +53,12 @@ export default function App() {
   // Navigation: Home -> Products (Agent, MCP, SDK) -> Docs -> Pricing -> Dashboard -> Lab
   const [activeTab, setActiveTab] = useState<MainTab>(() => {
     if (typeof window !== 'undefined') {
-      if (window.location.pathname === '/eval' || window.location.hash === '#eval') {
-        return 'eval';
+      const path = window.location.pathname.replace(/^\//, '').toLowerCase();
+      const hash = window.location.hash.replace(/^#/, '').toLowerCase();
+      const target = path || hash;
+      const validTabs: MainTab[] = ['home', 'agent', 'mcp', 'sdk', 'docs', 'pricing', 'dashboard', 'eval'];
+      if (validTabs.includes(target as MainTab)) {
+        return target as MainTab;
       }
     }
     return 'home';
@@ -71,10 +75,27 @@ export default function App() {
       setSelectedMutationId(mutationId);
       setSdkSelectedMutation(mutationId);
     }
-    if (tab === 'eval') {
-      window.history.pushState(null, '', '/eval');
+    if (typeof window !== 'undefined') {
+      const newPath = tab === 'home' ? '/' : `/${tab}`;
+      if (window.location.pathname !== newPath) {
+        window.history.pushState(null, '', newPath);
+      }
     }
   };
+
+  useEffect(() => {
+    const handlePopState = () => {
+      const path = window.location.pathname.replace(/^\//, '').toLowerCase();
+      const validTabs: MainTab[] = ['home', 'agent', 'mcp', 'sdk', 'docs', 'pricing', 'dashboard', 'eval'];
+      if (validTabs.includes(path as MainTab)) {
+        setActiveTab(path as MainTab);
+      } else if (!path) {
+        setActiveTab('home');
+      }
+    };
+    window.addEventListener('popstate', handlePopState);
+    return () => window.removeEventListener('popstate', handlePopState);
+  }, []);
 
   // User Authentication & Session State (Connected to real Firebase horizon-1ba53)
   const [user, setUser] = useState<UserProfile | null>(() => {

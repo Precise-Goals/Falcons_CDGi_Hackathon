@@ -3,6 +3,10 @@
   "cleanUrls": true,
   "rewrites": [
     {
+      "source": "/api/mcp/tools/call",
+      "destination": "/api/mcp/tools/call/index.json"
+    },
+    {
       "source": "/api/mcp/tools",
       "destination": "/api/mcp/tools/index.json"
     },
@@ -19,8 +23,20 @@
       "destination": "/api/engine/health/index.json"
     },
     {
+      "source": "/api/engine/observe",
+      "destination": "/api/engine/observe/index.json"
+    },
+    {
       "source": "/api/engine",
       "destination": "/api/engine/index.json"
+    },
+    {
+      "source": "/api/sim/switchboard/toggle",
+      "destination": "/api/sim/switchboard/toggle/index.json"
+    },
+    {
+      "source": "/api/sim/switchboard/reset",
+      "destination": "/api/sim/switchboard/reset/index.json"
     },
     {
       "source": "/api/sim/switchboard",
@@ -35,7 +51,15 @@
       "destination": "/api/index.json"
     },
     {
-      "source": "/((?!api/).*)",
+      "source": "/(docs|eval|dashboard|agent|mcp|sdk|home)",
+      "destination": "/index.html"
+    },
+    {
+      "source": "/(docs|eval|dashboard|agent|mcp|sdk|home)/(.*)",
+      "destination": "/index.html"
+    },
+    {
+      "source": "/(.*)",
       "destination": "/index.html"
     }
   ],

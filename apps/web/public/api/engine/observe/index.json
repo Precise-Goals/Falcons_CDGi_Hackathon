@@ -1,0 +1,8 @@
+{
+  "status": "observed",
+  "timestamp": "2026-10-11T09:47:00.000Z",
+  "engine": "intra-edge-v1",
+  "pipeline": "6-stage closed-loop adaptation engine",
+  "confidence": 0.96,
+  "verdict": "equivalent"
+}
