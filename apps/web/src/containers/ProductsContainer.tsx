@@ -326,7 +326,7 @@ export function ProductsContainer({
                                   onSelectProductTab('sdk');
                                 }
                               }}
-                              className="flex items-center space-x-1 px-2.5 py-1 rounded-lg bg-black text-white text-[11px] font-semibold hover:bg-black/80 transition shadow-xs"
+                              className="flex items-center space-x-1 px-2.5 py-1 rounded-lg bg-black text-white text-[11px] font-semibold hover:bg-black/80 transition shadow-sm"
                               title="Test dynamically adapted payload in Client SDK Proxy"
                             >
                               <Code2 className="w-3 h-3 text-emerald-400" />
@@ -340,7 +340,7 @@ export function ProductsContainer({
                                   onNavigateToTab('dashboard', 'switchboard', targetMutation);
                                 }
                               }}
-                              className="flex items-center space-x-1 px-2.5 py-1 rounded-lg bg-white border border-black/15 text-black text-[11px] font-semibold hover:border-crimson hover:text-crimson transition shadow-xs"
+                              className="flex items-center space-x-1 px-2.5 py-1 rounded-lg bg-white border border-black/15 text-black text-[11px] font-semibold hover:border-crimson hover:text-crimson transition shadow-sm"
                               title={`Jump to Switchboard and toggle ${targetMutation}`}
                             >
                               <Sliders className="w-3 h-3 text-crimson" />
@@ -354,7 +354,7 @@ export function ProductsContainer({
                                   onNavigateToTab('dashboard', 'impact', targetMutation);
                                 }
                               }}
-                              className="flex items-center space-x-1 px-2.5 py-1 rounded-lg bg-white border border-black/15 text-black text-[11px] font-semibold hover:border-crimson hover:text-crimson transition shadow-xs"
+                              className="flex items-center space-x-1 px-2.5 py-1 rounded-lg bg-white border border-black/15 text-black text-[11px] font-semibold hover:border-crimson hover:text-crimson transition shadow-sm"
                               title="Inspect downstream Shipwell workflows affected by this change"
                             >
                               <Layers className="w-3 h-3 text-blue-600" />
@@ -368,7 +368,7 @@ export function ProductsContainer({
                                   onNavigateToTab('eval');
                                 }
                               }}
-                              className="flex items-center space-x-1 px-2.5 py-1 rounded-lg bg-white border border-black/15 text-black text-[11px] font-semibold hover:border-crimson hover:text-crimson transition shadow-xs"
+                              className="flex items-center space-x-1 px-2.5 py-1 rounded-lg bg-white border border-black/15 text-black text-[11px] font-semibold hover:border-crimson hover:text-crimson transition shadow-sm"
                               title="Run 50-sample dynamic stress test in autonomous laboratory"
                             >
                               <FlaskConical className="w-3 h-3 text-purple-600" />
@@ -384,7 +384,7 @@ export function ProductsContainer({
                                   onSelectProductTab('mcp');
                                 }
                               }}
-                              className="flex items-center space-x-1 px-2.5 py-1 rounded-lg bg-white border border-black/15 text-black text-[11px] font-semibold hover:border-crimson hover:text-crimson transition shadow-xs"
+                              className="flex items-center space-x-1 px-2.5 py-1 rounded-lg bg-white border border-black/15 text-black text-[11px] font-semibold hover:border-crimson hover:text-crimson transition shadow-sm"
                               title="Inspect tool definitions and recent changes via MCP Server"
                             >
                               <Terminal className="w-3 h-3 text-amber-600" />
