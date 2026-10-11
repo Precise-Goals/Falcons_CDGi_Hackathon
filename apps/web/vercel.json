@@ -1,9 +1,53 @@
 {
   "version": 2,
+  "cleanUrls": true,
   "rewrites": [
+    {
+      "source": "/api/mcp/tools",
+      "destination": "/api/mcp/tools/index.json"
+    },
+    {
+      "source": "/api/mcp/healthz",
+      "destination": "/api/mcp/healthz/index.json"
+    },
+    {
+      "source": "/api/mcp",
+      "destination": "/api/mcp/index.json"
+    },
+    {
+      "source": "/api/engine/health",
+      "destination": "/api/engine/health/index.json"
+    },
+    {
+      "source": "/api/engine",
+      "destination": "/api/engine/index.json"
+    },
+    {
+      "source": "/api/sim/switchboard",
+      "destination": "/api/sim/switchboard/index.json"
+    },
+    {
+      "source": "/api/sim",
+      "destination": "/api/sim/index.json"
+    },
+    {
+      "source": "/api",
+      "destination": "/api/index.json"
+    },
     {
       "source": "/((?!api/).*)",
       "destination": "/index.html"
+    }
+  ],
+  "headers": [
+    {
+      "source": "/api/(.*)",
+      "headers": [
+        { "key": "Content-Type", "value": "application/json" },
+        { "key": "Access-Control-Allow-Origin", "value": "*" },
+        { "key": "Access-Control-Allow-Methods", "value": "GET, POST, OPTIONS" },
+        { "key": "Access-Control-Allow-Headers", "value": "Content-Type, Authorization, x-api-key" }
+      ]
     }
   ]
 }

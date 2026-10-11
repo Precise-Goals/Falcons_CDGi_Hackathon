@@ -4,26 +4,11 @@
     "web": {
       "root": "apps/web",
       "framework": "vite"
-    },
-    "api": {
-      "root": "api"
     }
   },
   "rewrites": [
     {
-      "source": "/api",
-      "destination": {
-        "service": "api"
-      }
-    },
-    {
-      "source": "/api/(.*)",
-      "destination": {
-        "service": "api"
-      }
-    },
-    {
-      "source": "/((?!api).*)",
+      "source": "/(.*)",
       "destination": {
         "service": "web"
       }

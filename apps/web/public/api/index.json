@@ -1,0 +1,15 @@
+{
+  "name": "Intra Autonomous Resilience Engine API",
+  "status": "active",
+  "version": "0.1.0",
+  "routes": {
+    "engine": "/api/engine",
+    "engineHealth": "/api/engine/health",
+    "engineObserve": "/api/engine/observe",
+    "mcp": "/api/mcp",
+    "mcpTools": "/api/mcp/tools",
+    "mcpHealthz": "/api/mcp/healthz",
+    "sim": "/api/sim",
+    "simSwitchboard": "/api/sim/switchboard"
+  }
+}

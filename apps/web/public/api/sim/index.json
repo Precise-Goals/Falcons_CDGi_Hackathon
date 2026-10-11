@@ -1,0 +1,15 @@
+{
+  "name": "Intra Simulated External Microservices",
+  "status": "active",
+  "services": [
+    "users",
+    "payments",
+    "search",
+    "notifications",
+    "mcp-tool"
+  ],
+  "switchboard": {
+    "totalMutations": 10,
+    "endpoint": "/api/sim/switchboard"
+  }
+}

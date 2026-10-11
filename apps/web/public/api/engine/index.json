@@ -1,0 +1,15 @@
+{
+  "status": "ok",
+  "service": "Intra Closed-Loop Adaptation Engine",
+  "version": "0.1.0",
+  "rateLimitHeadroom": 98,
+  "observedServices": 5,
+  "activeAdapters": 2,
+  "baselines": [
+    "users",
+    "payments",
+    "search",
+    "notifications",
+    "mcp-tool"
+  ]
+}

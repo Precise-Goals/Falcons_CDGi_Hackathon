@@ -1,0 +1,47 @@
+{
+  "name": "Intra Customer MCP Server",
+  "status": "healthy",
+  "transport": "http/streamable",
+  "protocolVersion": "2024-11-05",
+  "toolCount": 7,
+  "endpoints": {
+    "tools": "/api/mcp/tools",
+    "toolsCall": "/api/mcp/tools/call",
+    "healthz": "/api/mcp/healthz"
+  },
+  "tools": [
+    {
+      "name": "intra_list_dependencies",
+      "description": "Lists all external services and endpoints actively observed by Intra"
+    },
+    {
+      "name": "intra_get_contract",
+      "description": "Fetches the learned schema and behavioural fingerprint for a service endpoint",
+      "parameters": { "service": "string", "endpoint": "string" }
+    },
+    {
+      "name": "intra_recent_changes",
+      "description": "Fetches recent structural and semantic drift detected by Intra",
+      "parameters": { "service": "optional string", "min_confidence": "optional number" }
+    },
+    {
+      "name": "intra_impact",
+      "description": "Calculates the blast radius of a change on dependent application workflows",
+      "parameters": { "change_id": "string" }
+    },
+    {
+      "name": "intra_propose_adapter",
+      "description": "Generates a compatibility adapter diff and test plan for an unreviewed change",
+      "parameters": { "change_id": "string" }
+    },
+    {
+      "name": "intra_apply_adapter",
+      "description": "Applies an adapter proposal into canary routing after human confirmation",
+      "parameters": { "proposal_id": "string", "confirm": "boolean" }
+    },
+    {
+      "name": "intra_health",
+      "description": "Checks health status, observed error rates, and rate limit headroom across all dependencies"
+    }
+  ]
+}
