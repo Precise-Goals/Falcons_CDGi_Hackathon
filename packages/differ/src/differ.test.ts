@@ -1,5 +1,11 @@
 import { describe, it, expect } from 'vitest';
-import { detectChanges } from './differ.js';
+import {
+  detectChanges,
+  calculateLevenshtein,
+  normalizedLevenshteinDistance,
+  stringSimilarity,
+  clearLevenshteinCache,
+} from './differ.js';
 import { Contract } from '@intra/shared';
 
 describe('@intra/differ Change Detection & Semantic Classification', () => {
@@ -136,4 +142,58 @@ describe('@intra/differ Change Detection & Semantic Classification', () => {
     expect(enumChange).toBeDefined();
     expect(enumChange?.semanticVerdict).toBe('breaking');
   });
+
+  describe('Levenshtein Similarity & Nested Property Renames', () => {
+    it('accurately computes edit distance and normalized similarity on nested paths', () => {
+      const p1 = 'billing.address.postal_code';
+      const p2 = 'billing.address.post_code';
+      const dist = calculateLevenshtein(p1, p2);
+      expect(dist).toBe(2); // 'al' removed
+
+      const normDist = normalizedLevenshteinDistance(p1, p2);
+      expect(normDist).toBeCloseTo(2 / p1.length, 3);
+
+      const sim = stringSimilarity(p1, p2);
+      expect(sim).toBeGreaterThan(0.9);
+    });
+
+    it('leverages memoization across repeated distance computations', () => {
+      clearLevenshteinCache();
+      const a = 'customer.tax_identifier';
+      const b = 'customer.tax_id';
+
+      const d1 = calculateLevenshtein(a, b);
+      const d2 = calculateLevenshtein(a, b);
+      const dSymmetric = calculateLevenshtein(b, a);
+
+      expect(d1).toBe(d2);
+      expect(d1).toBe(dSymmetric);
+    });
+
+    it('detects renames between nested dot-delimited field structures', () => {
+      const base = makeBaseContract({
+        schema: {
+          types: { id: 'string', 'account.billing_email': 'string' },
+          optionality: [],
+          enums: {},
+          formats: {},
+        },
+      });
+
+      const mutated = makeBaseContract({
+        schema: {
+          types: { id: 'string', 'account.billing_addr_email': 'string' },
+          optionality: [],
+          enums: {},
+          formats: {},
+        },
+      });
+
+      const changes = detectChanges(base, mutated, ['obs_nested']);
+      const rename = changes.find((c) => c.kind === 'rename');
+      expect(rename).toBeDefined();
+      expect(rename?.semanticVerdict).toBe('equivalent');
+    });
+  });
 });
+
