@@ -17,6 +17,7 @@ import {
   Code2,
   Terminal,
   FlaskConical,
+  Network,
 } from 'lucide-react';
 import {
   MutationItem,
@@ -27,6 +28,7 @@ import {
 } from '../types';
 import { logLedgerChecksum } from '../lib/crypto';
 import { execute7StagePipeline, PipelineExecutionReport } from '../lib/pipelineEngine7';
+import { NetworkXGraphVisualizer } from '../components/NetworkXGraphVisualizer';
 
 export interface DashboardContainerProps {
   engineHealth: EngineHealthResponse | null;
@@ -383,6 +385,7 @@ export function DashboardContainer({
         {/* Sub-Navigation Pill Dock for Dashboard Views */}
         <div className="flex flex-wrap items-center gap-2 pt-2 border-t border-black/5">
           {[
+            { id: 'graph', label: 'NetworkX Graph Engine', icon: Network },
             { id: 'predict', label: 'Upgrade & Drift Predictor', icon: TrendingUp },
             { id: 'drift', label: 'Drift Inspector', icon: Activity },
             { id: 'pipeline', label: 'Pipeline Engine', icon: Sparkles },
@@ -415,6 +418,13 @@ export function DashboardContainer({
           })}
         </div>
       </div>
+
+      {/* Sub-view 0: NetworkX Graph Engine */}
+      {dashboardView === 'graph' && (
+        <div className="space-y-6">
+          <NetworkXGraphVisualizer />
+        </div>
+      )}
 
       {/* Sub-view 1: Pure Algorithmic Upgrade & Drift Predictor */}
       {dashboardView === 'predict' && (
@@ -906,6 +916,9 @@ export function DashboardContainer({
               Intra inspects the downstream codebase to identify which internal workflows, functions, and files are broken by the upstream drift.
             </p>
           </div>
+
+          {/* Dynamic NetworkX Graph Visualizer */}
+          <NetworkXGraphVisualizer />
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {[
