@@ -46,7 +46,15 @@ export async function askSarvamAI(
 
   const data = await res.json();
   const choice = data.choices?.[0];
-  const rawText: string | undefined = choice?.message?.content;
+  const rawText: string | undefined = 
+    (typeof choice?.message?.content === 'string' && choice.message.content.trim())
+      ? choice.message.content
+      : (typeof choice?.message?.reasoning_content === 'string' && choice.message.reasoning_content.trim())
+      ? choice.message.reasoning_content
+      : (typeof choice?.text === 'string' && choice.text.trim())
+      ? choice.text
+      : undefined;
+
   if (!rawText || !rawText.trim()) {
     throw new Error(
       `Sarvam AI 105B returned empty completion (finish_reason: ${choice?.finish_reason || 'unknown'})`

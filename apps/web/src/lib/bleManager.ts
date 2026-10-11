@@ -201,16 +201,8 @@ export class IntraBleManager {
       if (!selectedDevice) {
         try {
           selectedDevice = await bt.requestDevice({
-            filters: [
-              { services: [INTRA_BLE_CONFIG.SERVICE_UUID] },
-              { namePrefix: 'Intra' },
-            ],
-            optionalServices: [
-              INTRA_BLE_CONFIG.SERVICE_UUID,
-              '0000ffe0-0000-1000-8000-00805f9b34fb',
-              '00001800-0000-1000-8000-00805f9b34fb',
-              '00001801-0000-1000-8000-00805f9b34fb',
-            ],
+            filters: [{ services: [INTRA_BLE_CONFIG.SERVICE_UUID] }],
+            optionalServices: [INTRA_BLE_CONFIG.SERVICE_UUID],
           });
         } catch (filterErr: any) {
           if (filterErr.name === 'NotFoundError' || filterErr.message?.includes('User cancelled')) {
@@ -219,12 +211,7 @@ export class IntraBleManager {
           // Fallback to accepting all Bluetooth devices
           selectedDevice = await bt.requestDevice({
             acceptAllDevices: true,
-            optionalServices: [
-              INTRA_BLE_CONFIG.SERVICE_UUID,
-              '0000ffe0-0000-1000-8000-00805f9b34fb',
-              '00001800-0000-1000-8000-00805f9b34fb',
-              '00001801-0000-1000-8000-00805f9b34fb',
-            ],
+            optionalServices: [INTRA_BLE_CONFIG.SERVICE_UUID],
           });
         }
       }
