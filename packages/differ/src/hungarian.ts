@@ -1,6 +1,18 @@
 /**
- * Hungarian Algorithm (Kuhn-Munkres) for optimal bipartite matching.
- * Solves the linear assignment problem in O(V^3) time using dual potentials.
+ * Hungarian Algorithm (Kuhn-Munkres) for Optimal Bipartite Matching
+ *
+ * Mathematical Foundations:
+ * - Primal Problem: Finds a bijection M: U -> V minimizing total cost sum(c_{u, M(u)}).
+ * - Dual Formulation: Maintains node potentials u_i and v_j such that u_i + v_j <= c_{ij}.
+ * - Complementary Slackness: An edge (i, j) is tight (in the equality subgraph) iff u_i + v_j = c_{ij}.
+ * - Augmenting Paths: Iteratively expands matchings via shortest augmenting paths on reduced costs.
+ *
+ * Computational Complexity:
+ * - Time Complexity: Exactly O(V^3) operations (specifically O(N * M^2) for rectangular N x M where N <= M).
+ * - Space Complexity: O(N * M) for input cost matrix, O(N + M) auxiliary working memory for dual potentials.
+ * - Determinism: Fully deterministic 1-to-1 matching, eliminating greedy local-optimum deadlocks
+ *   when remapping renamed schema fields across API version transitions.
+ *
  * Zero external dependencies.
  */
 
