@@ -5,6 +5,10 @@ import {
   ContractSchema,
 } from '@intra/shared';
 
+/**
+ * Infers the primitive or structural data type of an arbitrary value, distinguishing
+ * floats from integers and null values from generic objects.
+ */
 function inferType(val: unknown): string {
   if (val === null) return 'null';
   if (Array.isArray(val)) return 'array';
@@ -14,6 +18,15 @@ function inferType(val: unknown): string {
   return typeof val;
 }
 
+/**
+ * Infers an API Contract specification from a batch of observed network traffic.
+ * Analyzes field types, optionality distributions, enum candidate sets, rate limit headers,
+ * pagination topologies (cursor vs offset vs page), and HTTP error taxonomy shapes.
+ *
+ * @param observations - Stream of raw or buffered traffic observations
+ * @returns Inferred contract compliant with ContractSchema
+ * @throws Error if observations array is empty
+ */
 export function inferContract(observations: Observation[]): Contract {
   if (observations.length === 0) {
     throw new Error('Cannot infer contract from 0 observations');
