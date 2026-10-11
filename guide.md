@@ -78,7 +78,7 @@ Executes the full 6-stage mutation injection, breakage detection, AST mapping, a
 
 ## 4. Web Application Tour: Features & Ecosystem Navigation
 
-### 4.1 Centered Capsule Navbar
+### 4.1 Global Editorial Navigation Bar
 The floating top navbar provides access across the platform:
 1. **Home**: High-impact mission landing page anchored on `docs/lock.md`. Details the anatomy of silent failure (M1–M10), before vs with Intra comparisons, and verified telemetry benchmarks.
 2. **Products Dropdown** (Opaque, high-contrast, zero background bleed):
