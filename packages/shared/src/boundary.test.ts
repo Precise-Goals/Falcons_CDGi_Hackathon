@@ -529,6 +529,30 @@ describe('Adversarial & Boundary Test Suite: @intra/shared', () => {
           expect(ChangeSchema.safeParse(change).success).toBe(false);
         }
       });
+
+      it('asserts compile-time and runtime exhaustive mapping across all 13 drift mutation classes', () => {
+        type ExhaustiveKindMap = Record<ChangeKind, { category: 'mutation' | 'operational' | 'schema'; code: string }>;
+        const kindRegistry: ExhaustiveKindMap = {
+          field_added: { category: 'schema', code: 'M1' },
+          field_removed: { category: 'schema', code: 'M1' },
+          rename: { category: 'mutation', code: 'M2' },
+          unit_shift: { category: 'mutation', code: 'M3' },
+          enum_semantics: { category: 'mutation', code: 'M4' },
+          pagination_changed: { category: 'mutation', code: 'M5' },
+          default_changed: { category: 'mutation', code: 'M6' },
+          type_changed: { category: 'schema', code: 'M6' },
+          error_shape_changed: { category: 'mutation', code: 'M7' },
+          truncation: { category: 'mutation', code: 'M8' },
+          rate_limit_changed: { category: 'operational', code: 'OP-RATE' },
+          latency_regime: { category: 'operational', code: 'OP-LAT' },
+          semantic_other: { category: 'operational', code: 'OP-OTHER' },
+        };
+        const registeredKeys = Object.keys(kindRegistry);
+        expect(registeredKeys).toHaveLength(13);
+        for (const kind of ChangeKindSchema.options) {
+          expect(kindRegistry[kind]).toBeDefined();
+        }
+      });
     });
 
     describe('All 4 SemanticVerdict enums validated', () => {
