@@ -3,6 +3,7 @@ import path from 'node:path';
 
 export default defineConfig({
   test: {
+    globals: true,
     alias: {
       '@intra/shared': path.resolve(__dirname, './packages/shared/src/index.ts'),
       '@intra/observer': path.resolve(__dirname, './packages/observer/src/index.ts'),
