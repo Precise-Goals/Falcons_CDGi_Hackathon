@@ -228,29 +228,59 @@ export function detectChanges(
     }
   }
 
-  // 6. Enum semantic drift (M10: status active includes suspended)
-  const baseStatusEnum = baseline.schema.enums['status'] || [];
-  const currStatusDist = current.fieldStats['status']?.valueDistributions || {};
-  if (baseStatusEnum.length > 0 && currStatusDist['active'] && !currStatusDist['suspended']) {
-    // If suspended users disappeared from distribution but count didn't drop
-    const change: Change = {
-      id: `chg_${Date.now()}_enum_status`,
-      service: current.service,
-      endpoint: current.endpoint,
-      kind: 'enum_semantics',
-      documented: false,
-      before: { enum: baseStatusEnum },
-      after: { distribution: currStatusDist },
-      evidence: {
-        samples: sampleIds,
-        stats: { suspendedCount: 0 },
-      },
-      semanticVerdict: 'breaking',
-      confidence: 0.78,
-      detectedAt: new Date().toISOString(),
-    };
-    ChangeSchema.parse(change);
-    detected.push(change);
+  // 6. Enum semantic drift (M4/M10: enum variant omission or semantic shift)
+  for (const [enumField, baseEnumVals] of Object.entries(baseline.schema.enums)) {
+    if (enumField === 'status') {
+      const currStatusDist = current.fieldStats['status']?.valueDistributions || {};
+      if (baseEnumVals.length > 0 && currStatusDist['active'] && !currStatusDist['suspended']) {
+        const change: Change = {
+          id: `chg_${Date.now()}_enum_status`,
+          service: current.service,
+          endpoint: current.endpoint,
+          kind: 'enum_semantics',
+          documented: false,
+          before: { enum: baseEnumVals },
+          after: { distribution: currStatusDist },
+          evidence: {
+            samples: sampleIds,
+            stats: { suspendedCount: 0 },
+          },
+          semanticVerdict: 'breaking',
+          confidence: 0.78,
+          detectedAt: new Date().toISOString(),
+        };
+        ChangeSchema.parse(change);
+        detected.push(change);
+      }
+    } else {
+      const currEnumVals = current.schema.enums[enumField];
+      if (currEnumVals) {
+        const missingVals = baseEnumVals.filter((v) => !currEnumVals.includes(v));
+        if (missingVals.length > 0) {
+          const isSecurityOrTerminal = missingVals.some((v) =>
+            /revoked|suspended|denied|failed|cancelled|quarantined/i.test(v)
+          );
+          const change: Change = {
+            id: `chg_${Date.now()}_enum_omission_${enumField}`,
+            service: current.service,
+            endpoint: current.endpoint,
+            kind: 'enum_semantics',
+            documented: false,
+            before: { field: enumField, enums: baseEnumVals },
+            after: { field: enumField, enums: currEnumVals, missingEnums: missingVals },
+            evidence: {
+              samples: sampleIds,
+              stats: { missingCount: missingVals.length },
+            },
+            semanticVerdict: isSecurityOrTerminal ? 'breaking' : 'lossy',
+            confidence: isSecurityOrTerminal ? 0.96 : 0.85,
+            detectedAt: new Date().toISOString(),
+          };
+          ChangeSchema.parse(change);
+          detected.push(change);
+        }
+      }
+    }
   }
 
   return detected;
