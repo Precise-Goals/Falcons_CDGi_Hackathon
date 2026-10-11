@@ -242,8 +242,8 @@ export function DocsContainer({
               </p>
 
               {/* Taxonomy Table */}
-              <div className="overflow-x-auto my-4">
-                <table className="w-full text-left font-mono text-xs border border-black/15 bg-white">
+              <div className="overflow-x-auto my-4 rounded-2xl border-2 border-black/15 shadow-sm bg-white">
+                <table className="w-full text-left font-mono text-xs">
                   <thead className="bg-[#FAF8F5] border-b border-black/15 text-black">
                     <tr>
                       <th className="p-2.5">Mutation</th>
