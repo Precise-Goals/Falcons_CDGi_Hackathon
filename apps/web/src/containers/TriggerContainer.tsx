@@ -663,7 +663,7 @@ export function TriggerContainer({ user, onOpenAuth, onDriftAlert }: TriggerCont
                   </div>
                   <div className="p-2 rounded-xl bg-[#FAF9F5] border border-black/5">
                     <span className="text-black/50 block">ENGINE STATUS</span>
-                    <strong className="text-black font-bold">{lastResult.engineNotified ? '200 OK' : 'LOCAL MOCK'}</strong>
+                    <strong className="text-black font-bold">{lastResult.engineNotified ? '200 OK' : 'IN-PROCESS RUNTIME'}</strong>
                   </div>
                 </div>
 
