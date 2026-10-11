@@ -1,6 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { ImpactAnalyzer } from './analyzer.js';
 import { extractPropertyAccesses } from './ast.js';
+import { CallGraphTracer } from './callgraph.js';
 import { Change } from '@intra/shared';
 
 describe('@intra/impact Blast Radius & Dependency Mapping', () => {
@@ -85,5 +86,43 @@ describe('@intra/impact Blast Radius & Dependency Mapping', () => {
       expect(fields).toContain('data.role');
     });
   });
+
+  describe('Call Graph Downstream Dependency Tracing', () => {
+    it('traces multi-hop downstream dependencies in linear workflow chains', () => {
+      const tracer = new CallGraphTracer();
+      tracer.addEdge('checkout', 'paymentGateway');
+      tracer.addEdge('paymentGateway', 'stripeProxy');
+      tracer.addEdge('stripeProxy', 'bankLedger');
+
+      const downstream = tracer.traceDownstream('checkout');
+      expect(downstream).toHaveLength(3);
+      expect(downstream).toContain('paymentGateway');
+      expect(downstream).toContain('stripeProxy');
+      expect(downstream).toContain('bankLedger');
+
+      const chain = tracer.findHopChain('checkout', 'bankLedger');
+      expect(chain).toEqual(['checkout', 'paymentGateway', 'stripeProxy', 'bankLedger']);
+    });
+
+    it('handles cyclic dependencies gracefully without infinite recursion', () => {
+      const tracer = new CallGraphTracer();
+      tracer.addEdge('serviceA', 'serviceB');
+      tracer.addEdge('serviceB', 'serviceC');
+      tracer.addEdge('serviceC', 'serviceA'); // cycle
+
+      const reachable = tracer.traceDownstream('serviceA');
+      expect(reachable).toContain('serviceB');
+      expect(reachable).toContain('serviceC');
+    });
+
+    it('returns null when target node is disconnected', () => {
+      const tracer = new CallGraphTracer();
+      tracer.addEdge('orderService', 'inventoryService');
+
+      const path = tracer.findHopChain('orderService', 'unrelatedService');
+      expect(path).toBeNull();
+    });
+  });
 });
+
 
