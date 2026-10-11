@@ -223,7 +223,7 @@ export function HomeContainer({
                   </div>
                   <button
                     onClick={() => setIsAdapted((prev) => !prev)}
-                    className="flex items-center space-x-1 px-3 py-1.5 rounded-lg bg-crimson hover:bg-crimson-hover text-white text-[11px] font-bold transition shadow-xs"
+                    className="flex items-center space-x-1 px-3 py-1.5 rounded-lg bg-crimson hover:bg-crimson-hover text-white text-[11px] font-bold transition shadow-sm"
                   >
                     <RefreshCw className="w-3 h-3" />
                     <span>{isAdapted ? 'Simulate Failure' : 'Heal With Intra'}</span>
