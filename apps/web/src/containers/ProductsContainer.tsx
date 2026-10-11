@@ -109,13 +109,13 @@ export function ProductsContainer({
     <div className="space-y-8">
       {/* Product Suite Top Sub-Nav Selector */}
       <div className="flex justify-center">
-        <div className="inline-flex rounded-full bg-cream-subtle p-1 border border-black/10 text-xs font-mono font-semibold">
+        <div className="inline-flex rounded-2xl bg-cream-subtle p-1.5 border border-black/10 text-xs font-mono font-semibold gap-1">
           <button
             onClick={() => onSelectProductTab('agent')}
-            className={`flex items-center space-x-1.5 px-4 py-1.5 rounded-full transition ${
+            className={`flex items-center space-x-1.5 px-4 py-2 rounded-xl transition ${
               activeProductTab === 'agent'
                 ? 'bg-black text-white shadow-sm'
-                : 'text-black/60 hover:text-black'
+                : 'text-black/60 hover:text-black hover:bg-black/5'
             }`}
           >
             <Cpu className="w-3.5 h-3.5" />
@@ -123,10 +123,10 @@ export function ProductsContainer({
           </button>
           <button
             onClick={() => onSelectProductTab('mcp')}
-            className={`flex items-center space-x-1.5 px-4 py-1.5 rounded-full transition ${
+            className={`flex items-center space-x-1.5 px-4 py-2 rounded-xl transition ${
               activeProductTab === 'mcp'
                 ? 'bg-crimson text-white shadow-sm'
-                : 'text-black/60 hover:text-black'
+                : 'text-black/60 hover:text-black hover:bg-black/5'
             }`}
           >
             <Terminal className="w-3.5 h-3.5" />
@@ -134,10 +134,10 @@ export function ProductsContainer({
           </button>
           <button
             onClick={() => onSelectProductTab('sdk')}
-            className={`flex items-center space-x-1.5 px-4 py-1.5 rounded-full transition ${
+            className={`flex items-center space-x-1.5 px-4 py-2 rounded-xl transition ${
               activeProductTab === 'sdk'
                 ? 'bg-black text-white shadow-sm'
-                : 'text-black/60 hover:text-black'
+                : 'text-black/60 hover:text-black hover:bg-black/5'
             }`}
           >
             <Code2 className="w-3.5 h-3.5" />
@@ -165,10 +165,10 @@ export function ProductsContainer({
               </div>
 
               {/* Mode Switcher: Ask Mode vs Plan Mode */}
-              <div className="flex items-center p-1 bg-cream-subtle rounded-full border border-black/10 text-xs font-mono font-semibold">
+              <div className="flex items-center p-1 bg-cream-subtle rounded-xl border border-black/10 text-xs font-mono font-semibold">
                 <button
                   onClick={() => setAgentMode('ask')}
-                  className={`px-4 py-1.5 rounded-full transition ${
+                  className={`px-4 py-1.5 rounded-lg transition ${
                     agentMode === 'ask'
                       ? 'bg-black text-white shadow-sm'
                       : 'text-black/60 hover:text-black'
@@ -178,7 +178,7 @@ export function ProductsContainer({
                 </button>
                 <button
                   onClick={() => setAgentMode('plan')}
-                  className={`px-4 py-1.5 rounded-full transition ${
+                  className={`px-4 py-1.5 rounded-lg transition ${
                     agentMode === 'plan'
                       ? 'bg-crimson text-white shadow-sm'
                       : 'text-black/60 hover:text-black'
@@ -237,7 +237,7 @@ export function ProductsContainer({
                 <button
                   key={chip}
                   onClick={() => handleAgentSubmit(chip)}
-                  className="px-3.5 py-1.5 rounded-full border border-black/10 bg-white hover:border-crimson hover:bg-crimson/5 text-xs text-black/80 transition shadow-sm text-left"
+                  className="px-3.5 py-1.5 rounded-xl border border-black/10 bg-white hover:border-crimson hover:bg-crimson/5 text-xs text-black/80 transition shadow-sm text-left"
                 >
                   {chip}
                 </button>
@@ -444,7 +444,7 @@ export function ProductsContainer({
             {!isAtBottom && (
               <button
                 onClick={() => scrollToPresentChat(true)}
-                className="absolute bottom-20 right-10 z-10 flex items-center space-x-1.5 px-3 py-1.5 rounded-full bg-crimson text-white text-[11px] font-mono font-bold shadow-lg hover:bg-crimson-hover transition transform hover:-translate-y-0.5"
+                className="absolute bottom-20 right-10 z-10 flex items-center space-x-1.5 px-3.5 py-2 rounded-xl bg-crimson text-white text-[11px] font-mono font-bold shadow-lg hover:bg-crimson-hover transition transform hover:-translate-y-0.5"
               >
                 <ArrowDown className="w-3.5 h-3.5 animate-bounce" />
                 <span>Present Chat</span>
@@ -463,11 +463,11 @@ export function ProductsContainer({
                 value={agentPrompt}
                 onChange={(e) => setAgentPrompt(e.target.value)}
                 onKeyDown={(e) => e.key === 'Enter' && handleAgentSubmit()}
-                className="flex-grow px-4 py-3 rounded-full border border-black/10 bg-cream-subtle text-xs text-black focus:outline-none focus:border-crimson"
+                className="flex-grow px-4 py-3 rounded-xl border border-black/10 bg-cream-subtle text-xs text-black focus:outline-none focus:border-crimson"
               />
               <button
                 onClick={() => handleAgentSubmit()}
-                className="p-3 rounded-full bg-crimson text-white hover:bg-crimson-hover transition shadow-sm"
+                className="p-3 rounded-xl bg-crimson text-white hover:bg-crimson-hover transition shadow-sm"
               >
                 <Send className="w-4 h-4" />
               </button>
@@ -570,7 +570,7 @@ export function ProductsContainer({
                 <button
                   onClick={() => executeMcpTool(selectedMcpTool)}
                   disabled={mcpLoading}
-                  className="flex items-center space-x-1.5 px-3 py-1.5 rounded-full bg-black text-white text-xs font-mono font-bold hover:bg-black/80 transition"
+                  className="flex items-center space-x-1.5 px-3 py-1.5 rounded-xl bg-black text-white text-xs font-mono font-bold hover:bg-black/80 transition"
                 >
                   <RefreshCw className={`w-3 h-3 ${mcpLoading ? 'animate-spin' : ''}`} />
                   <span>{mcpLoading ? 'Executing...' : 'Re-run Tool'}</span>

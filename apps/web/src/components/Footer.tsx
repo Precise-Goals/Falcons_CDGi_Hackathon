@@ -35,11 +35,10 @@ export function Footer({ setActiveTab }: FooterProps) {
             <p className="text-white/60 leading-relaxed font-sans text-xs">
               Autonomous runtime infrastructure empowering software to survive undocumented upstream API changes with zero production downtime.
             </p>
-            <div className="flex items-center space-x-2 pt-1">
-              <span className="px-2.5 py-0.5 rounded-full text-[10px] font-mono font-bold uppercase tracking-wider bg-crimson/15 text-crimson border border-crimson/40">
-                v0.1.0 VERIFIED
-              </span>
-              <span className="text-white/40 font-mono text-[10px]">MIT LICENSE</span>
+            <div className="flex items-center space-x-2 pt-1 text-[11px] font-mono">
+              <span className="text-crimson font-bold">v0.1.0 VERIFIED</span>
+              <span className="text-white/30">|</span>
+              <span className="text-white/60">MIT LICENSE</span>
             </div>
           </div>
 

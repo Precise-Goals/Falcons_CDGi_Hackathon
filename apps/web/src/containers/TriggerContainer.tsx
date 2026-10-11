@@ -327,16 +327,17 @@ export function TriggerContainer({ user, onOpenAuth, onDriftAlert }: TriggerCont
       <div className="relative overflow-hidden rounded-[2.5rem] border border-black/10 bg-white/95 p-8 md:p-10 shadow-card dot-grid-pattern">
         <div className="flex flex-wrap items-center justify-between gap-4">
           <div className="space-y-2">
-            <div className="flex items-center space-x-2">
-              <span className="verified-badge flex items-center space-x-1.5">
+            <div className="flex items-center flex-wrap gap-2 text-xs font-mono uppercase tracking-wider text-black/80 font-semibold">
+              <span className="inline-flex items-center space-x-1.5">
                 <span className="w-2 h-2 rounded-full bg-crimson animate-ping" />
-                <span>SECRET OPERATOR LAB</span>
+                <span className="text-crimson font-black tracking-widest">SECRET OPERATOR LAB</span>
               </span>
-              <span className="text-xs font-mono bg-black text-white px-2.5 py-0.5 rounded-full font-bold">
-                ROUTE: /trigger
-              </span>
-              <span className="text-xs font-mono text-emerald-700 bg-emerald-50 px-2.5 py-0.5 rounded-full border border-emerald-200">
-                ZERO-MOCK REAL SCENARIO
+              <span className="text-black/30 font-light">|</span>
+              <span className="text-black/90 font-mono font-bold">ROUTE: /trigger</span>
+              <span className="text-black/30 font-light">|</span>
+              <span className="inline-flex items-center space-x-1.5 text-emerald-700 font-bold">
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.8)]" />
+                <span>ZERO-MOCK REAL SCENARIO</span>
               </span>
             </div>
             <h1 className="font-display font-black text-3xl sm:text-4xl text-black tracking-tight">
@@ -445,14 +446,13 @@ export function TriggerContainer({ user, onOpenAuth, onDriftAlert }: TriggerCont
               Graphical API Mutation Topology &amp; Airlink Broadcast
             </h3>
           </div>
-          <div className="flex items-center space-x-2">
-            <span className="text-[10px] font-mono text-crimson bg-crimson/10 px-2.5 py-0.5 rounded-full border border-crimson/30 font-bold flex items-center space-x-1">
-              <span className="w-1.5 h-1.5 rounded-full bg-crimson animate-ping" />
+          <div className="flex items-center space-x-2 text-[11px] font-mono font-bold">
+            <span className="inline-flex items-center space-x-1.5 text-crimson">
+              <span className="w-1.5 h-1.5 rounded-full bg-crimson shadow-[0_0_6px_rgba(225,29,72,0.8)] animate-pulse" />
               <span>LIVE SIGNAL TOPOLOGY</span>
             </span>
-            <span className="text-[10px] font-mono text-black/60 bg-black/5 px-2.5 py-0.5 rounded-full border border-black/10 font-bold">
-              ANDROID AIRLINK &bull; &lt;20MS
-            </span>
+            <span className="text-black/30">|</span>
+            <span className="text-black/60">ANDROID AIRLINK &bull; &lt;20MS</span>
           </div>
         </div>
 
@@ -480,7 +480,7 @@ export function TriggerContainer({ user, onOpenAuth, onDriftAlert }: TriggerCont
 
             {/* Node 2: Mutated Upstream Endpoint */}
             <div className="p-3.5 rounded-xl bg-crimson/15 border border-crimson/40 text-center space-y-1 relative">
-              <span className="absolute -top-2 left-1/2 -translate-x-1/2 px-2 py-0.5 rounded-full bg-crimson text-white text-[9px] font-mono font-bold">
+              <span className="absolute -top-2 left-1/2 -translate-x-1/2 px-2 py-0.5 rounded-md bg-crimson text-white text-[9px] font-mono font-bold">
                 DRIFT SITE
               </span>
               <div className="text-[10px] font-mono text-crimson font-bold uppercase">{activeSchema.method}</div>
@@ -521,7 +521,7 @@ export function TriggerContainer({ user, onOpenAuth, onDriftAlert }: TriggerCont
             <div className="p-4 rounded-2xl bg-white border border-black/10 shadow-xs space-y-2">
               <div className="text-[11px] font-mono font-bold text-black/60 uppercase flex items-center justify-between">
                 <span>Baseline Schema (Pre-Drift)</span>
-                <span className="text-[10px] px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200">
+                <span className="text-[10px] px-2 py-0.5 rounded-md bg-emerald-50 text-emerald-700 border border-emerald-200">
                   HTTP 200 OK
                 </span>
               </div>
@@ -534,7 +534,7 @@ export function TriggerContainer({ user, onOpenAuth, onDriftAlert }: TriggerCont
             <div className="p-4 rounded-2xl bg-white border border-crimson/20 shadow-xs space-y-2 ring-1 ring-crimson/10">
               <div className="text-[11px] font-mono font-bold text-crimson uppercase flex items-center justify-between">
                 <span>Mutated Upstream (Live Drift)</span>
-                <span className="text-[10px] px-2 py-0.5 rounded-full bg-crimson/10 text-crimson border border-crimson/30 font-bold">
+                <span className="text-[10px] px-2 py-0.5 rounded-md bg-crimson/10 text-crimson border border-crimson/30 font-bold">
                   {activeSchema.mutationType.toUpperCase()}
                 </span>
               </div>
@@ -639,7 +639,7 @@ export function TriggerContainer({ user, onOpenAuth, onDriftAlert }: TriggerCont
                 </h3>
               </div>
               {lastResult && (
-                <span className="text-[10px] font-mono bg-black text-white px-2 py-0.5 rounded-full font-bold">
+                <span className="text-[10px] font-mono bg-black text-white px-2 py-0.5 rounded-md font-bold">
                   {lastResult.durationMs}ms
                 </span>
               )}

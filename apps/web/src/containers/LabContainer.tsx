@@ -82,17 +82,18 @@ export function LabContainer({
 
         {/* Top Header Block */}
         <div className="space-y-3 relative z-10">
-          <div className="flex flex-wrap items-center gap-2">
-            <span className="verified-badge bg-crimson/10 text-crimson border border-crimson/30">
-              AUTONOMOUS STRESS LABORATORY
+          <div className="flex items-center flex-wrap gap-2 text-xs font-mono uppercase tracking-wider text-black/80 font-semibold">
+            <span className="inline-flex items-center space-x-1.5">
+              <span className="w-2 h-2 rounded-full bg-crimson shadow-[0_0_8px_rgba(225,29,72,0.8)] animate-pulse" />
+              <span className="text-crimson font-black tracking-widest">AUTONOMOUS STRESS LABORATORY</span>
             </span>
-            <span className="text-[11px] font-mono text-emerald-600 bg-emerald-500/10 px-2.5 py-0.5 rounded-full border border-emerald-500/20 font-bold flex items-center space-x-1.5">
-              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+            <span className="text-black/30 font-light">|</span>
+            <span className="inline-flex items-center space-x-1.5 text-emerald-700 font-bold">
+              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.8)]" />
               <span>ALGORITHMIC ZERO-MOCK RUNTIME</span>
             </span>
-            <span className="text-[11px] font-mono text-black/60 bg-black/5 px-2.5 py-0.5 rounded-full border border-black/10 font-bold">
-              MST CHAIN #91562037
-            </span>
+            <span className="text-black/30 font-light">|</span>
+            <span className="text-black/70 font-mono font-bold">MST CHAIN #91562037</span>
           </div>
 
           <h2 className="font-display font-extrabold text-3xl sm:text-4xl text-black tracking-tight">
@@ -375,35 +376,35 @@ export function LabContainer({
           </div>
 
           {/* Sub-Navigation Tabs */}
-          <div className="flex rounded-full bg-cream-subtle p-1 border border-black/10 text-xs font-mono font-semibold max-w-xl mx-auto">
+          <div className="flex flex-wrap rounded-2xl bg-cream-subtle p-1.5 border border-black/10 text-xs font-mono font-bold max-w-3xl mx-auto gap-1">
             <button
               onClick={() => setActiveLabTab('batch')}
-              className={`flex-1 py-1.5 rounded-full transition ${
-                activeLabTab === 'batch' ? 'bg-black text-white shadow-sm' : 'text-black/60 hover:text-black'
+              className={`flex-1 min-w-[140px] py-2 px-3 rounded-xl transition ${
+                activeLabTab === 'batch' ? 'bg-black text-white shadow-sm' : 'text-black/60 hover:text-black hover:bg-black/5'
               }`}
             >
               Benchmark Overview
             </button>
             <button
               onClick={() => setActiveLabTab('predictability')}
-              className={`flex-1 py-1.5 rounded-full transition ${
-                activeLabTab === 'predictability' ? 'bg-crimson text-white shadow-sm' : 'text-black/60 hover:text-black'
+              className={`flex-1 min-w-[160px] py-2 px-3 rounded-xl transition ${
+                activeLabTab === 'predictability' ? 'bg-crimson text-white shadow-sm' : 'text-black/60 hover:text-black hover:bg-black/5'
               }`}
             >
               Predictability of Changes
             </button>
             <button
               onClick={() => setActiveLabTab('samples')}
-              className={`flex-1 py-1.5 rounded-full transition ${
-                activeLabTab === 'samples' ? 'bg-black text-white shadow-sm' : 'text-black/60 hover:text-black'
+              className={`flex-1 min-w-[130px] py-2 px-3 rounded-xl transition ${
+                activeLabTab === 'samples' ? 'bg-black text-white shadow-sm' : 'text-black/60 hover:text-black hover:bg-black/5'
               }`}
             >
               Samples ({batchReport.totalSamples})
             </button>
             <button
               onClick={() => setActiveLabTab('logs')}
-              className={`flex-1 py-1.5 rounded-full transition ${
-                activeLabTab === 'logs' ? 'bg-black text-white shadow-sm' : 'text-black/60 hover:text-black'
+              className={`flex-1 min-w-[150px] py-2 px-3 rounded-xl transition ${
+                activeLabTab === 'logs' ? 'bg-black text-white shadow-sm' : 'text-black/60 hover:text-black hover:bg-black/5'
               }`}
             >
               Terminal Audit Stream
@@ -858,14 +859,14 @@ export function LabContainer({
           <div className="flex flex-wrap items-center justify-center gap-3 pt-2">
             <button
               onClick={() => handleRunBatchEvaluation(batchSampleSize)}
-              className="skeuo-button-primary px-7 py-3.5 rounded-full text-white font-mono text-xs font-bold inline-flex items-center space-x-2"
+              className="skeuo-button-primary px-7 py-3.5 rounded-2xl text-white font-mono text-xs font-bold inline-flex items-center space-x-2"
             >
               <Play className="w-4 h-4 fill-current" />
               <span>Run Dynamic {batchSampleSize}-Sample Stress Suite</span>
             </button>
             <button
               onClick={() => handleRunEvaluation()}
-              className="px-6 py-3.5 rounded-full border border-black/20 text-black font-mono font-semibold text-xs hover:bg-black/5 transition inline-flex items-center space-x-2"
+              className="px-6 py-3.5 rounded-2xl border border-black/20 text-black font-mono font-semibold text-xs hover:bg-black/5 transition inline-flex items-center space-x-2"
             >
               <Sparkles className="w-4 h-4 text-crimson" />
               <span>Quick Single Schema Test</span>

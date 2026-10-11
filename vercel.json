@@ -7,24 +7,18 @@
       "framework": "vite",
       "buildCommand": "pnpm run build",
       "outputDirectory": "dist"
+    },
+    "api": {
+      "root": "api",
+      "entrypoint": "server.js"
     }
   },
   "rewrites": [
     {
-      "source": "/api/mcp/tools/call",
-      "destination": "/api/mcp/tools/call.js"
-    },
-    {
-      "source": "/api/mcp/(.*)",
-      "destination": "/api/mcp/$1.js"
-    },
-    {
-      "source": "/api/engine/(.*)",
-      "destination": "/api/engine/$1.js"
-    },
-    {
-      "source": "/api/sim/(.*)",
-      "destination": "/api/sim/$1.js"
+      "source": "/api/(.*)",
+      "destination": {
+        "service": "api"
+      }
     },
     {
       "source": "/((?!api/).*)",

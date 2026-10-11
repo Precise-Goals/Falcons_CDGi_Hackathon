@@ -15,6 +15,15 @@ export function buildSimServicesApp(switchboard: Switchboard): FastifyInstance {
     }
   });
 
+  // Catch-all parser for missing or arbitrary Content-Type to prevent 415 Unsupported Media Type
+  app.addContentTypeParser('*', { parseAs: 'string' }, (_req, body, done) => {
+    try {
+      done(null, body ? JSON.parse(body as string) : {});
+    } catch {
+      done(null, {});
+    }
+  });
+
   // Switchboard control endpoints (supporting /sim/switchboard, /switchboard, and /api/sim/switchboard)
   const handleGetSwitchboard = async () => ({ mutations: switchboard.list() });
   const handleToggleSwitchboard = async (req: any, reply: any) => {

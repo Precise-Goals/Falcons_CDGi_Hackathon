@@ -15,6 +15,15 @@ export function buildEngineApp(pipeline = new PipelineEngine()): FastifyInstance
     }
   });
 
+  // Catch-all parser for missing or arbitrary Content-Type to prevent 415 Unsupported Media Type
+  app.addContentTypeParser('*', { parseAs: 'string' }, (_req, body, done) => {
+    try {
+      done(null, body ? JSON.parse(body as string) : {});
+    } catch {
+      done(null, {});
+    }
+  });
+
   const registerRoutes = async (instance: FastifyInstance) => {
     // 1. Record Observation
     instance.post('/observe', async (req, reply) => {
