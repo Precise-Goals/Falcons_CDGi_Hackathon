@@ -12,8 +12,13 @@
     "lint": "tsc --noEmit"
   },
   "dependencies": {
+    "@intra/adapter": "workspace:*",
+    "@intra/differ": "workspace:*",
+    "@intra/impact": "workspace:*",
+    "@intra/model": "workspace:*",
     "@intra/sdk": "workspace:*",
     "@intra/shared": "workspace:*",
+    "@intra/validator": "workspace:*",
     "clsx": "^2.1.1",
     "ethers": "^6.17.0",
     "lucide-react": "^0.475.0",

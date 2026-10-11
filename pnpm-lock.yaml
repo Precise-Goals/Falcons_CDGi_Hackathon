@@ -280,12 +280,27 @@ importers:
 
   apps/web:
     dependencies:
+      '@intra/adapter':
+        specifier: workspace:*
+        version: link:../../packages/adapter
+      '@intra/differ':
+        specifier: workspace:*
+        version: link:../../packages/differ
+      '@intra/impact':
+        specifier: workspace:*
+        version: link:../../packages/impact
+      '@intra/model':
+        specifier: workspace:*
+        version: link:../../packages/model
       '@intra/sdk':
         specifier: workspace:*
         version: link:../../packages/sdk
       '@intra/shared':
         specifier: workspace:*
         version: link:../../packages/shared
+      '@intra/validator':
+        specifier: workspace:*
+        version: link:../../packages/validator
       clsx:
         specifier: ^2.1.1
         version: 2.1.1
