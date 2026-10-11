@@ -1,5 +1,9 @@
-import { describe, it, expect } from 'vitest';
-import { synthesizeProgram, PBESynthesizer, deepEquals } from './pbe.js';
+import {
+  synthesizeProgram,
+  PBESynthesizer,
+  deepEquals,
+  StringTransformationDSL,
+} from './pbe.js';
 
 describe('FlashFill PBE Synthesizer (@intra/adapter)', () => {
   describe('Occam Shortest-Program & Generalization Tests', () => {
@@ -145,6 +149,30 @@ describe('FlashFill PBE Synthesizer (@intra/adapter)', () => {
       expect(deepEquals({ a: 1 }, { a: 2 })).toBe(false);
       expect(deepEquals(null, null)).toBe(true);
       expect(deepEquals(null, undefined)).toBe(false);
+    });
+
+    it('synthesizes inductive substring slice deduction from prefix matches', () => {
+      const examples = [
+        { input: 'ORDER_PREFIX_101', output: 'ORDER' },
+        { input: 'ORDER_PREFIX_202', output: 'ORDER' },
+        { input: 'ORDER_PREFIX_303', output: 'ORDER' },
+        { input: 'ORDER_PREFIX_404', output: 'ORDER' },
+        { input: 'ORDER_PREFIX_505', output: 'ORDER' },
+      ];
+
+      const res = synthesizeProgram(examples);
+      expect(res).not.toBeNull();
+      expect(res?.verified).toBe(true);
+      expect(res?.program.execute('ORDER_PREFIX_999')).toBe('ORDER');
+    });
+
+    it('executes StringTransformationDSL operations with accurate affixes and padding', () => {
+      expect(StringTransformationDSL.slice('abcdef', 0, 3)).toBe('abc');
+      expect(StringTransformationDSL.concat('hello', 'world', ' ')).toBe('hello world');
+      expect(StringTransformationDSL.replace('order_v1', 'v1', 'v2')).toBe('order_v2');
+      expect(StringTransformationDSL.pad('42', 5, '0')).toBe('00042');
+      expect(StringTransformationDSL.prefix('123', 'id_')).toBe('id_123');
+      expect(StringTransformationDSL.suffix('123', '_suffix')).toBe('123_suffix');
     });
   });
 });
