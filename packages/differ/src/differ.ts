@@ -4,7 +4,27 @@ import {
   ChangeSchema,
 } from '@intra/shared';
 
-function calculateLevenshtein(a: string, b: string): number {
+const levenshteinCache = new Map<string, number>();
+
+/**
+ * Clears the internal Levenshtein distance memoization cache.
+ */
+export function clearLevenshteinCache(): void {
+  levenshteinCache.clear();
+}
+
+/**
+ * Computes Levenshtein edit distance with symmetrical cache memoization.
+ */
+export function calculateLevenshtein(a: string, b: string): number {
+  if (a === b) return 0;
+  if (a.length === 0) return b.length;
+  if (b.length === 0) return a.length;
+
+  const key = a < b ? `${a}\0${b}` : `${b}\0${a}`;
+  const cached = levenshteinCache.get(key);
+  if (cached !== undefined) return cached;
+
   const matrix: number[][] = [];
   for (let i = 0; i <= b.length; i++) matrix[i] = [i];
   for (let j = 0; j <= a.length; j++) matrix[0][j] = j;
@@ -22,14 +42,30 @@ function calculateLevenshtein(a: string, b: string): number {
       }
     }
   }
-  return matrix[b.length][a.length];
+
+  const dist = matrix[b.length][a.length];
+  if (levenshteinCache.size < 10000) {
+    levenshteinCache.set(key, dist);
+  }
+  return dist;
 }
 
-function stringSimilarity(s1: string, s2: string): number {
-  const longer = s1.length > s2.length ? s1 : s2;
-  if (longer.length === 0) return 1.0;
-  return (longer.length - calculateLevenshtein(s1, s2)) / longer.length;
+/**
+ * Computes normalized Levenshtein distance bounded between 0.0 (identical) and 1.0 (completely disjoint).
+ */
+export function normalizedLevenshteinDistance(a: string, b: string): number {
+  const maxLen = Math.max(a.length, b.length);
+  if (maxLen === 0) return 0.0;
+  return calculateLevenshtein(a, b) / maxLen;
 }
+
+/**
+ * Computes string similarity bounded between 0.0 and 1.0.
+ */
+export function stringSimilarity(s1: string, s2: string): number {
+  return 1.0 - normalizedLevenshteinDistance(s1, s2);
+}
+
 
 export function detectChanges(
   baseline: Contract,
