@@ -285,3 +285,43 @@ export function detectChanges(
 
   return detected;
 }
+
+export interface PaginationDriftClassification {
+  hasDrift: boolean;
+  fromStyle: Contract['paginationStyle'];
+  toStyle: Contract['paginationStyle'];
+  isOpaqueCursor: boolean;
+  isLossyRandomAccess: boolean;
+  recommendedAdapter: 'cursor-to-offset' | 'offset-to-cursor' | 'none';
+}
+
+/**
+ * Classifies pagination parameter drift (M5), detecting lossy random access transitions
+ * such as offset-to-cursor and suggesting standard compatibility adapter shims.
+ */
+export function classifyPaginationDrift(
+  baseline: Contract,
+  current: Contract
+): PaginationDriftClassification {
+  const fromStyle = baseline.paginationStyle;
+  const toStyle = current.paginationStyle;
+  const hasDrift = fromStyle !== toStyle && toStyle !== 'none';
+  const isOpaqueCursor =
+    hasDrift &&
+    (fromStyle === 'offset' || fromStyle === 'page') &&
+    toStyle === 'cursor';
+
+  return {
+    hasDrift,
+    fromStyle,
+    toStyle,
+    isOpaqueCursor,
+    isLossyRandomAccess: isOpaqueCursor,
+    recommendedAdapter: isOpaqueCursor
+      ? 'cursor-to-offset'
+      : hasDrift
+      ? 'offset-to-cursor'
+      : 'none',
+  };
+}
+
