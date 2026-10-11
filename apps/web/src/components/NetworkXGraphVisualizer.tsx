@@ -335,11 +335,378 @@ const INITIAL_EDGES: GraphEdge[] = [
   { id: 'e13', source: 'wf-audit', target: 'cns-mcp', protocol: 'Incident Hook', status: 'broken', trafficSpeed: 0.0, particles: [] },
 ];
 
+export const MOVIE_BOOKING_NODES: GraphNode[] = [
+  // Tier 0: Upstream External Microservices
+  {
+    id: 'mb-srv-movies',
+    label: 'MovieCatalog (/v1/movies/search)',
+    type: 'upstream',
+    tier: 0,
+    status: 'adapted',
+    severity: 'medium',
+    filePath: 'external://cinema.catalog.io/v1/movies',
+    lines: 'M5: offset -> opaque cursor pagination',
+    invariantsCount: 14,
+    qps: 340,
+    merkleHash: '0x8fa12bc90011...',
+    x: 120,
+    y: 130,
+    vx: 0,
+    vy: 0,
+    radius: 22,
+  },
+  {
+    id: 'mb-srv-seats',
+    label: 'SeatLockService (/v1/shows/reserve-seat)',
+    type: 'upstream',
+    tier: 0,
+    status: 'mutated',
+    severity: 'high',
+    filePath: 'external://seats.engine.io/v1/reserve-seat',
+    lines: 'M1: seat_id -> seat_coordinate',
+    invariantsCount: 22,
+    qps: 720,
+    merkleHash: '0x99e234bc1234...',
+    x: 120,
+    y: 260,
+    vx: 0,
+    vy: 0,
+    radius: 22,
+  },
+  {
+    id: 'mb-srv-payments',
+    label: 'StripeMoviePay (/v1/payments/process-booking)',
+    type: 'upstream',
+    tier: 0,
+    status: 'mutated',
+    severity: 'critical',
+    filePath: 'external://pay.stripe.com/v1/charges',
+    lines: 'M3: $ float -> cents int unit shift',
+    invariantsCount: 16,
+    qps: 290,
+    merkleHash: '0x44cd55ea6677...',
+    x: 120,
+    y: 390,
+    vx: 0,
+    vy: 0,
+    radius: 22,
+  },
+  {
+    id: 'mb-srv-pricing',
+    label: 'DynamicPricing (/v1/venues/pricing-tier)',
+    type: 'upstream',
+    tier: 0,
+    status: 'healthy',
+    severity: 'low',
+    filePath: 'external://pricing.ai/v2/tiers',
+    lines: 'M4: default currency flips USD -> EUR',
+    invariantsCount: 8,
+    qps: 110,
+    merkleHash: '0x12bb99ee3311...',
+    x: 120,
+    y: 520,
+    vx: 0,
+    vy: 0,
+    radius: 22,
+  },
+  {
+    id: 'mb-srv-notify',
+    label: 'CustomerSmsPush (/v1/notifications/ticket-sms)',
+    type: 'upstream',
+    tier: 0,
+    status: 'adapted',
+    severity: 'low',
+    filePath: 'external://sms.twilio.net/v1/messages',
+    lines: 'M7: payload nests event.type -> type',
+    invariantsCount: 6,
+    qps: 160,
+    merkleHash: '0x77aa88dd9900...',
+    x: 120,
+    y: 640,
+    vx: 0,
+    vy: 0,
+    radius: 22,
+  },
+
+  // Tier 1: Intra Synthesized Adapters
+  {
+    id: 'mb-adp-cursor',
+    label: 'Adapter: Showtimes Cursor Demux',
+    type: 'adapter',
+    tier: 1,
+    status: 'adapted',
+    severity: 'medium',
+    filePath: 'packages/adapter/src/pbe.ts',
+    lines: 'unwrap(items, page_token)',
+    invariantsCount: 4,
+    qps: 340,
+    merkleHash: '0xad0199fe2233...',
+    x: 320,
+    y: 150,
+    vx: 0,
+    vy: 0,
+    radius: 18,
+  },
+  {
+    id: 'mb-adp-seat',
+    label: 'Adapter: Seat Coordinate Mapper',
+    type: 'adapter',
+    tier: 1,
+    status: 'adapted',
+    severity: 'high',
+    filePath: 'packages/adapter/src/generator.ts',
+    lines: 'rename(seat_coordinate -> seat_id)',
+    invariantsCount: 6,
+    qps: 720,
+    merkleHash: '0xad0288ee1144...',
+    x: 320,
+    y: 280,
+    vx: 0,
+    vy: 0,
+    radius: 18,
+  },
+  {
+    id: 'mb-adp-cents',
+    label: 'Adapter: Cents Unit Scaler (* 100)',
+    type: 'adapter',
+    tier: 1,
+    status: 'adapted',
+    severity: 'critical',
+    filePath: 'packages/adapter/src/pbe.ts',
+    lines: 'scale(100) auto-applied (p=0.98)',
+    invariantsCount: 5,
+    qps: 290,
+    merkleHash: '0xad0377dd0055...',
+    x: 320,
+    y: 410,
+    vx: 0,
+    vy: 0,
+    radius: 18,
+  },
+  {
+    id: 'mb-adp-sms',
+    label: 'Adapter: SMS Event Unpacker',
+    type: 'adapter',
+    tier: 1,
+    status: 'adapted',
+    severity: 'low',
+    filePath: 'packages/adapter/src/generator.ts',
+    lines: 'nest(type -> event.type)',
+    invariantsCount: 3,
+    qps: 160,
+    merkleHash: '0xad0466cc9966...',
+    x: 320,
+    y: 620,
+    vx: 0,
+    vy: 0,
+    radius: 18,
+  },
+
+  // Tier 2: Movie Booking Application Workflows
+  {
+    id: 'mb-wf-schedule',
+    label: 'showtimeBrowse.ts (Cinema Hall Grid)',
+    type: 'workflow',
+    tier: 2,
+    status: 'healthy',
+    severity: 'medium',
+    filePath: 'apps/booking-app/src/workflows/showtimeBrowse.ts',
+    lines: 'L34-L52 (AST parseSchedule)',
+    invariantsCount: 12,
+    qps: 340,
+    merkleHash: '0xwf0155bb8877...',
+    x: 540,
+    y: 160,
+    vx: 0,
+    vy: 0,
+    radius: 20,
+  },
+  {
+    id: 'mb-wf-seatlock',
+    label: 'seatReservation.ts (10m TTL Lock)',
+    type: 'workflow',
+    tier: 2,
+    status: 'healthy',
+    severity: 'high',
+    filePath: 'apps/booking-app/src/workflows/seatReservation.ts',
+    lines: 'L68-L94 (AST acquireSeatLock)',
+    invariantsCount: 18,
+    qps: 720,
+    merkleHash: '0xwf0244aa7788...',
+    x: 540,
+    y: 290,
+    vx: 0,
+    vy: 0,
+    radius: 20,
+  },
+  {
+    id: 'mb-wf-pay',
+    label: 'paymentCapture.ts (Idempotency Token)',
+    type: 'workflow',
+    tier: 2,
+    status: 'healthy',
+    severity: 'critical',
+    filePath: 'apps/booking-app/src/workflows/paymentCapture.ts',
+    lines: 'L22-L48 (AST captureCheckout)',
+    invariantsCount: 15,
+    qps: 290,
+    merkleHash: '0xwf0333996699...',
+    x: 540,
+    y: 420,
+    vx: 0,
+    vy: 0,
+    radius: 20,
+  },
+  {
+    id: 'mb-wf-ticket',
+    label: 'ticketDispatch.ts (Barcode & Passbook)',
+    type: 'workflow',
+    tier: 2,
+    status: 'healthy',
+    severity: 'low',
+    filePath: 'apps/booking-app/src/workflows/ticketDispatch.ts',
+    lines: 'L15-L38 (AST generateMobilePass)',
+    invariantsCount: 9,
+    qps: 160,
+    merkleHash: '0xwf04228855aa...',
+    x: 540,
+    y: 620,
+    vx: 0,
+    vy: 0,
+    radius: 20,
+  },
+
+  // Tier 3: Downstream Consumers & Data Integrity
+  {
+    id: 'mb-db-seats',
+    label: 'Seat Matrix DB (PostgreSQL Row Lock)',
+    type: 'database',
+    tier: 3,
+    status: 'healthy',
+    severity: 'high',
+    filePath: 'db://cinema-primary.internal/seat_inventory',
+    lines: 'ACID Row Locks (TTL: 600s)',
+    invariantsCount: 11,
+    qps: 720,
+    merkleHash: '0xdb01117744bb...',
+    x: 760,
+    y: 200,
+    vx: 0,
+    vy: 0,
+    radius: 20,
+  },
+  {
+    id: 'mb-db-ledger',
+    label: 'Booking Audit Ledger (SHA-256 Chain)',
+    type: 'database',
+    tier: 3,
+    status: 'healthy',
+    severity: 'critical',
+    filePath: 'db://audit-ledger.internal/receipts',
+    lines: 'Tamper-Evident Merkle Blocks',
+    invariantsCount: 20,
+    qps: 290,
+    merkleHash: '0xdb02006633cc...',
+    x: 760,
+    y: 350,
+    vx: 0,
+    vy: 0,
+    radius: 20,
+  },
+  {
+    id: 'mb-cns-mobile',
+    label: 'MovieGoer Companion (BLE GATT & Push)',
+    type: 'consumer',
+    tier: 3,
+    status: 'healthy',
+    severity: 'low',
+    filePath: 'android://intra_companion/ble_airlink',
+    lines: 'BLE Service 0xFFE0 / Push APNS',
+    invariantsCount: 14,
+    qps: 450,
+    merkleHash: '0xcns01ff5522dd...',
+    x: 760,
+    y: 490,
+    vx: 0,
+    vy: 0,
+    radius: 18,
+  },
+  {
+    id: 'mb-cns-kiosk',
+    label: 'Box Office Kiosk (Thermal Ticket Print)',
+    type: 'consumer',
+    tier: 3,
+    status: 'healthy',
+    severity: 'medium',
+    filePath: 'iot://theater-kiosk/printer',
+    lines: 'ESC/POS Thermal Protocol',
+    invariantsCount: 7,
+    qps: 90,
+    merkleHash: '0xcns02ee4411ee...',
+    x: 760,
+    y: 610,
+    vx: 0,
+    vy: 0,
+    radius: 18,
+  },
+  {
+    id: 'mb-cns-mcp',
+    label: 'AI Booking Concierge (Intra MCP Tools)',
+    type: 'consumer',
+    tier: 3,
+    status: 'healthy',
+    severity: 'low',
+    filePath: 'packages/mcpserver/src/server.ts',
+    lines: 'Port 3002 (intra_get_contract, intra_impact)',
+    invariantsCount: 28,
+    qps: 180,
+    merkleHash: '0xcns03dd3300ff...',
+    x: 760,
+    y: 710,
+    vx: 0,
+    vy: 0,
+    radius: 18,
+  },
+];
+
+export const MOVIE_BOOKING_EDGES: GraphEdge[] = [
+  // Upstream -> Adapters
+  { id: 'mbe-1', source: 'mb-srv-movies', target: 'mb-adp-cursor', protocol: 'HTTPS/REST', status: 'adapted', trafficSpeed: 0.02, particles: [] },
+  { id: 'mbe-2', source: 'mb-srv-seats', target: 'mb-adp-seat', protocol: 'gRPC/Proto', status: 'mutated', trafficSpeed: 0.025, particles: [] },
+  { id: 'mbe-3', source: 'mb-srv-payments', target: 'mb-adp-cents', protocol: 'HTTPS/JSON', status: 'mutated', trafficSpeed: 0.018, particles: [] },
+  { id: 'mbe-4', source: 'mb-srv-notify', target: 'mb-adp-sms', protocol: 'Webhook/HMAC', status: 'adapted', trafficSpeed: 0.015, particles: [] },
+  { id: 'mbe-5', source: 'mb-srv-pricing', target: 'mb-wf-pay', protocol: 'REST/Cache', status: 'normal', trafficSpeed: 0.012, particles: [] },
+
+  // Adapters -> Workflows
+  { id: 'mbe-6', source: 'mb-adp-cursor', target: 'mb-wf-schedule', protocol: 'TypeScript Call', status: 'adapted', trafficSpeed: 0.02, particles: [] },
+  { id: 'mbe-7', source: 'mb-adp-seat', target: 'mb-wf-seatlock', protocol: 'TypeScript Call', status: 'adapted', trafficSpeed: 0.025, particles: [] },
+  { id: 'mbe-8', source: 'mb-adp-cents', target: 'mb-wf-pay', protocol: 'TypeScript Call', status: 'adapted', trafficSpeed: 0.018, particles: [] },
+  { id: 'mbe-9', source: 'mb-adp-sms', target: 'mb-wf-ticket', protocol: 'TypeScript Call', status: 'adapted', trafficSpeed: 0.015, particles: [] },
+
+  // Workflows -> Databases & Consumers
+  { id: 'mbe-10', source: 'mb-wf-seatlock', target: 'mb-db-seats', protocol: 'pgx Pool (ACID)', status: 'normal', trafficSpeed: 0.025, particles: [] },
+  { id: 'mbe-11', source: 'mb-wf-pay', target: 'mb-db-ledger', protocol: 'PostgreSQL Driver', status: 'normal', trafficSpeed: 0.018, particles: [] },
+  { id: 'mbe-12', source: 'mb-wf-seatlock', target: 'mb-wf-pay', protocol: 'Saga Coordinator', status: 'normal', trafficSpeed: 0.02, particles: [] },
+  { id: 'mbe-13', source: 'mb-wf-pay', target: 'mb-wf-ticket', protocol: 'Event Bus', status: 'normal', trafficSpeed: 0.016, particles: [] },
+  { id: 'mbe-14', source: 'mb-wf-ticket', target: 'mb-cns-mobile', protocol: 'BLE 0xFFE0 / Push', status: 'normal', trafficSpeed: 0.02, particles: [] },
+  { id: 'mbe-15', source: 'mb-wf-ticket', target: 'mb-cns-kiosk', protocol: 'Thermal Printer Driver', status: 'normal', trafficSpeed: 0.01, particles: [] },
+  { id: 'mbe-16', source: 'mb-wf-schedule', target: 'mb-cns-mobile', protocol: 'GraphQL API', status: 'normal', trafficSpeed: 0.022, particles: [] },
+  { id: 'mbe-17', source: 'mb-wf-schedule', target: 'mb-cns-mcp', protocol: 'Model Context Protocol', status: 'normal', trafficSpeed: 0.014, particles: [] },
+  { id: 'mbe-18', source: 'mb-wf-seatlock', target: 'mb-cns-mcp', protocol: 'Tool Execution', status: 'normal', trafficSpeed: 0.015, particles: [] },
+];
+
 export function NetworkXGraphVisualizer() {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const [nodes, setNodes] = useState<GraphNode[]>(INITIAL_NODES);
   const [edges, setEdges] = useState<GraphEdge[]>(INITIAL_EDGES);
   
+  const [scenario, setScenario] = useState<'fleet' | 'movie-booking'>('fleet');
+  const [isAgentSynthesizing, setIsAgentSynthesizing] = useState<boolean>(false);
+  const [agentStep, setAgentStep] = useState<number>(0);
+  const [agentPrompt] = useState<string>(
+    'Build the standard api system for the Movie booking system with seats lock, dynamic pricing, and webhook payment callbacks.'
+  );
+
   const [layoutMode, setLayoutMode] = useState<LayoutMode>('spring');
   const [isPlaying, setIsPlaying] = useState<boolean>(true);
   const [speedMultiplier, setSpeedMultiplier] = useState<number>(1.0);
@@ -386,6 +753,24 @@ export function NetworkXGraphVisualizer() {
         };
       } else if (mode === 'blast-radius') {
         // Centered blast radius concentric layout
+        const isMovieBooking = node.id.startsWith('mb-');
+        if (isMovieBooking) {
+          if (node.id === 'mb-srv-seats') return { ...node, x: 440, y: 320, vx: 0, vy: 0 };
+          if (node.id === 'mb-srv-payments') return { ...node, x: 380, y: 320, vx: 0, vy: 0 };
+
+          const dist = node.tier === 1 ? 160 : node.tier === 2 ? 280 : 390;
+          const tierNodes = prev.filter(n => n.tier === node.tier);
+          const idx = tierNodes.findIndex(n => n.id === node.id);
+          const angle = (idx / Math.max(1, tierNodes.length)) * Math.PI * 2;
+          return {
+            ...node,
+            x: 440 + Math.cos(angle) * dist,
+            y: 320 + Math.sin(angle) * dist,
+            vx: 0,
+            vy: 0,
+          };
+        }
+
         const isM3 = node.id.includes('stripe') || node.id.includes('m3') || node.id.includes('checkout') || node.id.includes('ledger');
         const isAudit = node.id.includes('audit');
         if (isAudit) {
@@ -431,6 +816,60 @@ export function NetworkXGraphVisualizer() {
       }
     }));
   }, []);
+
+  const handleRunMovieBookingAgent = () => {
+    setIsAgentSynthesizing(true);
+    setAgentStep(1);
+    setTimeout(() => setAgentStep(2), 500);
+    setTimeout(() => setAgentStep(3), 1000);
+    setTimeout(() => {
+      setAgentStep(4);
+      setScenario('movie-booking');
+      const preparedEdges = MOVIE_BOOKING_EDGES.map(edge => ({
+        ...edge,
+        particles: Array.from({ length: 4 }).map((_, i) => ({
+          id: i,
+          progress: i / 4,
+          speed: edge.trafficSpeed * (0.8 + Math.random() * 0.4),
+        })),
+      }));
+      setNodes(MOVIE_BOOKING_NODES);
+      setEdges(preparedEdges);
+      setSelectedNode(MOVIE_BOOKING_NODES[1]);
+      setIsAgentSynthesizing(false);
+      applyLayout(layoutMode);
+    }, 1600);
+  };
+
+  const handleSelectScenario = (target: 'fleet' | 'movie-booking') => {
+    setScenario(target);
+    if (target === 'fleet') {
+      const preparedEdges = INITIAL_EDGES.map(edge => ({
+        ...edge,
+        particles: Array.from({ length: 4 }).map((_, i) => ({
+          id: i,
+          progress: i / 4,
+          speed: edge.trafficSpeed * (0.8 + Math.random() * 0.4),
+        })),
+      }));
+      setNodes(INITIAL_NODES);
+      setEdges(preparedEdges);
+      setSelectedNode(INITIAL_NODES[0]);
+    } else {
+      const preparedEdges = MOVIE_BOOKING_EDGES.map(edge => ({
+        ...edge,
+        particles: Array.from({ length: 4 }).map((_, i) => ({
+          id: i,
+          progress: i / 4,
+          speed: edge.trafficSpeed * (0.8 + Math.random() * 0.4),
+        })),
+      }));
+      setNodes(MOVIE_BOOKING_NODES);
+      setEdges(preparedEdges);
+      setSelectedNode(MOVIE_BOOKING_NODES[1]);
+    }
+    applyLayout(layoutMode);
+  };
 
   useEffect(() => {
     applyLayout(layoutMode);
@@ -913,7 +1352,7 @@ export function NetworkXGraphVisualizer() {
               }`}
             >
               <Activity className="w-3.5 h-3.5" />
-              Spring Layout
+              1. Spring Layout (Physics)
             </button>
             <button
               onClick={() => { setLayoutMode('kahn-dag'); applyLayout('kahn-dag'); }}
@@ -924,7 +1363,7 @@ export function NetworkXGraphVisualizer() {
               }`}
             >
               <Layers className="w-3.5 h-3.5" />
-              Kahn DAG Tiers
+              2. Kahn DAG Triggers (Pipeline)
             </button>
             <button
               onClick={() => { setLayoutMode('blast-radius'); applyLayout('blast-radius'); }}
@@ -935,9 +1374,93 @@ export function NetworkXGraphVisualizer() {
               }`}
             >
               <ShieldAlert className="w-3.5 h-3.5" />
-              AST Blast Ripple
+              3. AST Blast Ripple (Shockwave)
             </button>
           </div>
+        </div>
+      </div>
+
+      {/* Topology Scenario Selection & Autonomous Agent Runner Dock */}
+      <div className="p-4 rounded-2xl bg-white border border-black/10 shadow-sm space-y-3 aceternity-dot-bg">
+        <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-3">
+          <div className="flex items-center flex-wrap gap-2">
+            <span className="text-[11px] font-mono font-bold text-black/60 uppercase">Active Topology:</span>
+            <div className="flex items-center gap-1.5 p-1 rounded-xl bg-black/5 border border-black/10 font-mono text-xs">
+              <button
+                onClick={() => handleSelectScenario('fleet')}
+                className={`px-3 py-1 rounded-lg font-bold transition-all ${
+                  scenario === 'fleet'
+                    ? 'bg-black text-white shadow-sm'
+                    : 'text-black/70 hover:text-black'
+                }`}
+              >
+                Intra Fleet Baseline (12 Nodes)
+              </button>
+              <button
+                onClick={() => handleSelectScenario('movie-booking')}
+                className={`px-3 py-1 rounded-lg font-bold transition-all ${
+                  scenario === 'movie-booking'
+                    ? 'bg-crimson text-white shadow-sm'
+                    : 'text-black/70 hover:text-black'
+                }`}
+              >
+                Movie Booking API System (17 Nodes)
+              </button>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-2 w-full md:w-auto justify-end">
+            <button
+              onClick={handleRunMovieBookingAgent}
+              disabled={isAgentSynthesizing}
+              className="flex items-center gap-2 px-4 py-2 rounded-xl bg-crimson text-white font-mono font-bold text-xs hover:bg-crimson-hover disabled:opacity-50 transition shadow-sm hover:shadow-crimson/20"
+            >
+              {isAgentSynthesizing ? (
+                <>
+                  <RotateCcw className="w-3.5 h-3.5 animate-spin" />
+                  <span>Agent Synthesizing Step {agentStep}/4...</span>
+                </>
+              ) : (
+                <>
+                  <Cpu className="w-3.5 h-3.5 text-emerald-400" />
+                  <span>Execute Movie Booking Agent &amp; Forward Graph</span>
+                </>
+              )}
+            </button>
+          </div>
+        </div>
+
+        {/* Dynamic Agent Output Stream Banner */}
+        <div className="p-3 rounded-xl bg-[#FAF7F2] border border-black/10 font-mono text-xs space-y-2">
+          <div className="flex flex-wrap items-center justify-between gap-2 text-[11px]">
+            <span className="text-black/70 flex items-center gap-1.5 font-bold">
+              <span className="w-2 h-2 rounded-full bg-crimson animate-ping" />
+              Agent Prompt: "{agentPrompt}"
+            </span>
+            <span className="text-black/40">
+              Forward Target: Canvas Graph Engine &bull; SHA-256 Proofs
+            </span>
+          </div>
+
+          {isAgentSynthesizing ? (
+            <div className="flex items-center gap-3 text-crimson font-bold text-[11px]">
+              <span className="p-1 rounded bg-crimson/10 border border-crimson/20">
+                {agentStep === 1 && '[PHASE 1/4] Analyzing Prompt & Discovering Service Boundaries (/movies, /seats, /payments)...'}
+                {agentStep === 2 && '[PHASE 2/4] Injecting Latent Schema Drift (M1 Seat Coord, M3 Unit Cent Shift, M5 Cursor)...'}
+                {agentStep === 3 && '[PHASE 3/4] Synthesizing PBE Adapters & Calculating AST Blast Radius (SPRT 99.4%)...'}
+                {agentStep === 4 && '[PHASE 4/4] Forwarding 17 Graph Nodes & 18 Reactive Edges to Canvas Graph Engine!'}
+              </span>
+            </div>
+          ) : (
+            <div className="flex items-center justify-between text-[11px] text-black/70">
+              <span>
+                Topology Status: <strong className="text-black">{scenario === 'movie-booking' ? 'Movie Booking System' : 'Intra Fleet Baseline'}</strong> &bull; {nodes.length} Nodes &bull; {edges.length} Reactive Edges
+              </span>
+              <span className="text-emerald-700 font-bold">
+                Forwarded to Canvas Engine &bull; Ready for Layout Inspection
+              </span>
+            </div>
+          )}
         </div>
       </div>
 

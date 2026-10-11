@@ -498,6 +498,133 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 ),
               ),
             ),
+            const SizedBox(height: 16),
+
+            // Movie Booking Agentic Graph Engine Card
+            Card(
+              color: AppColors.darkPatch,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(16),
+                side: const BorderSide(color: Color(0xFF2F3336), width: 1),
+              ),
+              child: Padding(
+                padding: const EdgeInsets.all(18),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Row(
+                          children: [
+                            const Icon(Icons.hub_outlined, color: AppColors.crimson, size: 18),
+                            const SizedBox(width: 8),
+                            Text(
+                              'AGENTIC GRAPH ENGINE',
+                              style: GoogleFonts.poppins(
+                                fontSize: 11,
+                                fontWeight: FontWeight.bold,
+                                letterSpacing: 0.5,
+                                color: AppColors.twitterTextLight,
+                              ),
+                            ),
+                          ],
+                        ),
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2.5),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFF221215),
+                            borderRadius: BorderRadius.circular(6),
+                            border: Border.all(color: AppColors.crimson.withValues(alpha: 0.4)),
+                          ),
+                          child: Text(
+                            'MOVIE BOOKING API',
+                            style: GoogleFonts.poppins(fontSize: 9, fontWeight: FontWeight.bold, color: const Color(0xFFFF6B6B)),
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 10),
+                    Text(
+                      'Forward agentic system discovery into 3 real-time graph engines: Spring Layout (Physics), Kahn DAG (Topological Pipeline), and AST Blast Ripple (Concentric Shockwaves).',
+                      style: GoogleFonts.poppins(fontSize: 11, color: AppColors.twitterTextSecondary, height: 1.4),
+                    ),
+                    const SizedBox(height: 14),
+                    // 3 Layout pills
+                    Row(
+                      children: [
+                        _buildLayoutPill('1. Spring Physics', Icons.grain),
+                        const SizedBox(width: 6),
+                        _buildLayoutPill('2. Kahn DAG', Icons.account_tree_outlined),
+                        const SizedBox(width: 6),
+                        _buildLayoutPill('3. AST Ripple', Icons.radar),
+                      ],
+                    ),
+                    const SizedBox(height: 14),
+                    SizedBox(
+                      width: double.infinity,
+                      child: ElevatedButton.icon(
+                        key: const Key('trigger_movie_agent_btn'),
+                        onPressed: () async {
+                          await SoundService.playClickSound();
+                          try {
+                            final packet = BleService.encodeDriftAlertPacket(
+                              mutationId: 'M03',
+                              confidence: 0.98,
+                              verdict: 'breaking',
+                              timestamp: DateTime.now(),
+                              hash: 'mb_seat_reservation_coordinate_drift',
+                            );
+                            await _bleService.handleIncomingPacket(packet);
+                          } catch (_) {
+                            final fallbackEvent = DriftEvent(
+                              id: 'MB_SEAT_DRIFT_01',
+                              service: 'movie-booking-seats',
+                              endpoint: '/v1/shows/reserve-seat',
+                              kind: 'rename_schema_mutation',
+                              verdict: 'breaking',
+                              confidence: 0.98,
+                              timestamp: DateTime.now(),
+                              evidence: const {
+                                'target': 'seat_coordinate',
+                                'previous': 'seat_number',
+                              },
+                            );
+                            if (!widget.engineClient.recentChanges.any((e) => e.id == fallbackEvent.id)) {
+                              widget.engineClient.recentChanges.insert(0, fallbackEvent);
+                            }
+                            if (mounted) setState(() {});
+                          }
+                          if (context.mounted) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(
+                                backgroundColor: AppColors.charcoal,
+                                content: Text(
+                                  'Movie Booking Agent drift emitted -> Forwarded to Graph Engine & BLE Airlink',
+                                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12),
+                                ),
+                                duration: Duration(seconds: 2),
+                              ),
+                            );
+                          }
+                        },
+                        icon: const Icon(Icons.bolt, size: 16, color: AppColors.white),
+                        label: Text(
+                          'Simulate Movie Booking Drift Alert',
+                          style: GoogleFonts.poppins(fontSize: 12, fontWeight: FontWeight.w700),
+                        ),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: AppColors.crimson,
+                          foregroundColor: AppColors.white,
+                          padding: const EdgeInsets.symmetric(vertical: 12),
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(999)),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
             const SizedBox(height: 20),
 
             // Remote Switchboard Header
@@ -576,6 +703,37 @@ class _DashboardScreenState extends State<DashboardScreen> {
               ...client.recentChanges.asMap().entries.map((entry) => _buildDriftEventTile(entry.value, index: entry.key)),
 
             const SizedBox(height: 32),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildLayoutPill(String text, IconData icon) {
+    return Expanded(
+      child: Container(
+        padding: const EdgeInsets.symmetric(vertical: 6, horizontal: 4),
+        decoration: BoxDecoration(
+          color: const Color(0xFF16181C),
+          borderRadius: BorderRadius.circular(8),
+          border: Border.all(color: const Color(0xFF2F3336)),
+        ),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(icon, size: 12, color: AppColors.crimson),
+            const SizedBox(width: 4),
+            Flexible(
+              child: Text(
+                text,
+                style: GoogleFonts.poppins(
+                  fontSize: 9,
+                  fontWeight: FontWeight.w600,
+                  color: AppColors.twitterTextLight,
+                ),
+                overflow: TextOverflow.ellipsis,
+              ),
+            ),
           ],
         ),
       ),

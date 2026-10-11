@@ -385,7 +385,7 @@ export function DashboardContainer({
         {/* Sub-Navigation Pill Dock for Dashboard Views */}
         <div className="flex flex-wrap items-center gap-2 pt-2 border-t border-black/5">
           {[
-            { id: 'graph', label: 'NetworkX Graph Engine', icon: Network },
+            { id: 'graph', label: 'NetworkX Graph Engine', icon: Network, badgeText: 'MOVIE AGENT' },
             { id: 'predict', label: 'Upgrade & Drift Predictor', icon: TrendingUp },
             { id: 'drift', label: 'Drift Inspector', icon: Activity },
             { id: 'pipeline', label: 'Pipeline Engine', icon: Sparkles },
@@ -408,6 +408,11 @@ export function DashboardContainer({
               >
                 <Icon className="w-3.5 h-3.5" />
                 <span>{tab.label}</span>
+                {tab.badgeText && (
+                  <span className="px-1.5 py-0.5 rounded-full bg-crimson text-white text-[9px] font-black uppercase tracking-wider">
+                    {tab.badgeText}
+                  </span>
+                )}
                 {tab.badge !== undefined && tab.badge > 0 && (
                   <span className="w-4 h-4 rounded-full bg-crimson text-white text-[10px] font-bold flex items-center justify-center">
                     {tab.badge}
@@ -421,7 +426,7 @@ export function DashboardContainer({
 
       {/* Sub-view 0: NetworkX Graph Engine */}
       {dashboardView === 'graph' && (
-        <div className="space-y-6">
+        <div className="space-y-6 aceternity-dot-bg rounded-[2.5rem] p-1">
           <NetworkXGraphVisualizer />
         </div>
       )}

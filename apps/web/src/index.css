@@ -271,3 +271,76 @@ body {
   }
 }
 
+/* =========================================================================
+   ACETERNITY UI & UIVERSE MODERN BACKGROUNDS & MICRO-COMPONENTS
+   ========================================================================= */
+
+/* Aceternity Dot Background with Vignette Mask */
+.aceternity-dot-bg {
+  background-image: radial-gradient(rgba(10, 10, 10, 0.08) 1.5px, transparent 1.5px);
+  background-size: 24px 24px;
+  mask-image: radial-gradient(ellipse 90% 70% at 50% 30%, #000 65%, transparent 100%);
+  -webkit-mask-image: radial-gradient(ellipse 90% 70% at 50% 30%, #000 65%, transparent 100%);
+}
+
+/* Aceternity Technical Line Grid with Fade */
+.aceternity-grid-bg {
+  background-image: linear-gradient(to right, rgba(10, 10, 10, 0.04) 1px, transparent 1px),
+                    linear-gradient(to bottom, rgba(10, 10, 10, 0.04) 1px, transparent 1px);
+  background-size: 32px 32px;
+  mask-image: radial-gradient(ellipse 80% 60% at 50% 40%, #000 60%, transparent 100%);
+  -webkit-mask-image: radial-gradient(ellipse 80% 60% at 50% 40%, #000 60%, transparent 100%);
+}
+
+/* Aceternity Glowing Ambient Spotlight */
+.aceternity-spotlight {
+  background: radial-gradient(600px circle at var(--mouse-x, 50%) var(--mouse-y, 50%), rgba(200, 16, 46, 0.06), transparent 40%);
+}
+
+/* Uiverse High-End Elevating Glowing Card */
+.uiverse-card-elevated {
+  position: relative;
+  background: #FFFFFF;
+  border: 1px solid rgba(10, 10, 10, 0.08);
+  box-shadow: 0 10px 30px -10px rgba(10, 10, 10, 0.04), 0 0 0 1px rgba(255, 255, 255, 0.8) inset;
+  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.uiverse-card-elevated:hover {
+  border-color: rgba(200, 16, 46, 0.3);
+  box-shadow: 0 20px 40px -15px rgba(200, 16, 46, 0.1), 0 0 25px -5px rgba(200, 16, 46, 0.08);
+  transform: translateY(-2px);
+}
+
+/* Uiverse Sleek Pill Badge */
+.uiverse-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.375rem;
+  padding: 0.25rem 0.625rem;
+  border-radius: 9999px;
+  font-size: 0.6875rem;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  background: rgba(10, 10, 10, 0.03);
+  border: 1px solid rgba(10, 10, 10, 0.08);
+  color: #0A0A0A;
+  transition: all 0.2s ease;
+}
+.uiverse-badge:hover {
+  background: rgba(200, 16, 46, 0.06);
+  border-color: rgba(200, 16, 46, 0.25);
+  color: #C8102E;
+}
+
+/* Ambient Moving Beam Keyframes */
+@keyframes beamGlow {
+  0%, 100% { opacity: 0.4; transform: scale(1); }
+  50% { opacity: 0.8; transform: scale(1.08); }
+}
+
+.aceternity-beam-pulse {
+  animation: beamGlow 6s ease-in-out infinite;
+}
+
+

@@ -72,9 +72,9 @@ export function HomeContainer({
 
       <div className="space-y-10 relative z-10">
         {/* Maximalist Split Hero with Live Interactive In-Process Adapter Simulator */}
-        <div className="border border-black/10 bg-white/95 rounded-[2.5rem] p-8 md:p-12 shadow-card dot-grid-pattern overflow-hidden relative">
+        <div className="border border-black/10 bg-white/95 rounded-[2.5rem] p-8 md:p-12 shadow-card dot-grid-pattern aceternity-dot-bg overflow-hidden relative">
           {/* Ambient Red Accent Glows */}
-          <div className="absolute top-0 right-0 w-96 h-96 bg-crimson/10 rounded-full blur-3xl pointer-events-none" />
+          <div className="absolute top-0 right-0 w-96 h-96 bg-crimson/10 rounded-full blur-3xl pointer-events-none aceternity-beam-pulse" />
           <div className="absolute top-0 left-0 right-0 h-1.5 bg-gradient-to-r from-crimson via-black to-crimson opacity-80" />
 
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-center relative z-10">
@@ -237,7 +237,7 @@ export function HomeContainer({
         {/* Asymmetric Bento Grid Layout with Skeuomorphic Depth */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           {/* Bento Card 1: 2-Span Hero */}
-          <div className="md:col-span-2 skeuo-card p-8 rounded-[2rem] space-y-4 flex flex-col justify-between">
+          <div className="md:col-span-2 skeuo-card aceternity-grid-bg p-8 rounded-[2rem] space-y-4 flex flex-col justify-between relative overflow-hidden">
             <div className="space-y-3">
               <div className="flex justify-between items-center">
                 <span className="verified-badge">STAGE 01 — 06</span>
@@ -278,7 +278,7 @@ export function HomeContainer({
           </div>
 
           {/* Bento Card 2: Safe-Handling Policy */}
-          <div className="skeuo-card p-8 rounded-[2rem] space-y-4 flex flex-col justify-between">
+          <div className="skeuo-card aceternity-dot-bg p-8 rounded-[2rem] space-y-4 flex flex-col justify-between relative overflow-hidden">
             <div className="space-y-3">
               <span className="verified-badge">SECTION 10 MATRIX</span>
               <h3 className="font-display font-bold text-lg text-black">
@@ -294,7 +294,7 @@ export function HomeContainer({
           </div>
 
           {/* Bento Card 3: Blockchain & BridgeKey */}
-          <div className="skeuo-card p-8 rounded-[2rem] space-y-4 flex flex-col justify-between">
+          <div className="skeuo-card aceternity-dot-bg p-8 rounded-[2rem] space-y-4 flex flex-col justify-between relative overflow-hidden">
             <div className="space-y-3">
               <div className="w-10 h-10 rounded-2xl bg-black flex items-center justify-center text-white">
                 <Wallet className="w-5 h-5 text-crimson" />
@@ -312,7 +312,7 @@ export function HomeContainer({
           </div>
 
           {/* Bento Card 4: Double Span Navigation Cards */}
-          <div className="md:col-span-2 skeuo-card p-8 rounded-[2rem] space-y-5">
+          <div className="md:col-span-2 skeuo-card aceternity-grid-bg p-8 rounded-[2rem] space-y-5 relative overflow-hidden">
             <div className="flex justify-between items-center">
               <h3 className="font-display font-bold text-base text-black uppercase tracking-wide">
                 Platform Architecture Pillars
