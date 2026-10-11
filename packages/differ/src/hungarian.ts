@@ -4,10 +4,71 @@
  * Zero external dependencies.
  */
 
+import { normalizedLevenshteinDistance } from './differ.js';
+
 export interface HungarianAssignment {
   row: number;
   col: number;
 }
+
+export interface CostMatrixValidationResult {
+  valid: boolean;
+  rowCount: number;
+  colCount: number;
+  issues: string[];
+}
+
+/**
+ * Validates that a bipartite cost matrix is rectangular, finite, and well-conditioned.
+ */
+export function validateCostMatrix(costMatrix: number[][]): CostMatrixValidationResult {
+  const issues: string[] = [];
+  if (!Array.isArray(costMatrix)) {
+    return { valid: false, rowCount: 0, colCount: 0, issues: ['Cost matrix must be an array'] };
+  }
+  const rowCount = costMatrix.length;
+  if (rowCount === 0) {
+    return { valid: true, rowCount: 0, colCount: 0, issues: [] };
+  }
+  const colCount = Array.isArray(costMatrix[0]) ? costMatrix[0].length : 0;
+  for (let i = 0; i < rowCount; i++) {
+    const row = costMatrix[i];
+    if (!Array.isArray(row)) {
+      issues.push(`Row ${i} is not an array`);
+      continue;
+    }
+    if (row.length !== colCount) {
+      issues.push(`Row ${i} length ${row.length} mismatches expected colCount ${colCount}`);
+    }
+    for (let j = 0; j < row.length; j++) {
+      const val = row[j];
+      if (typeof val !== 'number' || !Number.isFinite(val)) {
+        issues.push(`Cell [${i}][${j}] is non-finite or not a number (${val})`);
+      }
+    }
+  }
+  return {
+    valid: issues.length === 0,
+    rowCount,
+    colCount,
+    issues,
+  };
+}
+
+/**
+ * Builds a bipartite cost matrix between two sets of string tokens using normalized Levenshtein distance.
+ */
+export function buildCostMatrixFromStrings(sourceKeys: string[], targetKeys: string[]): number[][] {
+  const matrix: number[][] = [];
+  for (let i = 0; i < sourceKeys.length; i++) {
+    matrix[i] = [];
+    for (let j = 0; j < targetKeys.length; j++) {
+      matrix[i][j] = normalizedLevenshteinDistance(sourceKeys[i], targetKeys[j]);
+    }
+  }
+  return matrix;
+}
+
 
 export interface HungarianResult {
   /** Array of 1-to-1 matched row/column pairs */
