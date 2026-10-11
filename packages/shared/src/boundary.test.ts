@@ -663,6 +663,37 @@ describe('Adversarial & Boundary Test Suite: @intra/shared', () => {
         const withoutRateLimit = buildValidContract({ rateLimitPolicy: undefined });
         expect(ContractSchema.safeParse(withoutRateLimit).success).toBe(true);
       });
+
+      it('validates rateLimitPolicy edge cases and rejects malformed fields', () => {
+        // Valid edge cases
+        const zeroLimit = buildValidContract({
+          rateLimitPolicy: { limit: 0, window: '0s' },
+        });
+        expect(ContractSchema.safeParse(zeroLimit).success).toBe(true);
+
+        const highThroughputLimit = buildValidContract({
+          rateLimitPolicy: { limit: 1_000_000, window: '1d' },
+        });
+        expect(ContractSchema.safeParse(highThroughputLimit).success).toBe(true);
+
+        // Invalid: missing window
+        const missingWindow = buildValidContract({
+          rateLimitPolicy: { limit: 100 } as any,
+        });
+        expect(ContractSchema.safeParse(missingWindow).success).toBe(false);
+
+        // Invalid: string limit
+        const stringLimit = buildValidContract({
+          rateLimitPolicy: { limit: '100' as any, window: '1m' },
+        });
+        expect(ContractSchema.safeParse(stringLimit).success).toBe(false);
+
+        // Invalid: number window
+        const numberWindow = buildValidContract({
+          rateLimitPolicy: { limit: 100, window: 60 as any },
+        });
+        expect(ContractSchema.safeParse(numberWindow).success).toBe(false);
+      });
     });
 
     describe('Rare and standard pagination styles', () => {
