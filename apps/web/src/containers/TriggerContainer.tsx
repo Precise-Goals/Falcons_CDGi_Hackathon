@@ -518,27 +518,27 @@ export function TriggerContainer({ user, onOpenAuth, onDriftAlert }: TriggerCont
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {/* Baseline Column */}
-            <div className="p-4 rounded-2xl bg-white border border-black/10 shadow-sm space-y-2">
+            <div className="p-5 rounded-3xl bg-white border-2 border-black/10 shadow-sm space-y-2.5">
               <div className="text-[11px] font-mono font-bold text-black/60 uppercase flex items-center justify-between">
                 <span>Baseline Schema (Pre-Drift)</span>
                 <span className="text-[10px] px-2 py-0.5 rounded-md bg-emerald-50 text-emerald-700 border border-emerald-200">
                   HTTP 200 OK
                 </span>
               </div>
-              <pre className="p-3 rounded-xl bg-[#FAF9F5] text-black text-[11px] font-mono overflow-x-auto leading-relaxed border border-black/5">
+              <pre className="p-3.5 rounded-2xl bg-[#FAF9F5] text-black text-[11px] font-mono overflow-x-auto leading-relaxed border border-black/5">
                 {JSON.stringify(activeSchema.baselinePayload, null, 2)}
               </pre>
             </div>
 
             {/* Mutated Column with Highlight Diff */}
-            <div className="p-4 rounded-2xl bg-white border border-crimson/20 shadow-sm space-y-2 ring-1 ring-crimson/10">
+            <div className="p-5 rounded-3xl bg-white border-2 border-crimson/30 shadow-sm space-y-2.5 ring-1 ring-crimson/10">
               <div className="text-[11px] font-mono font-bold text-crimson uppercase flex items-center justify-between">
                 <span>Mutated Upstream (Live Drift)</span>
                 <span className="text-[10px] px-2 py-0.5 rounded-md bg-crimson/10 text-crimson border border-crimson/30 font-bold">
                   {activeSchema.mutationType.toUpperCase()}
                 </span>
               </div>
-              <pre className="p-3 rounded-xl bg-[#FFF5F6] text-crimson font-bold text-[11px] font-mono overflow-x-auto leading-relaxed border border-crimson/20">
+              <pre className="p-3.5 rounded-2xl bg-[#FFF5F6] text-crimson font-bold text-[11px] font-mono overflow-x-auto leading-relaxed border border-crimson/20">
                 {JSON.stringify(activeSchema.mutatedPayload, null, 2)}
               </pre>
             </div>
@@ -546,7 +546,7 @@ export function TriggerContainer({ user, onOpenAuth, onDriftAlert }: TriggerCont
         </div>
 
         {/* 3. Android Companion Airlink Alert Dropper Banner */}
-        <div className="p-4 rounded-2xl bg-gradient-to-r from-[#0A0A0A] to-[#1E080A] text-white flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 border border-white/10 shadow-sm">
+        <div className="p-5 rounded-3xl bg-gradient-to-r from-[#0A0A0A] to-[#1E080A] text-white flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 border-2 border-white/10 shadow-sm">
           <div className="flex items-center space-x-3">
             <div className="w-10 h-10 rounded-xl bg-crimson/20 border border-crimson/40 flex items-center justify-center text-crimson shrink-0">
               <Smartphone className="w-5 h-5 text-crimson" />
