@@ -2,12 +2,7 @@ import { useState, useEffect } from 'react';
 import {
   RefreshCw,
   Zap,
-  TrendingUp,
-  Activity,
   Sparkles,
-  Layers,
-  Sliders,
-  ShieldCheck,
   Check,
   Copy,
   GitPullRequest,
@@ -17,8 +12,17 @@ import {
   Code2,
   Terminal,
   FlaskConical,
-  Network,
 } from 'lucide-react';
+import {
+  FiShare2,
+  FiTrendingUp,
+  FiActivity,
+  FiZap,
+  FiLayers,
+  FiShield,
+  FiSliders,
+  FiCheckCircle,
+} from 'react-icons/fi';
 import {
   MutationItem,
   EngineHealthResponse,
@@ -382,42 +386,138 @@ export function DashboardContainer({
           </div>
         )}
 
-        {/* Sub-Navigation Pill Dock for Dashboard Views */}
-        <div className="flex flex-wrap items-center gap-2 pt-2 border-t border-black/5">
+        {/* Navigation Cards Grid (matching designimplement.png layout with minimal react-icons) */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3.5 pt-4 border-t border-black/5">
           {[
-            { id: 'graph', label: 'NetworkX Graph Engine', icon: Network, badgeText: 'MOVIE AGENT' },
-            { id: 'predict', label: 'Upgrade & Drift Predictor', icon: TrendingUp },
-            { id: 'drift', label: 'Drift Inspector', icon: Activity },
-            { id: 'pipeline', label: 'Pipeline Engine', icon: Sparkles },
-            { id: 'impact', label: 'AST Blast Radius', icon: Layers },
-            { id: 'adapters', label: 'Safe Adapters & PRs', icon: Zap },
-            { id: 'switchboard', label: 'Mutation Switchboard', icon: Sliders, badge: activeMutations.length },
-            { id: 'resilience', label: 'Downstream Resilience', icon: ShieldCheck },
-          ].map((tab) => {
-            const Icon = tab.icon;
-            const isSelected = dashboardView === tab.id;
+            {
+              id: 'graph' as DashboardSubView,
+              label: 'NetworkX Graph Engine',
+              description: 'Force-directed topology & AST ripple shockwaves',
+              icon: FiShare2,
+              badgeText: 'MOVIE AGENT',
+              tag: 'TOPOLOGY',
+            },
+            {
+              id: 'predict' as DashboardSubView,
+              label: 'Upgrade & Drift Predictor',
+              description: 'Statistical probability of future vendor changes',
+              icon: FiTrendingUp,
+              tag: 'PREDICTOR',
+            },
+            {
+              id: 'drift' as DashboardSubView,
+              label: 'Drift Inspector',
+              description: 'Hungarian matching & live structural-semantic diffs',
+              icon: FiActivity,
+              tag: 'INGESTION',
+            },
+            {
+              id: 'pipeline' as DashboardSubView,
+              label: 'Pipeline Engine',
+              description: '7-stage cryptographic SRE incident resilience loop',
+              icon: FiZap,
+              tag: 'SRE ENGINE',
+            },
+            {
+              id: 'impact' as DashboardSubView,
+              label: 'AST Blast Radius',
+              description: 'Static TypeScript source mapping down to code lines',
+              icon: FiLayers,
+              tag: 'AST MAP',
+            },
+            {
+              id: 'adapters' as DashboardSubView,
+              label: 'Safe Adapters & PRs',
+              description: 'FlashFill PBE synthesis & Safe-Handling Policy Matrix',
+              icon: FiShield,
+              tag: 'POLICY',
+            },
+            {
+              id: 'switchboard' as DashboardSubView,
+              label: 'Mutation Switchboard',
+              description: 'Inject live M1–M10 simulated Fastify vendor mutations',
+              icon: FiSliders,
+              badgeCount: activeMutations.length,
+              tag: 'SWITCHBOARD',
+            },
+            {
+              id: 'resilience' as DashboardSubView,
+              label: 'Downstream Resilience',
+              description: 'Canary isolation & circuit-breaker zero-bypass',
+              icon: FiCheckCircle,
+              tag: 'RESILIENCE',
+            },
+          ].map((card) => {
+            const Icon = card.icon;
+            const isSelected = dashboardView === card.id;
             return (
               <button
-                key={tab.id}
-                onClick={() => setDashboardView(tab.id as DashboardSubView)}
-                className={`flex items-center space-x-1.5 px-4 py-2 rounded-full text-xs font-semibold transition ${
+                key={card.id}
+                onClick={() => setDashboardView(card.id)}
+                className={`group text-left p-4.5 rounded-[1.75rem] border transition-all duration-200 relative flex flex-col justify-between overflow-hidden ${
                   isSelected
-                    ? 'bg-black text-white shadow-sm'
-                    : 'bg-black/5 text-black/70 hover:bg-black/10 hover:text-black'
+                    ? 'bg-white border-crimson shadow-lg shadow-crimson/15 ring-2 ring-crimson/20 -translate-y-0.5'
+                    : 'bg-cream-subtle/80 hover:bg-white border-black/10 hover:border-black/25 shadow-xs hover:shadow-md hover:-translate-y-0.5'
                 }`}
               >
-                <Icon className="w-3.5 h-3.5" />
-                <span>{tab.label}</span>
-                {tab.badgeText && (
-                  <span className="px-1.5 py-0.5 rounded-full bg-crimson text-white text-[9px] font-black uppercase tracking-wider">
-                    {tab.badgeText}
-                  </span>
+                {/* Active Indicator Top Stripe */}
+                {isSelected && (
+                  <div className="absolute top-0 left-0 right-0 h-1 bg-crimson" />
                 )}
-                {tab.badge !== undefined && tab.badge > 0 && (
-                  <span className="w-4 h-4 rounded-full bg-crimson text-white text-[10px] font-bold flex items-center justify-center">
-                    {tab.badge}
-                  </span>
-                )}
+
+                {/* Top Row: Tag / Badge on Left, Circular Minimal React-Icon on Right (per designimplement.png) */}
+                <div className="flex items-center justify-between w-full mb-3">
+                  <div className="flex items-center gap-1.5 flex-wrap">
+                    <span className={`text-[9px] font-mono uppercase font-bold tracking-wider px-2 py-0.5 rounded-full ${
+                      isSelected
+                        ? 'bg-crimson/10 text-crimson border border-crimson/20'
+                        : 'bg-black/5 text-black/60 border border-black/5'
+                    }`}>
+                      {card.tag}
+                    </span>
+                    {card.badgeText && (
+                      <span className="px-1.5 py-0.5 rounded-full bg-crimson text-white text-[9px] font-black uppercase tracking-wider animate-pulse">
+                        {card.badgeText}
+                      </span>
+                    )}
+                    {card.badgeCount !== undefined && card.badgeCount > 0 && (
+                      <span className="w-4 h-4 rounded-full bg-crimson text-white text-[10px] font-bold flex items-center justify-center">
+                        {card.badgeCount}
+                      </span>
+                    )}
+                  </div>
+
+                  {/* Circular Icon Container (Top Right per designimplement.png) */}
+                  <div className={`w-11 h-11 rounded-full flex items-center justify-center border flex-shrink-0 transition-transform duration-200 group-hover:scale-105 ${
+                    isSelected
+                      ? 'bg-crimson text-white border-crimson shadow-md shadow-crimson/25'
+                      : 'bg-white text-black/75 border-black/10 group-hover:border-crimson group-hover:text-crimson shadow-xs'
+                  }`}>
+                    <Icon className="w-5 h-5 stroke-[1.8]" />
+                  </div>
+                </div>
+
+                {/* Bottom Section: Title, Description, and Bottom Pill Action (per designimplement.png) */}
+                <div className="space-y-1.5 mt-auto">
+                  <h4 className={`font-display font-bold text-sm tracking-tight transition-colors ${
+                    isSelected ? 'text-black font-extrabold' : 'text-black/85 group-hover:text-crimson'
+                  }`}>
+                    {card.label}
+                  </h4>
+                  <p className="text-[11px] text-black/60 leading-snug line-clamp-2">
+                    {card.description}
+                  </p>
+
+                  <div className="pt-2 flex items-center justify-between">
+                    <span className={`inline-flex items-center gap-1 text-[10px] font-mono font-bold px-2.5 py-0.5 rounded-full border transition ${
+                      isSelected
+                        ? 'bg-black text-white border-black'
+                        : 'bg-white/90 text-black/70 border-black/10 group-hover:border-black/30'
+                    }`}>
+                      <span>{isSelected ? '● ACTIVE VIEW' : 'SELECT VIEW'}</span>
+                    </span>
+                  </div>
+                </div>
               </button>
             );
           })}
