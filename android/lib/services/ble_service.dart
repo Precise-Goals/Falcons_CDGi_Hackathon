@@ -155,6 +155,10 @@ class BleService {
               _setState(BleAirlinkState.disconnected);
             }
             break;
+          case 'onBleAdvertisingFailed':
+            _setState(BleAirlinkState.disconnected);
+            _pairedDeviceName = 'Advertising Failed (Check BT Permissions)';
+            break;
         }
       });
     } catch (_) {
@@ -176,6 +180,9 @@ class BleService {
 
   /// Start BLE GATT Peripheral Advertising
   Future<void> startAdvertising() async {
+    try {
+      await _platformChannel.invokeMethod('requestPermissions');
+    } catch (_) {}
     _setState(BleAirlinkState.advertising);
     try {
       await _platformChannel.invokeMethod('startAdvertising', {
