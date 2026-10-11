@@ -114,7 +114,7 @@ export function Navbar({
 
   return (
     <header className="fixed top-5 left-0 right-0 z-50 px-4 pointer-events-none flex justify-center">
-      <nav className="pointer-events-auto liquid-glass rounded-full px-3 py-1.5 flex items-center gap-1.5 sm:gap-2 shadow-capsule">
+      <nav className="pointer-events-auto liquid-glass rounded-full px-3 py-1.5 flex items-center gap-1.5 sm:gap-2 shadow-capsule border border-black/10 backdrop-blur-xl">
         {/* Centered Brand Icon & Logo */}
         <div
           onClick={() => setActiveTab('home')}
