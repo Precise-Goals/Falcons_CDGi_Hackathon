@@ -7,6 +7,7 @@
   "scripts": {
     "build": "turbo run build",
     "test": "turbo run test",
+    "test:coverage": "turbo run test -- --coverage",
     "test:int": "turbo run test:int",
     "lint": "turbo run lint",
     "typecheck": "turbo run typecheck",

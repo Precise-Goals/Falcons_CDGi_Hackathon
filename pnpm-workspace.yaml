@@ -2,5 +2,6 @@ packages:
   - 'apps/*'
   - 'packages/*'
   - 'mcpserver'
+  - 'api'
 allowBuilds:
   esbuild: true

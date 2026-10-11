@@ -535,14 +535,14 @@ export default function App() {
       let res = await fetch('/api/sim/switchboard/toggle', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ id }),
+        body: JSON.stringify({ id, mutationId: id }),
       }).catch(() => null);
 
       if (!res || !res.ok) {
         await fetch('http://localhost:4000/sim/switchboard/toggle', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ id }),
+          body: JSON.stringify({ id, mutationId: id }),
         }).catch(() => null);
       }
     } catch {
@@ -573,9 +573,17 @@ export default function App() {
   // Reset mutations with real live Fastify endpoint & proxy resilience
   const resetAll = async () => {
     try {
-      let res = await fetch('/api/sim/switchboard/reset', { method: 'POST' }).catch(() => null);
+      let res = await fetch('/api/sim/switchboard/reset', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({}),
+      }).catch(() => null);
       if (!res || !res.ok) {
-        await fetch('http://localhost:4000/sim/switchboard/reset', { method: 'POST' }).catch(() => null);
+        await fetch('http://localhost:4000/sim/switchboard/reset', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({}),
+        }).catch(() => null);
       }
     } catch {
       // offline fallback

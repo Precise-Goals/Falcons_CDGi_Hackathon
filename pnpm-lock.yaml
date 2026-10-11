@@ -64,6 +64,8 @@ importers:
         specifier: ^3.0.7
         version: 3.2.7(@types/node@26.6.5)(jiti@1.21.7)
 
+  api: {}
+
   apps/demo-app:
     dependencies:
       '@intra/sdk':

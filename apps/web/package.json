@@ -5,6 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
+    "prebuild": "pnpm --filter @intra/shared --filter @intra/model --filter @intra/differ --filter @intra/impact --filter @intra/adapter --filter @intra/validator --filter @intra/sdk run build",
     "build": "tsc && vite build && node scripts/copy-spa-html.mjs",
     "preview": "vite preview",
     "test": "vitest run",
