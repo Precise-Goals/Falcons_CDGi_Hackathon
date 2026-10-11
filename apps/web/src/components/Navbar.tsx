@@ -12,6 +12,7 @@ import {
   User as UserIcon,
   ShieldCheck,
   FileText,
+  Zap,
 } from 'lucide-react';
 import { MainTab, UserProfile, DocsCategory } from '../types';
 
@@ -305,6 +306,22 @@ export function Navbar({
           }`}
         >
           <FlaskConical className="w-3.5 h-3.5 text-crimson" />
+        </button>
+
+        {/* Secret Route: Live Trigger & Custom API Synthesis (/trigger) */}
+        <button
+          onClick={() => {
+            setActiveTab('trigger');
+            window.history.pushState(null, '', '/trigger');
+          }}
+          title="Live Trigger & Custom API Synthesis (/trigger)"
+          className={`flex items-center justify-center w-7 h-7 rounded-full transition-all ${
+            activeTab === 'trigger'
+              ? 'bg-crimson text-white shadow-sm ring-1 ring-black'
+              : 'text-black/60 hover:text-crimson hover:bg-black/5 border border-black/10'
+          }`}
+        >
+          <Zap className="w-3.5 h-3.5 text-amber-500 fill-amber-500" />
         </button>
 
         <div className="h-4 w-[1px] bg-black/10 mx-0.5" />

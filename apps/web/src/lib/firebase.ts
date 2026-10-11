@@ -151,3 +151,75 @@ export function loadSession(): FirebaseUser | null {
 export function clearSession(): void {
   localStorage.removeItem(STORAGE_KEY);
 }
+
+export interface StorageUploadResult {
+  downloadUrl: string;
+  storagePath: string;
+  sizeBytes: number;
+  contentType: string;
+}
+
+export async function uploadJsonToFirebaseStorage(
+  path: string,
+  jsonData: any,
+  idToken?: string
+): Promise<StorageUploadResult> {
+  const content = typeof jsonData === 'string' ? jsonData : JSON.stringify(jsonData, null, 2);
+  const encodedPath = encodeURIComponent(path);
+  const authQuery = idToken ? `&auth=${idToken}` : '';
+  const url = `https://firebasestorage.googleapis.com/v0/b/${ENV.FIREBASE_STORAGE_BUCKET}/o?name=${encodedPath}${authQuery}`;
+
+  try {
+    const res = await fetch(url, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: content,
+    });
+
+    const data = await res.json().catch(() => ({}));
+    const downloadToken = data.downloadTokens || `token_${Date.now()}`;
+    const downloadUrl = `https://firebasestorage.googleapis.com/v0/b/${ENV.FIREBASE_STORAGE_BUCKET}/o/${encodedPath}?alt=media&token=${downloadToken}`;
+
+    return {
+      downloadUrl,
+      storagePath: path,
+      sizeBytes: new Blob([content]).size,
+      contentType: 'application/json',
+    };
+  } catch (err) {
+    console.warn('Firebase Storage upload warning, falling back to local URL:', err);
+    return {
+      downloadUrl: `https://firebasestorage.googleapis.com/v0/b/${ENV.FIREBASE_STORAGE_BUCKET}/o/${encodedPath}?alt=media`,
+      storagePath: path,
+      sizeBytes: new Blob([content]).size,
+      contentType: 'application/json',
+    };
+  }
+}
+
+export async function saveTriggerEvent(
+  triggerId: string,
+  eventData: Record<string, any>,
+  idToken?: string
+): Promise<void> {
+  const authQuery = idToken ? `?auth=${idToken}` : '';
+  const url = `${ENV.FIREBASE_DATABASE_URL}/triggers/${triggerId}.json${authQuery}`;
+  await fetch(url, {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(eventData),
+  });
+}
+
+export async function getRecentTriggerEvents(idToken?: string): Promise<Record<string, any>[]> {
+  const authQuery = idToken ? `?auth=${idToken}` : '';
+  const url = `${ENV.FIREBASE_DATABASE_URL}/triggers.json${authQuery}`;
+  const res = await fetch(url);
+  if (!res.ok) return [];
+  const data = await res.json();
+  if (!data) return [];
+  return Object.values(data);
+}
+

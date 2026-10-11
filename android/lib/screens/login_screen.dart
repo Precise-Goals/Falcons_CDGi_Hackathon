@@ -17,46 +17,64 @@ class LoginScreen extends StatefulWidget {
 }
 
 class _LoginScreenState extends State<LoginScreen> {
-  final _emailController = TextEditingController(text: 'developer@shipwell.io');
-  final _passwordController = TextEditingController(text: 'secret123');
+  final _emailController = TextEditingController(text: 'operator@intra.build');
+  final _passwordController = TextEditingController();
+  bool _isSignUp = false;
   bool _isLoading = false;
   String? _errorMessage;
 
-  Future<void> _handleSignIn() async {
+  Future<void> _handleSubmit() async {
+    final email = _emailController.text.trim();
+    final password = _passwordController.text.trim();
+
+    if (email.isEmpty || !email.contains('@')) {
+      setState(() => _errorMessage = 'Please enter a valid developer email address.');
+      return;
+    }
+    if (password.length < 6) {
+      setState(() => _errorMessage = 'Password must be at least 6 characters.');
+      return;
+    }
+
     setState(() {
       _isLoading = true;
       _errorMessage = null;
     });
 
-    final success = await widget.firebaseService.signInWithEmailPassword(
-      _emailController.text.trim(),
-      _passwordController.text.trim(),
-    );
-
-    if (mounted) {
-      setState(() => _isLoading = false);
-      if (success) {
-        widget.onLoginSuccess();
+    try {
+      if (_isSignUp) {
+        await widget.firebaseService.signUpWithEmailPassword(email, password);
       } else {
+        await widget.firebaseService.signInWithEmailPassword(email, password);
+      }
+
+      if (mounted) {
+        setState(() => _isLoading = false);
+        widget.onLoginSuccess();
+      }
+    } catch (e) {
+      if (mounted) {
         setState(() {
-          _errorMessage = 'Invalid email or password (min 6 characters).';
+          _isLoading = false;
+          final raw = e.toString().replaceAll('Exception: ', '');
+          if (raw.contains('EMAIL_NOT_FOUND') || raw.contains('INVALID_LOGIN_CREDENTIALS')) {
+            _errorMessage = 'Account not found or invalid credentials. Switch to "Create Account" to register.';
+          } else if (raw.contains('EMAIL_EXISTS')) {
+            _errorMessage = 'This email is already registered. Please sign in instead.';
+          } else if (raw.contains('INVALID_PASSWORD')) {
+            _errorMessage = 'Incorrect password. Please verify and retry.';
+          } else {
+            _errorMessage = raw;
+          }
         });
       }
-    }
-  }
-
-  Future<void> _handleDemoSignIn() async {
-    setState(() => _isLoading = true);
-    await widget.firebaseService.signInAsDemo();
-    if (mounted) {
-      setState(() => _isLoading = false);
-      widget.onLoginSuccess();
     }
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: AppColors.cream,
       body: SafeArea(
         child: Center(
           child: SingleChildScrollView(
@@ -65,26 +83,32 @@ class _LoginScreenState extends State<LoginScreen> {
               mainAxisAlignment: MainAxisAlignment.center,
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                // Top Brand Header
+                // Top Brand Logo
                 Center(
                   child: Container(
-                    width: 64,
-                    height: 64,
+                    width: 72,
+                    height: 72,
                     decoration: BoxDecoration(
-                      color: AppColors.crimson,
-                      borderRadius: BorderRadius.circular(20),
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(22),
                       boxShadow: [
                         BoxShadow(
-                          color: AppColors.crimson.withValues(alpha: 0.3),
-                          blurRadius: 16,
-                          offset: const Offset(0, 6),
+                          color: Colors.black.withValues(alpha: 0.08),
+                          blurRadius: 20,
+                          offset: const Offset(0, 8),
                         ),
                       ],
+                      border: Border.all(color: AppColors.borderSubtle),
                     ),
-                    child: const Icon(
-                      Icons.shield_outlined,
-                      color: Colors.white,
-                      size: 34,
+                    padding: const EdgeInsets.all(12),
+                    child: Image.asset(
+                      'assets/logo.png',
+                      fit: BoxFit.contain,
+                      errorBuilder: (_, __, ___) => const Icon(
+                        Icons.shield_outlined,
+                        color: AppColors.crimson,
+                        size: 36,
+                      ),
                     ),
                   ),
                 ),
@@ -94,28 +118,33 @@ class _LoginScreenState extends State<LoginScreen> {
                     'INTRA MOBILE',
                     style: TextStyle(
                       fontFamily: 'Montserrat',
-                      fontSize: 24,
+                      fontSize: 22,
                       fontWeight: FontWeight.w900,
                       letterSpacing: -0.5,
                       color: AppColors.charcoal,
                     ),
                   ),
                 ),
-                const SizedBox(height: 6),
+                const SizedBox(height: 4),
                 const Center(
                   child: Text(
-                    'Dependency Resilience & Drift Alarm Console',
+                    'Live Drift Alarm & Switchboard Remote Console',
                     textAlign: TextAlign.center,
                     style: TextStyle(
-                      fontSize: 13,
+                      fontSize: 12,
                       color: Colors.black54,
                     ),
                   ),
                 ),
-                const SizedBox(height: 36),
+                const SizedBox(height: 32),
 
                 // Card Container
                 Card(
+                  elevation: 0,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(24),
+                    side: const BorderSide(color: AppColors.borderSubtle),
+                  ),
                   child: Padding(
                     padding: const EdgeInsets.all(24.0),
                     child: Column(
@@ -130,7 +159,7 @@ class _LoginScreenState extends State<LoginScreen> {
                                 borderRadius: BorderRadius.circular(8),
                               ),
                               child: const Text(
-                                'FIREBASE AUTH',
+                                'REAL FIREBASE AUTH',
                                 style: TextStyle(
                                   fontSize: 10,
                                   fontWeight: FontWeight.bold,
@@ -142,10 +171,83 @@ class _LoginScreenState extends State<LoginScreen> {
                             const Icon(Icons.usb, size: 16, color: Colors.black45),
                             const SizedBox(width: 4),
                             const Text(
-                              'USB Debugging Ready',
-                              style: TextStyle(fontSize: 11, color: Colors.black54),
+                              'ADB Reverse (tcp:3001)',
+                              style: TextStyle(fontSize: 10, fontFamily: 'monospace', color: Colors.black54),
                             ),
                           ],
+                        ),
+                        const SizedBox(height: 20),
+
+                        // Mode Selector (Sign In vs Register)
+                        Container(
+                          padding: const EdgeInsets.all(4),
+                          decoration: BoxDecoration(
+                            color: AppColors.creamSubtle,
+                            borderRadius: BorderRadius.circular(14),
+                            border: Border.all(color: AppColors.borderSubtle),
+                          ),
+                          child: Row(
+                            children: [
+                              Expanded(
+                                child: InkWell(
+                                  onTap: () => setState(() {
+                                    _isSignUp = false;
+                                    _errorMessage = null;
+                                  }),
+                                  borderRadius: BorderRadius.circular(10),
+                                  child: Container(
+                                    padding: const EdgeInsets.symmetric(vertical: 8),
+                                    decoration: BoxDecoration(
+                                      color: !_isSignUp ? Colors.white : Colors.transparent,
+                                      borderRadius: BorderRadius.circular(10),
+                                      boxShadow: !_isSignUp
+                                          ? [BoxShadow(color: Colors.black.withValues(alpha: 0.05), blurRadius: 4)]
+                                          : null,
+                                    ),
+                                    child: Center(
+                                      child: Text(
+                                        'Sign In',
+                                        style: TextStyle(
+                                          fontSize: 12,
+                                          fontWeight: !_isSignUp ? FontWeight.bold : FontWeight.normal,
+                                          color: AppColors.charcoal,
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                              ),
+                              Expanded(
+                                child: InkWell(
+                                  onTap: () => setState(() {
+                                    _isSignUp = true;
+                                    _errorMessage = null;
+                                  }),
+                                  borderRadius: BorderRadius.circular(10),
+                                  child: Container(
+                                    padding: const EdgeInsets.symmetric(vertical: 8),
+                                    decoration: BoxDecoration(
+                                      color: _isSignUp ? Colors.white : Colors.transparent,
+                                      borderRadius: BorderRadius.circular(10),
+                                      boxShadow: _isSignUp
+                                          ? [BoxShadow(color: Colors.black.withValues(alpha: 0.05), blurRadius: 4)]
+                                          : null,
+                                    ),
+                                    child: Center(
+                                      child: Text(
+                                        'Create Account',
+                                        style: TextStyle(
+                                          fontSize: 12,
+                                          fontWeight: _isSignUp ? FontWeight.bold : FontWeight.normal,
+                                          color: AppColors.charcoal,
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
                         ),
                         const SizedBox(height: 20),
 
@@ -154,7 +256,8 @@ class _LoginScreenState extends State<LoginScreen> {
                           controller: _emailController,
                           keyboardType: TextInputType.emailAddress,
                           decoration: const InputDecoration(
-                            labelText: 'Developer Email',
+                            labelText: 'Operator Email',
+                            hintText: 'e.g. operator@company.com',
                             prefixIcon: Icon(Icons.email_outlined, size: 20),
                           ),
                         ),
@@ -166,47 +269,84 @@ class _LoginScreenState extends State<LoginScreen> {
                           obscureText: true,
                           decoration: const InputDecoration(
                             labelText: 'Password',
+                            hintText: 'Min 6 characters',
                             prefixIcon: Icon(Icons.lock_outline, size: 20),
                           ),
                         ),
                         const SizedBox(height: 20),
 
                         if (_errorMessage != null) ...[
-                          Text(
-                            _errorMessage!,
-                            style: const TextStyle(color: AppColors.breaking, fontSize: 12),
+                          Container(
+                            padding: const EdgeInsets.all(10),
+                            decoration: BoxDecoration(
+                              color: AppColors.breaking.withValues(alpha: 0.08),
+                              borderRadius: BorderRadius.circular(10),
+                              border: Border.all(color: AppColors.breaking.withValues(alpha: 0.2)),
+                            ),
+                            child: Row(
+                              children: [
+                                const Icon(Icons.error_outline, size: 16, color: AppColors.breaking),
+                                const SizedBox(width: 8),
+                                Expanded(
+                                  child: Text(
+                                    _errorMessage!,
+                                    style: const TextStyle(color: AppColors.breaking, fontSize: 11),
+                                  ),
+                                ),
+                              ],
+                            ),
                           ),
-                          const SizedBox(height: 12),
+                          const SizedBox(height: 16),
                         ],
 
                         ElevatedButton(
-                          onPressed: _isLoading ? null : _handleSignIn,
+                          onPressed: _isLoading ? null : _handleSubmit,
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: AppColors.crimson,
+                            foregroundColor: Colors.white,
+                            padding: const EdgeInsets.symmetric(vertical: 14),
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                          ),
                           child: _isLoading
                               ? const SizedBox(
                                   width: 20,
                                   height: 20,
                                   child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
                                 )
-                              : const Text('Sign In via Firebase'),
+                              : Text(
+                                  _isSignUp ? 'Create Firebase Operator Account' : 'Sign In via Firebase',
+                                  style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold),
+                                ),
                         ),
                       ],
                     ),
                   ),
                 ),
-                const SizedBox(height: 16),
+                const SizedBox(height: 20),
 
-                // Quick Demo Sign-in Button
-                OutlinedButton(
-                  onPressed: _isLoading ? null : _handleDemoSignIn,
-                  style: OutlinedButton.styleFrom(
-                    foregroundColor: AppColors.charcoal,
-                    padding: const EdgeInsets.symmetric(vertical: 14),
-                    side: const BorderSide(color: AppColors.borderSubtle),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-                  ),
-                  child: const Text(
-                    'Quick USB Demo Sign-In (Zero Setup)',
-                    style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold),
+                // Real status badge
+                Center(
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Container(
+                        width: 8,
+                        height: 8,
+                        decoration: const BoxDecoration(
+                          color: AppColors.success,
+                          shape: BoxShape.circle,
+                        ),
+                      ),
+                      const SizedBox(width: 6),
+                      const Text(
+                        'Project horizon-1ba53 Live & Operational',
+                        style: TextStyle(
+                          fontSize: 11,
+                          fontFamily: 'monospace',
+                          color: Colors.black45,
+                        ),
+                      ),
+                    ],
                   ),
                 ),
               ],

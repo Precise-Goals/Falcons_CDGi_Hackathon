@@ -18,6 +18,7 @@ const routes = [
   'research',
   'patent',
   'eval',
+  'trigger',
   'dashboard',
   'agent',
   'mcp',

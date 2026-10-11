@@ -37,6 +37,7 @@ const DocsContainer = lazy(() => import('./containers/DocsContainer'));
 const PricingContainer = lazy(() => import('./containers/PricingContainer'));
 const DashboardContainer = lazy(() => import('./containers/DashboardContainer'));
 const LabContainer = lazy(() => import('./containers/LabContainer'));
+const TriggerContainer = lazy(() => import('./containers/TriggerContainer'));
 
 function LoadingFallback() {
   return (
@@ -69,7 +70,7 @@ export default function App() {
       if (target === 'terms' || target === 'research' || target === 'patent') {
         return 'docs';
       }
-      const validTabs: MainTab[] = ['home', 'agent', 'mcp', 'sdk', 'docs', 'pricing', 'dashboard', 'eval'];
+      const validTabs: MainTab[] = ['home', 'agent', 'mcp', 'sdk', 'docs', 'pricing', 'dashboard', 'eval', 'trigger'];
       if (validTabs.includes(target as MainTab)) {
         return target as MainTab;
       }
@@ -120,7 +121,7 @@ export default function App() {
         setActiveTab('docs');
         setDocsCategory('docs');
       } else {
-        const validTabs: MainTab[] = ['home', 'agent', 'mcp', 'sdk', 'docs', 'pricing', 'dashboard', 'eval'];
+        const validTabs: MainTab[] = ['home', 'agent', 'mcp', 'sdk', 'docs', 'pricing', 'dashboard', 'eval', 'trigger'];
         if (validTabs.includes(path as MainTab)) {
           setActiveTab(path as MainTab);
         } else if (!path) {
@@ -873,6 +874,13 @@ export default function App() {
               handleExportVerificationJson={handleExportVerificationJson}
               copiedKey={copiedKey}
               copyToClipboard={copyToClipboard}
+            />
+          )}
+
+          {activeTab === 'trigger' && (
+            <TriggerContainer
+              user={user}
+              onOpenAuth={() => setShowLoginModal(true)}
             />
           )}
         </Suspense>

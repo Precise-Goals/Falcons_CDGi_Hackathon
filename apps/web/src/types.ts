@@ -52,7 +52,7 @@ export interface UserProfile {
   activeTokenUri?: string;
 }
 
-export type MainTab = 'home' | 'agent' | 'mcp' | 'sdk' | 'docs' | 'pricing' | 'dashboard' | 'eval';
+export type MainTab = 'home' | 'agent' | 'mcp' | 'sdk' | 'docs' | 'pricing' | 'dashboard' | 'eval' | 'trigger';
 export type DashboardSubView = 'predict' | 'drift' | 'pipeline' | 'impact' | 'adapters' | 'switchboard' | 'resilience';
 export type DocsCategory = 'docs' | 'terms' | 'research';
 export type AgentMode = 'ask' | 'plan';

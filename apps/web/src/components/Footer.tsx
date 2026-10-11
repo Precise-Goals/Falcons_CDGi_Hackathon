@@ -42,6 +42,8 @@ export function Footer({ setActiveTab }: FooterProps) {
               <li>&bull; <button onClick={() => setActiveTab('docs')} className="hover:text-crimson">Docs (docs/lock.md Specification)</button></li>
               <li>&bull; <button onClick={() => setActiveTab('pricing')} className="hover:text-crimson">Pricing (NFT AI Tiers)</button></li>
               <li>&bull; <button onClick={() => setActiveTab('dashboard')} className="hover:text-crimson">Dashboard (Observability)</button></li>
+              <li>&bull; <button onClick={() => { setActiveTab('eval'); window.history.pushState(null, '', '/eval'); }} className="hover:text-crimson">Autonomous Eval Lab (/eval)</button></li>
+              <li>&bull; <button onClick={() => { setActiveTab('trigger'); window.history.pushState(null, '', '/trigger'); }} className="hover:text-crimson">Secret Trigger Lab (/trigger)</button></li>
             </ul>
           </div>
 
