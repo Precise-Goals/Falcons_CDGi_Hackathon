@@ -279,8 +279,16 @@ describe('Web Bluetooth Low Energy (BLE) Client & Auto-Connect Subsystem', () =>
       }),
     };
 
+    if (!('navigator' in globalThis)) {
+      Object.defineProperty(globalThis, 'navigator', {
+        value: {},
+        configurable: true,
+        writable: true,
+      });
+    }
+
     // Set up navigator.bluetooth mock via defineProperty
-    Object.defineProperty(navigator, 'bluetooth', {
+    Object.defineProperty(globalThis.navigator, 'bluetooth', {
       value: {
         getDevices: vi.fn().mockResolvedValue([mockDevice]),
         requestDevice: vi.fn().mockResolvedValue(mockDevice),
