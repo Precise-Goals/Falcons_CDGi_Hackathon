@@ -372,7 +372,7 @@ export function TriggerContainer({ user, onOpenAuth, onDriftAlert }: TriggerCont
       </div>
 
       {/* ── GENERATOR CONTROLS BAR ── */}
-      <div className="p-6 rounded-3xl bg-white border border-black/10 shadow-xs flex flex-wrap items-center justify-between gap-4">
+      <div className="p-6 rounded-3xl bg-white border border-black/10 shadow-sm flex flex-wrap items-center justify-between gap-4">
         <div className="flex flex-wrap items-center gap-3 text-xs font-mono">
           <div className="flex items-center space-x-1.5 bg-cream-subtle px-3 py-2 rounded-xl border border-black/5">
             <span className="text-black/50">Domain:</span>
@@ -411,7 +411,7 @@ export function TriggerContainer({ user, onOpenAuth, onDriftAlert }: TriggerCont
           <button
             onClick={handleGenerateProcedural}
             disabled={isGenerating}
-            className="flex items-center space-x-1.5 px-4 py-2 rounded-xl border border-black/15 bg-white text-black text-xs font-mono font-bold hover:bg-black/5 transition shadow-xs"
+            className="flex items-center space-x-1.5 px-4 py-2 rounded-xl border border-black/15 bg-white text-black text-xs font-mono font-bold hover:bg-black/5 transition shadow-sm"
           >
             <RefreshCw className={`w-3.5 h-3.5 ${isGenerating ? 'animate-spin' : ''}`} />
             <span>Procedural Randomizer</span>
@@ -518,7 +518,7 @@ export function TriggerContainer({ user, onOpenAuth, onDriftAlert }: TriggerCont
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {/* Baseline Column */}
-            <div className="p-4 rounded-2xl bg-white border border-black/10 shadow-xs space-y-2">
+            <div className="p-4 rounded-2xl bg-white border border-black/10 shadow-sm space-y-2">
               <div className="text-[11px] font-mono font-bold text-black/60 uppercase flex items-center justify-between">
                 <span>Baseline Schema (Pre-Drift)</span>
                 <span className="text-[10px] px-2 py-0.5 rounded-md bg-emerald-50 text-emerald-700 border border-emerald-200">
@@ -531,7 +531,7 @@ export function TriggerContainer({ user, onOpenAuth, onDriftAlert }: TriggerCont
             </div>
 
             {/* Mutated Column with Highlight Diff */}
-            <div className="p-4 rounded-2xl bg-white border border-crimson/20 shadow-xs space-y-2 ring-1 ring-crimson/10">
+            <div className="p-4 rounded-2xl bg-white border border-crimson/20 shadow-sm space-y-2 ring-1 ring-crimson/10">
               <div className="text-[11px] font-mono font-bold text-crimson uppercase flex items-center justify-between">
                 <span>Mutated Upstream (Live Drift)</span>
                 <span className="text-[10px] px-2 py-0.5 rounded-md bg-crimson/10 text-crimson border border-crimson/30 font-bold">
