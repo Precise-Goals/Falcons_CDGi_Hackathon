@@ -147,3 +147,127 @@ body {
 .floating-leaf-delay-2 {
   animation: floatLeaf 7s ease-in-out 3s infinite;
 }
+
+/* =========================================================================
+   MAXIMALIST WEBFLOW AESTHETIC GRAPHICS & HIGH-FIDELITY DESIGN SYSTEM
+   ========================================================================= */
+
+/* High-fidelity dense technical dot matrix grid */
+.dot-matrix-canvas {
+  background-image: 
+    radial-gradient(rgba(200, 16, 46, 0.08) 1.2px, transparent 1.2px),
+    radial-gradient(rgba(10, 10, 10, 0.05) 1px, transparent 1px);
+  background-size: 24px 24px, 12px 12px;
+  background-position: 0 0, 12px 12px;
+}
+
+/* Ambient Crimson & Washi mesh gradients */
+.mesh-ambient-glow {
+  background: 
+    radial-gradient(circle at 15% 15%, rgba(200, 16, 46, 0.04) 0%, transparent 45%),
+    radial-gradient(circle at 85% 25%, rgba(16, 185, 129, 0.03) 0%, transparent 40%),
+    radial-gradient(circle at 50% 85%, rgba(200, 16, 46, 0.035) 0%, transparent 50%),
+    linear-gradient(180deg, #FAF7F2 0%, #F5EFE6 50%, #FAF7F2 100%);
+}
+
+/* Elevated glass panel with multi-layer inner reflection */
+.glass-panel-elevated {
+  background: rgba(255, 255, 255, 0.88);
+  backdrop-filter: blur(24px) saturate(180%);
+  -webkit-backdrop-filter: blur(24px) saturate(180%);
+  border: 1px solid rgba(255, 255, 255, 0.95);
+  box-shadow: 
+    0 24px 48px -12px rgba(10, 10, 10, 0.06),
+    0 4px 12px 0 rgba(200, 16, 46, 0.03),
+    inset 0 1px 2px 0 rgba(255, 255, 255, 1),
+    inset 0 -1px 2px 0 rgba(0, 0, 0, 0.02);
+}
+
+/* Maximalist technical schematic card */
+.maximalist-card {
+  position: relative;
+  background: linear-gradient(135deg, #FFFFFF 0%, #FCFAF7 60%, #F8F3EC 100%);
+  border: 1px solid rgba(220, 212, 200, 0.85);
+  border-radius: 2rem;
+  box-shadow: 
+    0 20px 40px -15px rgba(10, 10, 10, 0.06),
+    0 1px 3px 0 rgba(10, 10, 10, 0.03),
+    inset 0 1px 1px 0 rgba(255, 255, 255, 1);
+  overflow: hidden;
+  transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.25s cubic-bezier(0.16, 1, 0.3, 1), border-color 0.25s ease;
+}
+
+.maximalist-card:hover {
+  border-color: rgba(200, 16, 46, 0.35);
+  box-shadow: 
+    0 28px 56px -16px rgba(200, 16, 46, 0.12),
+    0 2px 6px 0 rgba(10, 10, 10, 0.04),
+    inset 0 1px 1px 0 rgba(255, 255, 255, 1);
+  transform: translateY(-2px);
+}
+
+/* Top decorative corner technical brackets */
+.technical-bracket::before {
+  content: '';
+  position: absolute;
+  top: 12px;
+  left: 12px;
+  width: 10px;
+  height: 10px;
+  border-top: 1.5px solid rgba(200, 16, 46, 0.4);
+  border-left: 1.5px solid rgba(200, 16, 46, 0.4);
+  pointer-events: none;
+}
+
+.technical-bracket::after {
+  content: '';
+  position: absolute;
+  bottom: 12px;
+  right: 12px;
+  width: 10px;
+  height: 10px;
+  border-bottom: 1.5px solid rgba(200, 16, 46, 0.4);
+  border-right: 1.5px solid rgba(200, 16, 46, 0.4);
+  pointer-events: none;
+}
+
+/* Shimmer beam loading indicator */
+@keyframes shimmerMove {
+  0% { transform: translateX(-100%); }
+  100% { transform: translateX(100%); }
+}
+
+.shimmer-beam {
+  position: relative;
+  overflow: hidden;
+}
+
+.shimmer-beam::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(90deg, transparent 0%, rgba(255, 255, 255, 0.45) 50%, transparent 100%);
+  animation: shimmerMove 2s infinite ease-in-out;
+}
+
+/* Neon crimson glow outline */
+.neon-crimson-ring {
+  box-shadow: 0 0 0 1px rgba(200, 16, 46, 0.3),
+              0 0 16px -2px rgba(200, 16, 46, 0.35);
+}
+
+/* Pulsing node indicator */
+.pulsing-node {
+  box-shadow: 0 0 0 0 rgba(200, 16, 46, 0.7);
+  animation: nodePulse 2s infinite cubic-bezier(0.66, 0, 0, 1);
+}
+
+@keyframes nodePulse {
+  to {
+    box-shadow: 0 0 0 8px rgba(200, 16, 46, 0);
+  }
+}
+
