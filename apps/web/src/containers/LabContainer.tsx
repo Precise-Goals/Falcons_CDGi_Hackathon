@@ -111,7 +111,7 @@ export function LabContainer({
         </div>
 
         {/* Uncluttered Modern Command Console Deck */}
-        <div className="bg-white/80 backdrop-blur-md p-5 rounded-3xl border border-black/10 shadow-sm space-y-4 relative z-10">
+        <div className="bg-white/90 backdrop-blur-md p-6 rounded-3xl border-2 border-black/15 shadow-sm space-y-4 relative z-10">
           {/* Row 1: Execution Mode Selector Segmented Tabs */}
           <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 pb-3 border-b border-black/5">
             <div className="text-[11px] font-mono font-bold text-black/50 uppercase tracking-wider flex items-center space-x-1.5">
