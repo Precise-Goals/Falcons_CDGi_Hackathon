@@ -14,11 +14,40 @@ export function MarkdownView({ content }: MarkdownViewProps) {
     setTimeout(() => setCopiedCodeIdx(null), 2000);
   };
 
-  // Helper to format inline markdown (bold, italic, inline code)
+  // Helper to safely split table cells taking into account inline code and escaped pipes
+  const splitCells = (line: string): string[] => {
+    let s = line.trim();
+    if (s.startsWith('|')) s = s.slice(1);
+    if (s.endsWith('|')) s = s.slice(0, -1);
+
+    const cells: string[] = [];
+    let current = '';
+    let inCode = false;
+
+    for (let idx = 0; idx < s.length; idx++) {
+      const char = s[idx];
+      if (char === '`') {
+        inCode = !inCode;
+        current += char;
+      } else if (char === '\\' && idx + 1 < s.length && s[idx + 1] === '|') {
+        current += '|';
+        idx++; // skip escaped pipe
+      } else if (char === '|' && !inCode) {
+        cells.push(current.trim());
+        current = '';
+      } else {
+        current += char;
+      }
+    }
+    cells.push(current.trim());
+    return cells;
+  };
+
+  // Helper to format inline markdown (bold, italic, inline code, links)
   const formatInlineText = (text: string): React.ReactNode => {
-    // Regex splits on `code` or **bold** or *italic*
+    // Regex splits on `code` or **bold** or *italic* or [label](url)
     const parts: React.ReactNode[] = [];
-    const regex = /(`[^`]+`|\*\*[^*]+\*\*|\*[^*]+\*)/g;
+    const regex = /(`[^`]+`|\*\*[^*]+\*\*|\*[^*]+\*|\[[^\]]+\]\([^)]+\))/g;
     let lastIndex = 0;
     let match: RegExpExecArray | null;
 
@@ -48,6 +77,24 @@ export function MarkdownView({ content }: MarkdownViewProps) {
             {token.slice(1, -1)}
           </em>
         );
+      } else if (token.startsWith('[') && token.endsWith(')')) {
+        const linkMatch = token.match(/^\[([^\]]+)\]\(([^)]+)\)$/);
+        if (linkMatch) {
+          const [, label, href] = linkMatch;
+          parts.push(
+            <a
+              key={match.index}
+              href={href}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-crimson underline underline-offset-2 hover:text-crimson/80 font-medium transition-colors"
+            >
+              {label}
+            </a>
+          );
+        } else {
+          parts.push(token);
+        }
       }
       lastIndex = regex.lastIndex;
     }
@@ -161,126 +208,189 @@ export function MarkdownView({ content }: MarkdownViewProps) {
         continue;
       }
 
-      // Markdown Table parsing (starts with pipe and followed by delimiter row)
-      if (
-        line.includes('|') &&
-        i + 1 < rawLines.length &&
-        /^\|?(\s*:?-+:?\s*\|)+\s*:?-+:?\s*\|?$/.test(rawLines[i + 1].trim())
-      ) {
-        flushList(i);
-
-        const splitRow = (rowStr: string): string[] => {
-          let s = rowStr.trim();
-          if (s.startsWith('|')) s = s.slice(1);
-          if (s.endsWith('|')) s = s.slice(0, -1);
-          return s.split('|').map((c) => c.trim());
-        };
-
-        const headerCells = splitRow(line);
-        const delimiterCells = splitRow(rawLines[i + 1]);
-
-        const alignments = delimiterCells.map((d) => {
-          if (d.startsWith(':') && d.endsWith(':')) return 'center';
-          if (d.endsWith(':')) return 'right';
-          return 'left';
-        });
-
-        const dataRows: string[][] = [];
-        let j = i + 2;
-        while (j < rawLines.length) {
-          const rowLine = rawLines[j].trim();
-          if (!rowLine || !rowLine.includes('|')) break;
-          if (rowLine.startsWith('```')) break;
-          dataRows.push(splitRow(rowLine));
-          j++;
+      // Markdown Table parsing (starts with pipe and followed by delimiter row, tolerating blank lines)
+      if (line.includes('|')) {
+        let nextIdx = i + 1;
+        while (nextIdx < rawLines.length && !rawLines[nextIdx].trim()) {
+          nextIdx++;
         }
 
-        const tableKeyIdx = i;
-        i = j - 1; // Advance outer index to the end of the table block
+        if (
+          nextIdx < rawLines.length &&
+          /^\|?(\s*:?-+:?\s*\|)+\s*:?-+:?\s*\|?$/.test(rawLines[nextIdx].trim())
+        ) {
+          flushList(i);
 
-        elements.push(
-          <div
-            key={`table-${tableKeyIdx}`}
-            className="my-3 overflow-x-auto rounded-2xl border border-black/10 bg-white shadow-sm"
-          >
-            <table className="w-full text-left border-collapse text-xs">
-              <thead className="bg-[#FAF9F5] border-b border-black/10 text-black/75 font-mono text-[10px] uppercase tracking-wider">
-                <tr>
-                  {headerCells.map((h, colIdx) => (
-                    <th
-                      key={colIdx}
-                      className={`px-3.5 py-2.5 font-bold border-r border-black/5 last:border-r-0 ${
-                        alignments[colIdx] === 'center'
-                          ? 'text-center'
-                          : alignments[colIdx] === 'right'
-                          ? 'text-right'
-                          : 'text-left'
-                      }`}
-                    >
-                      {formatInlineText(h)}
-                    </th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody>
-                {dataRows.map((row, rowIdx) => (
-                  <tr
-                    key={rowIdx}
-                    className="border-b border-black/5 last:border-b-0 hover:bg-crimson/[0.02] transition-colors even:bg-black/[0.015]"
-                  >
-                    {headerCells.map((_, colIdx) => {
-                      const cellVal = row[colIdx] || '';
-                      return (
-                        <td
-                          key={colIdx}
-                          className={`px-3.5 py-2 font-sans text-xs text-black/85 border-r border-black/5 last:border-r-0 leading-relaxed ${
-                            alignments[colIdx] === 'center'
-                              ? 'text-center'
-                              : alignments[colIdx] === 'right'
-                              ? 'text-right'
-                              : 'text-left'
-                          }`}
-                        >
-                          {formatInlineText(cellVal)}
-                        </td>
-                      );
-                    })}
+          const headerCells = splitCells(line);
+          const delimiterCells = splitCells(rawLines[nextIdx]);
+
+          const alignments = delimiterCells.map((d) => {
+            const td = d.trim();
+            if (td.startsWith(':') && td.endsWith(':')) return 'center';
+            if (td.endsWith(':')) return 'right';
+            return 'left';
+          });
+
+          const dataRows: string[][] = [];
+          let j = nextIdx + 1;
+          let lastTableRowIdx = nextIdx;
+
+          while (j < rawLines.length) {
+            const rowTrimmed = rawLines[j].trim();
+            if (!rowTrimmed) {
+              // Look ahead past blank lines to see if another table row follows
+              let lookAhead = j + 1;
+              while (lookAhead < rawLines.length && !rawLines[lookAhead].trim()) {
+                lookAhead++;
+              }
+              if (
+                lookAhead < rawLines.length &&
+                lookAhead < rawLines.length &&
+                rawLines[lookAhead].includes('|') &&
+                !rawLines[lookAhead].trim().startsWith('```') &&
+                !rawLines[lookAhead].trim().startsWith('#')
+              ) {
+                j = lookAhead;
+                dataRows.push(splitCells(rawLines[j]));
+                lastTableRowIdx = j;
+                j++;
+                continue;
+              } else {
+                break;
+              }
+            }
+
+            if (
+              rowTrimmed.includes('|') &&
+              !rowTrimmed.startsWith('```') &&
+              !rowTrimmed.startsWith('#')
+            ) {
+              dataRows.push(splitCells(rowTrimmed));
+              lastTableRowIdx = j;
+              j++;
+            } else {
+              break;
+            }
+          }
+
+          const tableKeyIdx = i;
+          i = lastTableRowIdx;
+
+          elements.push(
+            <div
+              key={`table-${tableKeyIdx}`}
+              className="my-3 overflow-x-auto rounded-2xl border border-black/10 bg-white shadow-sm"
+            >
+              <table className="w-full text-left border-collapse text-xs">
+                <thead className="bg-[#FAF9F5] border-b border-black/10 text-black/75 font-mono text-[10px] uppercase tracking-wider">
+                  <tr>
+                    {headerCells.map((h, colIdx) => (
+                      <th
+                        key={colIdx}
+                        className={`px-3.5 py-2.5 font-bold border-r border-black/5 last:border-r-0 ${
+                          alignments[colIdx] === 'center'
+                            ? 'text-center'
+                            : alignments[colIdx] === 'right'
+                            ? 'text-right'
+                            : 'text-left'
+                        }`}
+                      >
+                        {formatInlineText(h)}
+                      </th>
+                    ))}
                   </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+                </thead>
+                <tbody>
+                  {dataRows.map((row, rowIdx) => (
+                    <tr
+                      key={rowIdx}
+                      className="border-b border-black/5 last:border-b-0 hover:bg-crimson/[0.02] transition-colors even:bg-black/[0.015]"
+                    >
+                      {headerCells.map((_, colIdx) => {
+                        const cellVal = row[colIdx] || '';
+                        return (
+                          <td
+                            key={colIdx}
+                            className={`px-3.5 py-2 font-sans text-xs text-black/85 border-r border-black/5 last:border-r-0 leading-relaxed ${
+                              alignments[colIdx] === 'center'
+                                ? 'text-center'
+                                : alignments[colIdx] === 'right'
+                                ? 'text-right'
+                                : 'text-left'
+                            }`}
+                          >
+                            {formatInlineText(cellVal)}
+                          </td>
+                        );
+                      })}
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          );
+          continue;
+        }
+      }
+
+      // Horizontal Rule
+      if (/^([-*_]){3,}$/.test(trimmed)) {
+        flushList(i);
+        elements.push(
+          <hr key={`hr-${i}`} className="my-2.5 border-t border-black/10" />
         );
         continue;
       }
 
-      // Headers
-      if (trimmed.startsWith('# ')) {
+      // Headers (H1 to H6)
+      const headerMatch =
+        trimmed.match(/^(#{1,6})\s+(.*)$/) ||
+        (trimmed.startsWith('##') ? trimmed.match(/^(#{2,6})([A-Za-z0-9_].*)$/) : null);
+
+      if (headerMatch) {
         flushList(i);
-        elements.push(
-          <h1 key={`h1-${i}`} className="font-display font-bold text-sm text-black mt-3 mb-1 border-b border-black/10 pb-1">
-            {formatInlineText(trimmed.slice(2))}
-          </h1>
-        );
-        continue;
-      }
-      if (trimmed.startsWith('## ')) {
-        flushList(i);
-        elements.push(
-          <h2 key={`h2-${i}`} className="font-display font-bold text-xs text-black mt-2.5 mb-1 flex items-center space-x-1.5">
-            <span className="w-1.5 h-1.5 rounded-full bg-crimson" />
-            <span>{formatInlineText(trimmed.slice(3))}</span>
-          </h2>
-        );
-        continue;
-      }
-      if (trimmed.startsWith('### ')) {
-        flushList(i);
-        elements.push(
-          <h3 key={`h3-${i}`} className="font-mono font-bold text-[11px] text-crimson uppercase tracking-wider mt-2 mb-0.5">
-            {formatInlineText(trimmed.slice(4))}
-          </h3>
-        );
+        const level = headerMatch[1].length;
+        const headingText = headerMatch[2].trim();
+
+        if (level === 1) {
+          elements.push(
+            <h1 key={`h1-${i}`} className="font-display font-bold text-sm text-black mt-3 mb-1 border-b border-black/10 pb-1">
+              {formatInlineText(headingText)}
+            </h1>
+          );
+        } else if (level === 2) {
+          elements.push(
+            <h2 key={`h2-${i}`} className="font-display font-bold text-xs text-black mt-2.5 mb-1 flex items-center space-x-1.5">
+              <span className="w-1.5 h-1.5 rounded-full bg-crimson" />
+              <span>{formatInlineText(headingText)}</span>
+            </h2>
+          );
+        } else if (level === 3) {
+          elements.push(
+            <h3 key={`h3-${i}`} className="font-mono font-bold text-[11px] text-crimson uppercase tracking-wider mt-2 mb-0.5">
+              {formatInlineText(headingText)}
+            </h3>
+          );
+        } else if (level === 4) {
+          elements.push(
+            <h4 key={`h4-${i}`} className="font-mono font-bold text-[11px] text-black/90 uppercase tracking-wide mt-2 mb-0.5 flex items-center space-x-1.5">
+              <span className="w-1.5 h-1.5 rounded-sm bg-black/40" />
+              <span>{formatInlineText(headingText)}</span>
+            </h4>
+          );
+        } else if (level === 5) {
+          elements.push(
+            <h5 key={`h5-${i}`} className="font-mono font-semibold text-[10px] text-black/80 uppercase tracking-wider mt-1.5 mb-0.5">
+              {formatInlineText(headingText)}
+            </h5>
+          );
+        } else {
+          elements.push(
+            <h6 key={`h6-${i}`} className="font-mono font-medium text-[10px] text-black/70 tracking-wide mt-1 mb-0.5">
+              {formatInlineText(headingText)}
+            </h6>
+          );
+        }
         continue;
       }
 
