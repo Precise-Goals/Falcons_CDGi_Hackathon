@@ -106,3 +106,80 @@ export function validateNullabilityInvariant(
   }
   return profile.nullRatio <= maxAllowedNullRatio;
 }
+
+export interface QuantileConstancyResult {
+  isUnitShift: boolean;
+  scaleFactor: number;
+  variance: number;
+  quantilesTested: number[];
+  ratios: number[];
+  confidence: number;
+}
+
+/**
+ * Evaluates whether two sets of quantiles exhibit uniform multiplicative constancy,
+ * indicating an M3 unit shift (e.g. dollars-to-cents scale shift).
+ */
+export function evaluateQuantileConstancy(
+  quantilesBefore: number[],
+  quantilesAfter: number[],
+  tolerance: number = 0.02
+): QuantileConstancyResult {
+  if (
+    quantilesBefore.length === 0 ||
+    quantilesBefore.length !== quantilesAfter.length
+  ) {
+    return {
+      isUnitShift: false,
+      scaleFactor: 1.0,
+      variance: Infinity,
+      quantilesTested: [],
+      ratios: [],
+      confidence: 0,
+    };
+  }
+
+  const ratios: number[] = [];
+  for (let i = 0; i < quantilesBefore.length; i++) {
+    const b = quantilesBefore[i];
+    const a = quantilesAfter[i];
+    if (b === 0) continue;
+    ratios.push(a / b);
+  }
+
+  if (ratios.length < 2) {
+    return {
+      isUnitShift: false,
+      scaleFactor: ratios[0] ?? 1.0,
+      variance: 0,
+      quantilesTested: quantilesBefore,
+      ratios,
+      confidence: 0.5,
+    };
+  }
+
+  const meanRatio = ratios.reduce((sum, r) => sum + r, 0) / ratios.length;
+  const variance =
+    ratios.reduce((sum, r) => sum + Math.pow(r - meanRatio, 2), 0) /
+    ratios.length;
+  const stdDev = Math.sqrt(variance);
+  const relativeStdDev = meanRatio !== 0 ? stdDev / Math.abs(meanRatio) : Infinity;
+
+  const isUniformScale = relativeStdDev <= tolerance;
+  const isUnitShift =
+    isUniformScale && Math.abs(meanRatio - 1.0) > 0.05;
+
+  const confidence = isUniformScale
+    ? Math.max(0, Math.min(1, 1 - relativeStdDev / tolerance))
+    : 0;
+
+  return {
+    isUnitShift,
+    scaleFactor: Math.round(meanRatio * 1000) / 1000,
+    variance: Math.round(variance * 10000) / 10000,
+    quantilesTested: quantilesBefore,
+    ratios: ratios.map((r) => Math.round(r * 1000) / 1000),
+    confidence: Math.round(confidence * 1000) / 1000,
+  };
+}
+
