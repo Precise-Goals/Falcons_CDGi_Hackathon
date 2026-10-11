@@ -1,5 +1,9 @@
 import { describe, it, expect } from 'vitest';
-import { hungarianMatching } from './hungarian.js';
+import {
+  hungarianMatching,
+  validateCostMatrix,
+  buildCostMatrixFromStrings,
+} from './hungarian.js';
 
 describe('Hungarian Bipartite Matcher (@intra/differ)', () => {
   it('handles empty matrix gracefully', () => {
@@ -139,4 +143,70 @@ describe('Hungarian Bipartite Matcher (@intra/differ)', () => {
     }
     expect(res.totalCost).toBe(manualSum);
   });
+
+  describe('Cost Matrix Validation & 20-Field Mutated Schema Matching', () => {
+    it('validates regular cost matrices and catches malformed matrices', () => {
+      const validMatrix = [
+        [1, 2, 3],
+        [4, 5, 6],
+      ];
+      expect(validateCostMatrix(validMatrix).valid).toBe(true);
+
+      const nonRectangular = [[1, 2], [3, 4, 5]];
+      const resNonRect = validateCostMatrix(nonRectangular);
+      expect(resNonRect.valid).toBe(false);
+      expect(resNonRect.issues[0]).toContain('mismatches');
+
+      const withNaN = [[1, NaN], [3, 4]];
+      const resNaN = validateCostMatrix(withNaN);
+      expect(resNaN.valid).toBe(false);
+      expect(resNaN.issues[0]).toContain('non-finite');
+    });
+
+    it('optimally matches 20 mutated fields with 1-to-1 bijection', () => {
+      const sourceFields = [
+        'id', 'user_id', 'created_at', 'updated_at', 'status',
+        'email_address', 'phone_number', 'first_name', 'last_name', 'billing_street',
+        'billing_city', 'billing_country', 'billing_zip', 'shipping_street', 'shipping_city',
+        'shipping_country', 'shipping_zip', 'total_amount', 'discount_code', 'currency'
+      ];
+
+      const targetFields = [
+        'id', 'userId', 'createdAt', 'updatedAt', 'state',
+        'emailAddress', 'phoneNumber', 'firstName', 'lastName', 'billingStreet',
+        'billingCity', 'billingCountry', 'billingZip', 'shippingStreet', 'shippingCity',
+        'shippingCountry', 'shippingZip', 'totalAmount', 'discountCode', 'curr'
+      ];
+
+      expect(sourceFields.length).toBe(20);
+      expect(targetFields.length).toBe(20);
+
+      const costMatrix = buildCostMatrixFromStrings(sourceFields, targetFields);
+      const validation = validateCostMatrix(costMatrix);
+      expect(validation.valid).toBe(true);
+      expect(validation.rowCount).toBe(20);
+      expect(validation.colCount).toBe(20);
+
+      const matchResult = hungarianMatching(costMatrix);
+      expect(matchResult.assignments).toHaveLength(20);
+
+      // Verify bijection (all rows and columns matched exactly once)
+      const assignedRows = new Set(matchResult.assignments.map((a) => a.row));
+      const assignedCols = new Set(matchResult.assignments.map((a) => a.col));
+      expect(assignedRows.size).toBe(20);
+      expect(assignedCols.size).toBe(20);
+
+      // Key specific matches should be exact or near-identical
+      // 'id' (index 0) must match 'id' (index 0) with cost 0
+      expect(matchResult.rowToCol[0]).toBe(0);
+      expect(costMatrix[0][0]).toBe(0);
+
+      // 'user_id' (index 1) should match 'userId' (index 1)
+      expect(matchResult.rowToCol[1]).toBe(1);
+
+      // 'total_amount' (index 17) should match 'totalAmount' (index 17)
+      expect(matchResult.rowToCol[17]).toBe(17);
+    });
+  });
 });
+
