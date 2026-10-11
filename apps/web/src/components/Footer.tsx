@@ -155,7 +155,7 @@ export function Footer({ setActiveTab }: FooterProps) {
             <span className="text-white font-bold">ALL SYSTEMS OPERATIONAL</span>
           </div>
           <div>
-            COLOR PALETTE: <span className="text-crimson font-semibold">CRIMSON RED</span> &bull; <span className="text-white/90 font-semibold">CREAM</span> &bull; <span className="text-white/90 font-semibold">BLACK</span>
+            COLOR PALETTE: <span className="text-crimson font-semibold">CRIMSON (#C8102E)</span> &bull; <span className="text-white/90 font-semibold">CREAM (#FAF7F2)</span> &bull; <span className="text-white/90 font-semibold">BLACK (#0A0A0A)</span>
           </div>
           <div>
             FONTS: <span className="text-white font-semibold">POPPINS</span> + <span className="text-white font-semibold">MONTSERRAT</span>
