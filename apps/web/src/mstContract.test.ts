@@ -8,7 +8,7 @@ import {
   fetchMstBalance,
 } from './lib/mstWallet';
 
-describe('MST Blockchain Testnet & IntraSubscriptionNFT Contract Verification', () => {
+describe('MST Blockchain Testnet & IntraSubscriptionNFT Contract Verification', { timeout: 20000 }, () => {
   const RPC_URL = ENV.MST_TESTNET_RPC;
   const CONTRACT_ADDRESS = ENV.INTRA_SUBSCRIPTION_NFT_ADDRESS;
 

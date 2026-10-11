@@ -89,24 +89,32 @@ export function Navbar({
             }`}
           >
             <span>Products</span>
-            <ChevronDown className="w-3 h-3 opacity-60" />
+            <ChevronDown
+              className={`w-3 h-3 opacity-60 transition-transform duration-200 ${
+                productsDropdownOpen ? 'rotate-180' : ''
+              }`}
+            />
           </button>
 
           {productsDropdownOpen && (
-            <div className="absolute top-full mt-2 -left-6 w-56 liquid-glass-card rounded-[1.5rem] p-2.5 shadow-2xl space-y-1 z-50 border border-white/80 animate-in fade-in zoom-in-95 duration-150">
+            <div className="absolute top-full mt-2 -left-6 w-60 bg-white rounded-[1.5rem] p-2.5 shadow-2xl space-y-1 z-[100] border border-[#E8E2D9] animate-in fade-in zoom-in-95 duration-150 ring-1 ring-black/5">
               <button
                 onClick={() => {
                   setActiveTab('agent');
                   setProductsDropdownOpen(false);
                 }}
                 className={`w-full flex items-center space-x-2.5 p-2.5 rounded-xl text-left transition ${
-                  activeTab === 'agent' ? 'bg-crimson text-white font-bold' : 'hover:bg-black/5 text-black'
+                  activeTab === 'agent'
+                    ? 'bg-crimson text-white font-bold shadow-sm'
+                    : 'hover:bg-cream-subtle text-black'
                 }`}
               >
-                <Cpu className="w-4 h-4 text-crimson" />
+                <Cpu className={`w-4 h-4 ${activeTab === 'agent' ? 'text-white' : 'text-crimson'}`} />
                 <div>
                   <div className="text-xs font-bold">Agent Workbench</div>
-                  <div className="text-[10px] text-black/50 font-mono">Claude-Style Ask & Plan</div>
+                  <div className={`text-[10px] font-mono ${activeTab === 'agent' ? 'text-white/85' : 'text-black/50'}`}>
+                    Claude-Style Ask & Plan
+                  </div>
                 </div>
               </button>
 
@@ -116,13 +124,17 @@ export function Navbar({
                   setProductsDropdownOpen(false);
                 }}
                 className={`w-full flex items-center space-x-2.5 p-2.5 rounded-xl text-left transition ${
-                  activeTab === 'mcp' ? 'bg-crimson text-white font-bold' : 'hover:bg-black/5 text-black'
+                  activeTab === 'mcp'
+                    ? 'bg-crimson text-white font-bold shadow-sm'
+                    : 'hover:bg-cream-subtle text-black'
                 }`}
               >
-                <Terminal className="w-4 h-4 text-crimson" />
+                <Terminal className={`w-4 h-4 ${activeTab === 'mcp' ? 'text-white' : 'text-crimson'}`} />
                 <div>
                   <div className="text-xs font-bold">Customer MCP Server</div>
-                  <div className="text-[10px] text-black/50 font-mono">7 Discovery & Adapter Tools</div>
+                  <div className={`text-[10px] font-mono ${activeTab === 'mcp' ? 'text-white/85' : 'text-black/50'}`}>
+                    7 Discovery & Adapter Tools
+                  </div>
                 </div>
               </button>
 
@@ -132,13 +144,17 @@ export function Navbar({
                   setProductsDropdownOpen(false);
                 }}
                 className={`w-full flex items-center space-x-2.5 p-2.5 rounded-xl text-left transition ${
-                  activeTab === 'sdk' ? 'bg-crimson text-white font-bold' : 'hover:bg-black/5 text-black'
+                  activeTab === 'sdk'
+                    ? 'bg-crimson text-white font-bold shadow-sm'
+                    : 'hover:bg-cream-subtle text-black'
                 }`}
               >
-                <Code2 className="w-4 h-4 text-crimson" />
+                <Code2 className={`w-4 h-4 ${activeTab === 'sdk' ? 'text-white' : 'text-crimson'}`} />
                 <div>
                   <div className="text-xs font-bold">Client SDK & Proxy</div>
-                  <div className="text-[10px] text-black/50 font-mono">@intra/sdk Dynamic Interceptor</div>
+                  <div className={`text-[10px] font-mono ${activeTab === 'sdk' ? 'text-white/85' : 'text-black/50'}`}>
+                    @intra/sdk Dynamic Interceptor
+                  </div>
                 </div>
               </button>
             </div>
