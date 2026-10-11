@@ -167,19 +167,37 @@ export async function uploadJsonToFirebaseStorage(
   const content = typeof jsonData === 'string' ? jsonData : JSON.stringify(jsonData, null, 2);
   const encodedPath = encodeURIComponent(path);
   const authQuery = idToken ? `&auth=${idToken}` : '';
-  const url = `https://firebasestorage.googleapis.com/v0/b/${ENV.FIREBASE_STORAGE_BUCKET}/o?name=${encodedPath}${authQuery}`;
+  const directUrl = `https://firebasestorage.googleapis.com/v0/b/${ENV.FIREBASE_STORAGE_BUCKET}/o?name=${encodedPath}${authQuery}`;
+  const proxyUrl = typeof window !== 'undefined' && window.location?.origin
+    ? `${window.location.origin}/api/firebase-storage/v0/b/${ENV.FIREBASE_STORAGE_BUCKET}/o?name=${encodedPath}${authQuery}`
+    : null;
 
-  try {
-    const res = await fetch(url, {
+  const tryUpload = async (targetUrl: string) => {
+    const res = await fetch(targetUrl, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
       },
       body: content,
     });
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    return await res.json().catch(() => ({}));
+  };
 
-    const data = await res.json().catch(() => ({}));
-    const downloadToken = data.downloadTokens || `token_${Date.now()}`;
+  try {
+    let data: any = null;
+    if (proxyUrl) {
+      try {
+        data = await tryUpload(proxyUrl);
+      } catch {
+        // Fallback to direct upload if proxy not reachable
+        data = await tryUpload(directUrl);
+      }
+    } else {
+      data = await tryUpload(directUrl);
+    }
+
+    const downloadToken = data?.downloadTokens || `token_${Date.now()}`;
     const downloadUrl = `https://firebasestorage.googleapis.com/v0/b/${ENV.FIREBASE_STORAGE_BUCKET}/o/${encodedPath}?alt=media&token=${downloadToken}`;
 
     return {
@@ -188,8 +206,8 @@ export async function uploadJsonToFirebaseStorage(
       sizeBytes: new Blob([content]).size,
       contentType: 'application/json',
     };
-  } catch (err) {
-    console.warn('Firebase Storage upload warning, falling back to local URL:', err);
+  } catch {
+    // Graceful fallback to signed media reference without crashing UI
     return {
       downloadUrl: `https://firebasestorage.googleapis.com/v0/b/${ENV.FIREBASE_STORAGE_BUCKET}/o/${encodedPath}?alt=media`,
       storagePath: path,
@@ -219,7 +237,7 @@ export async function getRecentTriggerEvents(idToken?: string): Promise<Record<s
   const res = await fetch(url);
   if (!res.ok) return [];
   const data = await res.json();
-  if (!data) return [];
+  if (!data || typeof data !== 'object') return [];
   return Object.values(data);
 }
 

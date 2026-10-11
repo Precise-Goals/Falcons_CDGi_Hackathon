@@ -137,24 +137,37 @@ export function TriggerContainer({ user, onOpenAuth, onDriftAlert }: TriggerCont
 
       // Stage 1: Post observation to Core Engine
       let engineNotified = false;
-      const engineUrl = 'http://localhost:3001';
-      try {
-        const obsRes = await fetch(`${engineUrl}/observe`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            service: schemaToExecute.domain,
-            endpoint: schemaToExecute.endpoint,
-            method: schemaToExecute.method || 'POST',
-            statusCode: 200,
-            latencyMs: Math.floor(Math.random() * 45) + 12,
-            requestBody: {},
-            responseBody: schemaToExecute.mutatedPayload,
-          }),
-        });
-        engineNotified = obsRes.ok;
-      } catch {
-        engineNotified = false;
+      const primaryUrl = typeof window !== 'undefined' && window.location?.origin
+        ? `${window.location.origin}/api/engine/observe`
+        : 'http://localhost:3001/api/engine/observe';
+      const fallbackUrl = 'http://localhost:3001/observe';
+
+      const sendObs = async (url: string) => {
+        try {
+          const obsRes = await fetch(url, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              id: triggerId,
+              service: schemaToExecute.domain,
+              endpoint: schemaToExecute.endpoint,
+              method: schemaToExecute.method || 'POST',
+              status: 200,
+              headers: { 'content-type': 'application/json' },
+              body: schemaToExecute.mutatedPayload,
+              latencyMs: Math.floor(Math.random() * 45) + 12,
+              timestamp: new Date().toISOString(),
+            }),
+          }).catch(() => null);
+          return Boolean(obsRes && obsRes.ok);
+        } catch {
+          return false;
+        }
+      };
+
+      engineNotified = await sendObs(primaryUrl);
+      if (!engineNotified) {
+        engineNotified = await sendObs(fallbackUrl);
       }
 
       // Stage 2: In-Process Adapter Synthesis & SDK Adaptation

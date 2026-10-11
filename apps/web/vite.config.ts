@@ -51,12 +51,23 @@ export default defineConfig(({ mode }) => {
           changeOrigin: true,
           rewrite: (path) => path.replace(/^\/api\/sim/, ''),
         },
+        '/api/firebase-storage': {
+          target: 'https://firebasestorage.googleapis.com',
+          changeOrigin: true,
+          secure: true,
+          rewrite: (path) => path.replace(/^\/api\/firebase-storage/, ''),
+        },
       },
     },
     resolve: {
       alias: {
+        '@intra/adapter': path.resolve(__dirname, '../../packages/adapter/src/index.ts'),
+        '@intra/differ': path.resolve(__dirname, '../../packages/differ/src/index.ts'),
+        '@intra/impact': path.resolve(__dirname, '../../packages/impact/src/index.ts'),
+        '@intra/model': path.resolve(__dirname, '../../packages/model/src/index.ts'),
         '@intra/sdk': path.resolve(__dirname, '../../packages/sdk/src/index.ts'),
         '@intra/shared': path.resolve(__dirname, '../../packages/shared/src/index.ts'),
+        '@intra/validator': path.resolve(__dirname, '../../packages/validator/src/index.ts'),
       },
     },
     build: {
