@@ -27,7 +27,26 @@ export function buildEngineApp(pipeline = new PipelineEngine()): FastifyInstance
   // 1. Record Observation
   app.post('/observe', async (req, reply) => {
     try {
-      const parsed = ObservationSchema.parse(req.body);
+      if (!req.body || typeof req.body !== 'object' || Object.keys(req.body).length === 0) {
+        return reply.status(400).send({ error: 'Request body must be a non-empty object' });
+      }
+      const raw = req.body as any;
+      const normalized = {
+        id: raw.id || `obs_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`,
+        service: raw.service || raw.domain,
+        endpoint: raw.endpoint,
+        method: typeof raw.method === 'string' ? raw.method.toUpperCase() : 'POST',
+        status: raw.status ?? raw.statusCode,
+        headers: (raw.headers && typeof raw.headers === 'object') ? raw.headers : { 'content-type': 'application/json' },
+        body: raw.body ?? raw.responseBody ?? raw.mutatedPayload,
+        latencyMs: raw.latencyMs ?? 20,
+        timestamp: raw.timestamp || new Date().toISOString(),
+        ...(raw.rateLimitHeaders ? { rateLimitHeaders: raw.rateLimitHeaders } : {}),
+        ...(raw.paginationShape ? { paginationShape: raw.paginationShape } : {}),
+        ...(raw.errorBody ? { errorBody: raw.errorBody } : {}),
+      };
+
+      const parsed = ObservationSchema.parse(normalized);
       const obs = pipeline.recordObservation(parsed);
       return reply.status(201).send(obs);
     } catch (err: any) {
