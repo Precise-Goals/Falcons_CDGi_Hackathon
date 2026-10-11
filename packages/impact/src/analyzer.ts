@@ -113,6 +113,9 @@ export class ImpactAnalyzer {
       severity = 'low';
     }
 
+    // Elevate severity if route touches critical financial or ledger pathways
+    severity = annotateCriticality(change.service, change.endpoint, severity);
+
     const impact: Impact = {
       changeId: change.id,
       affectedWorkflows,
@@ -124,4 +127,30 @@ export class ImpactAnalyzer {
     ImpactSchema.parse(impact);
     return impact;
   }
+}
+
+/**
+ * Checks if a service or endpoint belongs to sensitive financial processing.
+ */
+export function isFinancialOrPaymentRoute(service: string, endpoint: string): boolean {
+  const normService = service.toLowerCase();
+  const normEndpoint = endpoint.toLowerCase();
+  const financialKeywords = ['payment', 'charge', 'billing', 'invoice', 'ledger', 'checkout', 'payout'];
+  return financialKeywords.some(kw => normService.includes(kw) || normEndpoint.includes(kw));
+}
+
+/**
+ * Annotates severity to critical if financial pathway is impacted by non-equivalent drift.
+ */
+export function annotateCriticality(
+  service: string,
+  endpoint: string,
+  currentSeverity: Impact['severity']
+): Impact['severity'] {
+  if (isFinancialOrPaymentRoute(service, endpoint)) {
+    if (currentSeverity === 'high' || currentSeverity === 'medium') {
+      return 'critical';
+    }
+  }
+  return currentSeverity;
 }
